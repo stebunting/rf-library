@@ -1,0 +1,991 @@
+#!/usr/bin/env python2.7
+# coding=utf-8
+
+# Imports
+# Import Python Modules
+# Platform - Check user operating system
+# OS - Path functions
+# Datetime - Creation date conversion
+# Re - Regular Expressions
+# xml.etree.ElementTree - XML Parsing
+import platform, os, datetime, re, xml.etree.ElementTree
+
+# Import program data
+# Data - Program data
+# Settings - User preferences and continuity
+import data, settings
+
+# Import GUI functions
+import Tkinter, ttk, tkFont, tkMessageBox, tkFileDialog
+
+# Import graph plotting functions
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+# Check for windows compatibility
+slash = '\\' if platform.system() == 'Windows' else '/'
+
+# Set date format
+dateFormat = data.dateFormats.get(settings.defaultDateFormat) if data.dateFormats.get(settings.defaultDateFormat) != None else data.dateFormats.get('yyyy-mm-dd')
+
+# Find script path for writing to settings.py
+scriptpath = os.path.dirname(os.path.realpath(__file__))
+
+					
+################################################################################
+##########                         Start GUI                          ##########
+################################################################################
+
+def main():
+	gui = GUI()
+	gui.window.mainloop()
+	
+################################################################################
+##########                        FILE OBJECT                         ##########
+################################################################################
+
+# Define Data class
+class File():
+
+	# Initialise class
+	def __init__(self, name, tvCountry):
+		self.fullfilename = name
+		self.filename = os.path.basename(self.fullfilename)
+		self.path = os.path.dirname(self.fullfilename)
+		self.valid = True
+		self.readFile()
+		if self.valid:
+			self.updateTVChannels(tvCountry)
+			self.getNewFilename()
+		
+	# Method to check validity and get file details
+	def readFile(self):
+		# Ensure file has valid extension
+		file, ext = os.path.splitext(self.filename)
+		if ext.lower() != '.csv' and ext.lower() != '.sdb2':
+			self.valid = False
+			return
+		
+		# Read first line of file
+		self.frequencies = []
+		self.fp = open(self.fullfilename)
+		firstLine = self.fp.readline().rstrip()
+		self.fp.seek(0)
+		
+		# Identify type of scan file from first line and parse
+		if firstLine[0:11] == 'Model Type:':
+			self.parseCSVScan('TTi {}'.format(firstLine[12:-1]))
+		elif firstLine[0:9] == 'Receiver;':
+			self.parseWSMScan()
+		elif firstLine[0:38] == '<?xml version="1.0" encoding="UTF-8"?>':
+			self.parseShureScan()
+		else:
+			self.parseCSVScan('Generic')
+		self.fp.close()
+		if len(self.frequencies) == 0:
+			self.valid = False
+			return
+		
+		# Get file details
+		self.startFrequency = min(freq[0] for freq in self.frequencies)
+		self.stopFrequency = max(freq[0] for freq in self.frequencies)
+		self.dataPoints = len(self.frequencies)
+		self.resolution = (self.stopFrequency - self.startFrequency) / (self.dataPoints - 1)
+	
+	# Parse an XML scan created by Shure WWB6 and hardware
+	def parseShureScan(self):
+		tree = xml.etree.ElementTree.parse(self.fp)
+		xmldoc = tree.getroot()
+		model = xmldoc.attrib['model']
+		if model == 'TODO' or model == '':
+			self.model = 'Shure AXT600'
+		else:
+			self.model = 'Shure {} ({})'.format(model, xmldoc.attrib['band'])
+		self.frequencies = [[float(freq.text) / 1000, float(level.text)] for freq, level in zip(xmldoc[0][0], xmldoc[0][1])]
+		self.creationDate = datetime.datetime.fromtimestamp(float(xmldoc[0][1].attrib['date_time']) / 1000)
+			
+	# Parse a CSV file
+	def parseCSVScan(self, model):
+		self.model = model
+		for line in self.fp:
+			splitLine = re.split('[\t,;]', line)
+			try:
+				freq = float(splitLine[0].strip())
+				value = float(splitLine[1].strip())
+				self.frequencies.append([freq, value])
+			except ValueError:
+				pass
+		self.getCreationDate()
+			
+	# Parse a WSM file
+	def parseWSMScan(self):
+		self.model = 'Sennheiser WSM'
+		wsmLowLimit = -99
+		wsmHighLimit = -80
+		wsmMultiplier = wsmLowLimit - wsmHighLimit
+		for line in self.fp:
+			splitLine = re.split('[	,; ]', line)
+			try:
+				freq = float(splitLine[0]) / 1000
+				value = wsmLowLimit - (float(splitLine[2]) * 0.025 * wsmMultiplier)
+				if freq > 1:
+					self.frequencies.append([freq, value])
+			except (ValueError, IndexError):
+				pass
+		self.getCreationDate()
+	
+	# Method to return creation date from file
+	def getCreationDate(self):
+		self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_birthtime)
+	
+	# Method to get TV channels
+	def updateTVChannels(self, tvCountry):
+		tvCountry = tvCountry if tvCountry == 'United States of America' else 'UK'
+		self.startTVChannel = None
+		self.stopTVChannel = None
+		for chan in data.TVChannels[tvCountry]:
+			if self.startTVChannel == None:
+				if self.startFrequency >= float(chan[1]) and self.startFrequency < float(chan[2]):
+					self.startTVChannel = chan[0]
+			else:
+				if self.stopFrequency > float(chan[1]) and self.stopFrequency <= float(chan[2]):
+					self.stopTVChannel = chan[0]
+					break
+		
+	# Method to get new filename based on BestAudio naming structure
+	def getNewFilename(self):
+		if self.startFrequency == 80:
+			self.newFilename = 'FM'
+		elif 54 <= self.startFrequency <= 88:
+			self.newFilename = '{:02}'.format((int(self.startFrequency) - 42) / 6)
+		elif 174 <= self.startFrequency <= 216:
+			self.newFilename = '{:02}'.format((int(self.startFrequency) - 132) / 6)
+		elif 470 <= self.startFrequency <= 890:
+			self.newFilename = '{:02}'.format((int(self.startFrequency) - 386) / 6)
+		elif self.startFrequency == 902:
+			self.newFilename = '900'
+		elif self.startFrequency == 1880:
+			self.newFilename = 'DECTEU'
+		elif self.startFrequency == 1920:
+			self.newFilename = 'DECTUSA'
+		else:
+			self.newFilename = None
+		self.newFilename = '{}.csv'.format(self.newFilename)
+
+################################################################################
+##########                  SETTINGS WINDOW OBJECT                    ##########
+################################################################################
+
+class SettingsWindow():
+
+	# Initialise class
+	def __init__(self):
+		self.settingsWindow = Tkinter.Toplevel(takefocus = True)
+		self.settingsWindow.lift()
+		
+		self.settingsWindow.title('Settings')
+		
+		self.createSettingsFrames()
+		self.createSettingsWidgets()
+	
+	def createSettingsFrames(self):
+		self.settingsMasterFrame = ttk.Frame(self.settingsWindow)
+		self.settingsMasterFrame.grid(padx = 0, pady = 0, sticky = 'NWSE')
+		
+		self.sourcePreferences = ttk.LabelFrame(self.settingsMasterFrame, text = 'Source Preferences')
+		self.sourcePreferences.grid(padx = 16, pady = 16, sticky = 'NWSE')
+		
+		self.outputPreferences = ttk.LabelFrame(self.settingsMasterFrame, text = 'Output Preferences')
+		self.outputPreferences.grid(padx = 16, pady = 16, sticky = 'NWSE')
+		
+		self.personalData = ttk.LabelFrame(self.settingsMasterFrame, text = 'Personal Data')
+		self.personalData.grid(padx = 16, pady = 16, sticky = 'NWSE')
+		
+		self.settingsButtonsFrame = ttk.Frame(self.settingsMasterFrame)
+		self.settingsButtonsFrame.grid(padx = 16, pady = 16, columnspan = 2, sticky = 'NWSE')
+			
+	def createSettingsWidgets(self):
+	
+		# Set Defaults
+		self.sourceFolder = Tkinter.StringVar()
+		self.scansFolder = Tkinter.StringVar()
+		self.lowFreqLimit = Tkinter.IntVar()
+		self.highFreqLimit = Tkinter.IntVar()
+		
+		if settings.initialised == False:
+			if platform.system() == 'Darwin':
+				self.sourceFolder.set(os.path.expanduser('~/Documents'))
+				self.scansFolder.set(os.path.expanduser('~/Documents/Scans'))
+			elif platform.system() == 'Windows':
+				self.sourceFolder.set(os.path.expanduser('~/Documents'))
+				self.scansFolder.set(os.path.expanduser('~/Documents/Scans'))
+		else:
+			self.sourceFolder.set(settings.defaultSourceLocation)
+			self.scansFolder.set(settings.defaultLibraryLocation)
+		self.lowFreqLimit.set(settings.lowFreqLimit)
+		self.highFreqLimit.set(settings.highFreqLimit)
+		
+		# Source Folder
+		ttk.Label(self.sourcePreferences, text = 'Default Source Folder').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.sourceFolderLabel = ttk.Label(self.sourcePreferences, textvariable = self.sourceFolder)
+		self.sourceFolderLabel.grid(column = 1, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.changeSourceFolderButton = ttk.Button(self.sourcePreferences, text = 'Change Folder', command = self.changeSourceFolder)
+		self.changeSourceFolderButton.grid(column = 1, row = 1)
+		
+		# Scans Folder
+		ttk.Label(self.outputPreferences, text = 'Scans Folder').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.scansFolderLabel = ttk.Label(self.outputPreferences, textvariable = self.scansFolder)
+		self.scansFolderLabel.grid(column = 1, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.changeBaseFolderButton = ttk.Button(self.outputPreferences, text = 'Change Folder', command = self.changeBaseFolder)
+		self.changeBaseFolderButton.grid(column = 1, row = 1)
+		
+		# Directory Structure
+		ttk.Label(self.outputPreferences, text = 'Directory Structure').grid(column = 0, row = 2, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		ttk.Label(self.outputPreferences, text = '/country/town venue/year/subdirectory').grid(column = 1, row = 2, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		
+		# Date Format
+		self.defaultDateFormat = Tkinter.StringVar()
+		self.defaultDateFormat.set(settings.defaultDateFormat)
+		ttk.Label(self.outputPreferences, text = 'Date Format').grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.dateFormatBox = ttk.Combobox(self.outputPreferences, textvariable = self.defaultDateFormat)
+		self.dateFormatBox['values'] = [key for key in data.dateFormats]
+		self.dateFormatBox.grid(column = 1, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		
+		# Low Frequency Limit
+		ttk.Label(self.outputPreferences, text = 'Low Frequency Limit').grid(column = 0, row = 4, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.lowFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable = self.lowFreqLimit)
+		self.lowFreqLimitEntry.grid(column = 1, row = 4)
+		
+		# High Frequency Limit
+		ttk.Label(self.outputPreferences, text = 'High Frequency Limit').grid(column = 0, row = 5, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.highFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable = self.highFreqLimit)
+		self.highFreqLimitEntry.grid(column = 1, row = 5)
+		
+		# Forename Entry
+		self.forename = Tkinter.StringVar()
+		self.forename.set(settings.forename)
+		ttk.Label(self.personalData, text = 'Forename').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.forenameEntry = ttk.Entry(self.personalData, textvariable = self.forename)
+		self.forenameEntry.grid(column = 1, row = 0)
+		
+		# Surname Entry
+		self.surname = Tkinter.StringVar()
+		self.surname.set(settings.surname)
+		ttk.Label(self.personalData, text = 'Surname').grid(column = 0, row = 1, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.surnameEntry = ttk.Entry(self.personalData, textvariable = self.surname)
+		self.surnameEntry.grid(column = 1, row = 1)
+		
+		# Buttons
+		self.saveSettingsButton = ttk.Button(self.settingsButtonsFrame, text = 'Save', command = self._saveSettings)
+		self.saveSettingsButton.grid(column = 0, row = 0)
+		self.cancelSettingsButton = ttk.Button(self.settingsButtonsFrame, text = 'Cancel', command = self._closeSettings)
+		self.cancelSettingsButton.grid(column = 1, row = 0)
+		
+		#Bindings
+		self.settingsWindow.bind('<Return>', self._saveSettings)
+		self.settingsWindow.bind('<Escape>', self._closeSettings)
+		
+		# Add padding to all entry boxes
+		for widget in [self.changeSourceFolderButton, self.changeBaseFolderButton, self.forenameEntry, self.surnameEntry, self.lowFreqLimitEntry, self.highFreqLimitEntry, self.saveSettingsButton, self.cancelSettingsButton]:
+			widget.grid(sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+	
+	# Callback method to select default source folder
+	def changeSourceFolder(self):
+		dir = tkFileDialog.askdirectory(parent = self.settingsMasterFrame, title = 'Select Source Folder', initialdir = self.sourceFolder.get())
+		if dir != '':
+			self.sourceFolder.set(dir)
+			
+	# Callback method to select scans base folder
+	def changeBaseFolder(self):
+		dir = tkFileDialog.askdirectory(parent = self.settingsMasterFrame, title = 'Select Scan Folder', initialdir = self.scansFolder.get())
+		if dir != '':
+			self.scansFolder.set(dir)
+		
+	# Callback method to save settings and close window	
+	def _saveSettings(self, event = None):
+	
+		# Ensure limits are ints, else revert to default
+		for var, default in [(self.lowFreqLimit, settings.lowFreqLimit), (self.highFreqLimit, settings.highFreqLimit)]:
+			try:
+				int(var.get())
+			except ValueError:
+				var.set(default)
+		settingsToSave = """# User Settings
+initialised = True
+forename = '{}'
+surname = '{}'
+defaultSourceLocation = '{}'
+defaultLibraryLocation = '{}'
+defaultDateFormat = '{}'
+lowFreqLimit = {}
+highFreqLimit = {}
+settingsLength = """.format(self.forename.get(), self.surname.get(), self.sourceFolder.get(),
+			self.scansFolder.get(), self.defaultDateFormat.get(), int(self.lowFreqLimit.get()), int(self.highFreqLimit.get()))
+		defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{}\'\ndefaultTown = \'{}\'\ndefaultCountry = \'{}\'\ndefaultDelete = {}'.format(settings.defaultVenue, settings.defaultTown, settings.defaultCountry, settings.defaultDelete)
+		open('{}{}settings.py'.format(scriptpath, slash), 'w').write('{}{}{}'.format(settingsToSave, str(len(settingsToSave)), defaults))
+		self._closeSettings()
+	
+	# Callback method to close settings window
+	def _closeSettings(self, event = None):
+		self.settingsWindow.quit()
+		self.settingsWindow.destroy()
+	
+	# Method to bring settings window to front
+	def bringtofront(self):
+		self.settingsWindow.grab_set()
+		self.settingsWindow.grab_release()
+	
+################################################################################
+##########                         GUI OBJECT                         ##########
+################################################################################
+
+class GUI():
+	def __init__(self):
+ 
+		# Variables
+		self.files = []
+		self.fileListboxSelection = None
+		self.subdirectory = True
+		self.settingsWindowOpen = False
+	 
+		# Create instance
+		self.window = Tkinter.Tk()
+		
+		# Configure main window
+		self.window.resizable(width = False, height = False)
+		self.window.title(data.title)
+		self.window.config(background = 'lightGrey')
+		self.window.iconbitmap('gui.ico')
+		
+		# Configure OS X Application menu
+		if platform.system() == 'Darwin':
+			self.window.createcommand('tkAboutDialog', self._about)
+			self.window.createcommand("::tk::mac::ShowPreferences", self._settings)
+		
+		# Build window
+		self.createStyles()
+		self.createFrames()
+		self.createMenu()
+		self.createWidgets()
+		
+		# Open settings if settings uninitialised
+		if not settings.initialised:
+			self._settings()
+		
+		# If settings cancelled, quit
+		if not settings.initialised:
+			self._quit()
+ 		
+	def createStyles(self):
+		self.fontSize = 13
+		default_font = tkFont.nametofont('TkDefaultFont')
+		default_font.configure(size = self.fontSize)
+		self.sdFocusColor = 'red'
+		self.sdNoFocusColor = 'darkgrey'
+		self.baseBackground = '#dcdad5'
+	 
+		self.guiStyle = ttk.Style()
+		self.guiStyle.theme_use('clam')
+		self.guiStyle.map('TCombobox', fieldbackground = [('readonly', 'white')])
+		self.guiStyle.configure('TLabelframe.Label', font = 'Arial 16')
+		self.guiStyle.map('TRadiobutton', background = [('hover', self.baseBackground)])
+		self.guiStyle.map('TCheckbutton', background = [('hover', self.baseBackground)])
+	 
+		self.guiStyle.element_create('plain.field', 'from', 'clam')
+		self.guiStyle.layout('Subdirectory.TEntry',
+			[('Entry.plain.field', {'children':
+				[('Entry.background', {'children':
+					[('Entry.padding', {'children':
+						[('Entry.textarea', {'sticky': 'nswe'})],
+					'sticky': 'nswe'})],
+				'sticky': 'nswe'})],
+			'border':'0', 'sticky': 'nswe'})])
+		self.guiStyle.configure('Subdirectory.TEntry', fieldbackground = self.baseBackground, foreground = self.sdFocusColor)
+ 
+	def createFrames(self):
+		self.masterFrame = ttk.Frame(self.window)
+		self.masterFrame.grid(padx = 0, pady = 0, sticky = 'NWSE')
+	 
+		self.inputFrame = ttk.LabelFrame(self.masterFrame, text = 'Source Data')
+		self.inputFrame.grid(column = 0, row = 0, padx = 10, pady = 10, sticky = 'NWSE')
+	 
+		self.previewFrame = ttk.LabelFrame(self.masterFrame, text = 'Source Preview')
+		self.previewFrame.grid(column = 1, row = 0, rowspan = 2, padx = 8, pady = 8, sticky = 'NWE')
+		self.displayEmptyPreview()
+					 
+		self.infoFrame = ttk.LabelFrame(self.masterFrame, text = 'Venue Information')
+		self.infoFrame.grid(column = 0, row = 1, padx = 8, pady = 8, sticky = 'NWSE')
+	 
+		self.outputFrame = ttk.LabelFrame(self.masterFrame, text = 'Output Data')
+		self.outputFrame.grid(column = 0, row = 2, columnspan = 2, padx = 8, pady = 8, sticky = 'NWSE')
+	 
+	def createMenu(self):
+		self.menuBar = Tkinter.Menu(self.window)
+		
+		# File Menu
+		self.fileMenu = Tkinter.Menu(self.menuBar, tearoff = False)
+		self.fileMenu.add_command(label = 'Add Files', accelerator = 'Command-a', command = self.addFiles)
+		self.fileMenu.add_command(label = 'Add Directory', accelerator = 'Command-shift-a', command = self.addDirectory)
+		self.fileMenu.add_separator()
+		self.fileMenu.add_command(label = 'Set Destination', accelerator = 'Command-d', command = self.customDestination) 
+		self.fileMenu.add_command(label = 'Create File', accelerator = 'Command-Return', command = self.createFile)
+		self.menuBar.add_cascade(label = 'File', menu = self.fileMenu)
+		
+		# Edit Menu
+		self.editMenu = Tkinter.Menu(self.menuBar, tearoff = False)
+		self.editMenu.add_command(label = 'Remove File', accelerator = 'BackSpace', command = self.removeFile)
+		self.editMenu.add_command(label = 'Clear Files', accelerator = 'Command-BackSpace', command = self.clearFiles)
+		self.menuBar.add_cascade(label = 'Edit', menu = self.editMenu)
+	 
+		self.window.config(menu = self.menuBar)
+		
+		#self.window.bind('<Command-a>', self.addFiles)
+		#self.window.bind('<Command-d>', self.customDestination)
+		#self.window.bind('<Command-Return>', self.createFile)
+	 
+	def createWidgets(self):
+		# File List
+		ttk.Label(self.inputFrame, text = 'File List').grid(column = 0, row = 0, sticky = 'W')
+		self.fileListbox = Tkinter.Listbox(self.inputFrame, height = 8, width = 20)
+		self.fileListbox.bind('<<ListboxSelect>>', self.printFileData)
+		self.fileListbox.grid(column = 0, row = 1, padx = data.padx_default, pady = data.pady_default)
+		
+		# Data List
+		ttk.Label(self.inputFrame, text = 'Selected File Information').grid(column = 1, row = 0, sticky = 'W')
+		self.dataListbox = Tkinter.Listbox(self.inputFrame, height = 8, width = 30)
+		self.dataListbox.grid(column = 1, row = 1, padx = data.padx_default, pady = data.pady_default)
+		self.dataListbox.configure(background = 'lightGrey')
+	 
+		# File List Edit Buttons
+		self.fileListEditFrame = ttk.Frame(self.inputFrame)
+		self.fileListEditFrame.grid(column = 0, row = 2, columnspan = 2, sticky = 'W')
+		self.addFilesButton = ttk.Button(self.fileListEditFrame, text = 'Add Files', command = self.addFiles)
+		self.addFilesButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.removeFileButton = ttk.Button(self.fileListEditFrame, text = 'Remove File', command = self.removeFile)
+		self.removeFileButton.grid(column = 1, row = 0, sticky = 'W', padx = data.padx_default, pady = 0)
+		self.clearFilesButton = ttk.Button(self.fileListEditFrame, text = 'Clear Files', command = self.clearFiles)
+		self.clearFilesButton.grid(column = 2, row = 0, sticky = 'W', padx = data.padx_default, pady = 0)
+		self.useDateButton = ttk.Button(self.fileListEditFrame, text = 'Set Date', command = self.useDate)
+		self.useDateButton.grid(column = 3, row = 0, sticky = 'W', padx = data.padx_default, pady = 0)
+	 
+		# File Info status
+		self.numFiles = Tkinter.StringVar()
+		self.fileStatus = ttk.Label(self.inputFrame, textvariable = self.numFiles)
+		self.fileStatus.grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+	 
+		# Source Venue Data
+		self.venue = Tkinter.StringVar()
+		self.venue.set(settings.defaultVenue)
+		ttk.Label(self.infoFrame, text = 'Venue').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.venueEntry = ttk.Entry(self.infoFrame, textvariable = self.venue, font = 'TkDefaultFont {}'.format(self.fontSize))
+		self.venueEntry.grid(column = 1, row = 0)
+
+		# Source Town Data
+		self.town = Tkinter.StringVar()
+		self.town.set(settings.defaultTown)
+		ttk.Label(self.infoFrame, text = 'Town').grid(column = 0, row = 1, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.townEntry = ttk.Entry(self.infoFrame, textvariable = self.town, font = 'TkDefaultFont {}'.format(self.fontSize))
+		self.townEntry.grid(column = 1, row = 1)
+
+		# Source Country Data
+		self.country = Tkinter.StringVar()
+		self.country.set(settings.defaultCountry)
+		ttk.Label(self.infoFrame, text = 'Country').grid(column = 0, row = 2, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.countryBox = ttk.Combobox(self.infoFrame, textvariable = self.country, font = 'TkDefaultFont {}'.format(self.fontSize))
+		self.countryBox['values'] = data.countries
+		self.countryBox.grid(column = 1, row = 2, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+	 
+		# Source Scan Date
+		self.scanDate = Tkinter.StringVar()
+		ttk.Label(self.infoFrame, text = 'Scan Date').grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.dateEntry = ttk.Entry(self.infoFrame, textvariable = self.scanDate, font = 'TkDefaultFont {}'.format(self.fontSize))
+		self.dateEntry.grid(column = 1, row = 3)
+	 
+		# Inside / Outside
+		self.io = Tkinter.StringVar()
+		ttk.Label(self.infoFrame, text = 'Inside/Outside').grid(column = 0, row = 4, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.ioBox = ttk.Combobox(self.infoFrame, textvariable = self.io, state = 'readonly', font = 'TkDefaultFont {}'.format(self.fontSize))
+		self.ioBox['values'] = ('Inside', 'Outside')
+		self.ioBox.grid(column = 1, row = 4)
+		self.ioBox.current(0)
+		self.ioBox.bind('<<ComboboxSelected>>', self.updateSubdirectory)
+	 
+		# Output Location
+		self.directoryFrame = ttk.Frame(self.outputFrame)
+		self.directoryFrame.grid(column = 1, row = 0, sticky = 'W')
+	 
+		self.scanOutputLocation = Tkinter.StringVar()
+		self.targetSubdirectory = Tkinter.StringVar()
+		self.targetSubdirectory.set(self.io.get())
+		ttk.Label(self.outputFrame, text = 'Destination').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		ttk.Label(self.directoryFrame, textvariable = self.scanOutputLocation).grid(column = 0, row = 0, sticky = 'W', padx = 0, pady = data.pady_default)
+		self.targetSubdirectoryEntry = ttk.Entry(self.directoryFrame, textvariable = self.targetSubdirectory, width = 10, font = 'TkDefaultFont {}'.format(self.fontSize), style = 'Subdirectory.TEntry')
+		self.targetSubdirectoryEntry.grid(column = 1, row = 0, sticky = 'W', padx = 0, pady = data.pady_default)
+		self.targetSubdirectoryEntry.bind('<FocusIn>', self.subdirectoryFocusIn)
+		self.targetSubdirectoryEntry.bind('<FocusOut>', self.subdirectoryFocusOut)
+	 
+		# Custom Output Frame
+		self.customOutputFrame = ttk.Frame(self.outputFrame)
+		self.customOutputFrame.grid(column = 1, row = 1, sticky = 'W')
+	 
+		# Custom Output
+		self.customOutputButton = ttk.Button(self.customOutputFrame, text = 'Set Destination', command = self.customDestination)
+		self.customOutputButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+	 
+		# Use Default Output
+		self.defaultOutputLocation = Tkinter.BooleanVar()
+		self.defaultOutputLocation.set(1)
+		self.defaultOutputCheck = ttk.Radiobutton(self.customOutputFrame, text = 'Standard Destination', variable = self.defaultOutputLocation, command = self.updateSubdirectory)
+		self.defaultOutputCheck.grid(column = 1, row = 0)
+	 
+		# Output Master File Name
+		self.scanMasterFilename = Tkinter.StringVar()
+		ttk.Label(self.outputFrame, text = 'Master Filename').grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.scanMasterFilenameEntry = ttk.Entry(self.outputFrame, textvariable = self.scanMasterFilename, font = 'TkDefaultFont {}'.format(self.fontSize))
+		self.scanMasterFilenameEntry.grid(column = 1, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.scanMasterFilenameEntry.config(width = 60)
+	 
+		# Delete Source Files
+		self.deleteSourceFiles = Tkinter.BooleanVar()
+		self.deleteSourceFiles.set(settings.defaultDelete)
+		ttk.Label(self.outputFrame, text = 'Delete Source Files').grid(column = 0, row = 4, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, variable = self.deleteSourceFiles)
+		self.deleteSourceFilesCheck.grid(column = 1, row = 4, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+	 
+		# Output Buttons
+		self.outputEditFrame = ttk.Frame(self.outputFrame)
+		self.outputEditFrame.grid(column = 0, row = 5, columnspan = 2, sticky = 'W')
+		self.createFileButton = ttk.Button(self.outputEditFrame, text = 'Create File', command = self.createFile)
+		self.createFileButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+	 
+		# Add binding to all entry boxes to refresh information automatically
+		for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox, self.defaultOutputCheck]:
+			x.grid(sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+			x.bind('<KeyRelease>', self.getMasterFilename)
+		self.countryBox.bind('<<ComboboxSelected>>', self.refresh)
+	 	
+	 	# Key Bindings
+		self.window.bind('<Up>', self.scrollFileListbox)
+		self.window.bind('<Down>', self.scrollFileListbox)
+		self.window.bind('<Escape>', self.deselectFileListbox)
+		self.window.bind('<BackSpace>', self.removeFile)
+	 	
+		# Initialise Lists
+		self.printFiles()
+
+################################################################################
+##########                  GUI CALLBACK FUNCTIONS                    ##########
+################################################################################
+			 
+	# Callback method to update filelist
+	def printFiles(self, event = None):
+		self.fileListbox.delete(0, Tkinter.END)
+		for file in self.files:
+			self.fileListbox.insert(Tkinter.END, file.filename)
+		self.printFileData(event)
+		self.updateFileStatus()
+		self.getScanDate()
+		self.getMasterFilename()
+
+	# Method to display file information
+	def printFileData(self, event = None):
+		self.dataListbox.delete(0, Tkinter.END)
+		self.displayEmptyPreview()
+		try:
+			self.fileListboxSelection = int(event.widget.curselection()[0])
+		except (AttributeError, IndexError):
+			pass
+		self.fileListbox.selection_clear(0, Tkinter.END)
+			
+		if self.fileListboxSelection == None:
+			self.dataListbox.insert(Tkinter.END, 'No file selected')
+		else:
+			self.fileListbox.select_set(self.fileListboxSelection)
+			self.dataListbox.insert(Tkinter.END, 'Filename: {}'.format(self.files[self.fileListboxSelection].filename))
+			self.dataListbox.insert(Tkinter.END, 'Date: {}'.format(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat)))
+			self.dataListbox.insert(Tkinter.END, 'Scanner: {}'.format(self.files[self.fileListboxSelection].model))
+			if self.files[self.fileListboxSelection].startTVChannel == None:
+				startTV = ''
+			else:
+				startTV = ' (TV{})'.format(self.files[self.fileListboxSelection].startTVChannel)
+			self.dataListbox.insert(Tkinter.END, 'Start Frequency: {:.3f}MHz{}'.format(self.files[self.fileListboxSelection].startFrequency, startTV))
+			if self.files[self.fileListboxSelection].stopTVChannel == None:
+				stopTV = ''
+			else:
+				stopTV = ' (TV{})'.format(self.files[self.fileListboxSelection].stopTVChannel)
+			self.dataListbox.insert(Tkinter.END, 'Stop Frequency: {:.3f}MHz{}'.format(self.files[self.fileListboxSelection].stopFrequency, stopTV))
+			self.dataListbox.insert(Tkinter.END, 'Data Points: {}'.format(self.files[self.fileListboxSelection].dataPoints))
+			self.dataListbox.insert(Tkinter.END, 'Mean Resolution: {:.3f}MHz'.format(self.files[self.fileListboxSelection].resolution))
+			self.dataListbox.insert(Tkinter.END, 'New Filename: {}'.format(self.files[self.fileListboxSelection].newFilename))
+			self.drawPreview()
+		self.buttonDisable()
+
+	# Method to decide if buttons should be disabled or not
+	def buttonDisable(self):
+		if len(self.files) == 0:
+			self.buttonStatus('disabled', 'disabled')
+		elif self.fileListboxSelection == None:
+			self.buttonStatus('disabled', 'enabled')
+		else:
+			self.buttonStatus('enabled', 'enabled')
+
+	# Callback method to print number of files chosen
+	def updateFileStatus(self):
+		plural = '' if len(self.files) == 1 else 's'
+		if len(self.files) == 0:
+			self.fileStatus.configure(foreground = 'red')
+		else:
+			self.fileStatus.configure(foreground = 'black')
+		self.numFiles.set('{} file{} added'.format(len(self.files), plural))
+ 
+	# Callback method to get earliest date from all files or todays date (default)
+	def getScanDate(self):
+		if len(self.files) == 0:
+			self.scanDateTimestamp = datetime.date.today()
+		else:
+			self.scanDateTimestamp = min([file.creationDate for file in self.files])
+		self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
+		
+	# Callback method to create master filename
+	def getMasterFilename(self, event = None):
+		
+		# Calculate space/hyphen formatting
+		if settings.forename == '' and settings.surname == '':
+			name = ''
+		elif settings.forename == '' or settings.surname == '':
+			name = ' {}{}'.format(settings.surname, settings.forename)
+		else:
+			name = ' {}-{}'.format(settings.surname, settings.forename)
+		if self.town.get() == '' and self.venue.get() == '':
+			townspace = ''
+			hyphen = ''
+		elif self.town.get() == '' or self.venue.get() == '':
+			townspace = ''
+			hyphen = '-'
+		else:
+			townspace = ' '
+			hyphen = '-'
+		
+		self.scanMasterFilename.set('{}{}{}{}{} {} {}{}.csv'.format(self.town.get(), townspace, self.venue.get(), hyphen, self.country.get(), self.scanDate.get(), self.io.get(), name))
+		year = self.scanDateTimestamp.year
+		if self.defaultOutputLocation.get() == 1:
+			self.libraryLocation = settings.defaultLibraryLocation + slash
+			self.targetLocation = ('{}{}{} {}{}{}'.format(self.country.get(), slash, self.town.get(), self.venue.get(), slash, year))
+		else:
+			self.targetLocation = ''
+		self.scanOutputLocation.set(self.libraryLocation + self.targetLocation + slash)
+ 
+	# Callback method to disable/enable buttons/menu items based on selected files
+	def buttonStatus(self, inputStatus = None, outputStatus = None):
+		if inputStatus != None:
+			for x in [self.removeFileButton, self.useDateButton]:
+				x.config(state = inputStatus)
+			if inputStatus == 'enabled':
+				inputStatus = 'normal'
+			for (menu, item) in [(self.editMenu, 'Remove File')]:
+				menu.entryconfig(item, state = inputStatus)
+		if outputStatus != None:
+			for x in [self.clearFilesButton, self.createFileButton]:
+				x.config(state = outputStatus)
+			if outputStatus == 'enabled':
+				outputStatus = 'normal'
+			for (menu, item) in [(self.editMenu, 'Clear Files'), (self.fileMenu, 'Create File')]:
+				menu.entryconfig(item, state = outputStatus)
+
+	# Callback method when focused into Subdirectory box
+	def subdirectoryFocusIn(self, event = ''):
+		if self.subdirectory == False:
+			self.targetSubdirectoryEntry.delete(0, Tkinter.END)
+			self.guiStyle.configure('Subdirectory.TEntry', foreground = self.sdFocusColor)
+	 
+	# Callback method when focused out from Subdirectory box
+	def subdirectoryFocusOut(self, event = ''):
+		if self.targetSubdirectory.get() == '':
+			self.subdirectory = False
+			self.targetSubdirectoryEntry.delete(0, Tkinter.END)
+			self.targetSubdirectoryEntry.insert(0, 'Subdirectory')
+			self.guiStyle.configure('Subdirectory.TEntry', foreground = self.sdNoFocusColor)
+		else:
+			self.subdirectory = True
+			self.guiStyle.configure('Subdirectory.TEntry', foreground = self.sdFocusColor)
+	 
+	# Callback method to change destination to custom destination	
+	def customDestination(self, event = None):
+		customLocation = tkFileDialog.askdirectory(parent = self.masterFrame, title = 'Select Destination Folder')
+		if customLocation != '':
+			self.libraryLocation = customLocation
+			self.scanOutputLocation.set(self.libraryLocation)
+			self.defaultOutputLocation.set(0)
+			self.updateSubdirectory()
+ 
+	# Callback method to refresh file data, for use when country or settings change
+	def refresh(self, event = None):
+		global dateFormat
+		dateFormat = data.dateFormats.get(settings.defaultDateFormat) if data.dateFormats.get(settings.defaultDateFormat) != None else data.dateFormats.get('yyyy-mm-dd')
+		for file in self.files:
+			file.updateTVChannels(self.country.get())
+		self.printFiles()
+
+	# Callback method to enable use of arrow keys to scroll through fileListbox
+	def scrollFileListbox(self, event = None):
+		if len(self.files) == 0:
+			return
+		elif self.fileListboxSelection == None and event.keysym == 'Down':
+			self.fileListboxSelection = 0
+		elif self.fileListboxSelection != len(self.files) - 1 and event.keysym == 'Down':
+			self.fileListboxSelection += 1
+		elif self.fileListboxSelection == None and event.keysym == 'Up':
+			self.fileListboxSelection = len(self.files) - 1
+		elif self.fileListboxSelection > 0 and event.keysym == 'Up':
+			self.fileListboxSelection -= 1
+		else:
+			return
+		self.fileListbox.selection_clear(0, Tkinter.END)
+		self.fileListbox.select_set(self.fileListboxSelection)
+		self.fileListbox.see(self.fileListboxSelection)
+		self.printFileData(event)
+
+	# Callback method to deselect fileListbox
+	def deselectFileListbox(self, event = None):
+		self.fileListboxSelection = None
+		self.fileListbox.selection_clear(0, Tkinter.END)
+		self.printFileData()
+	 
+	# Callback method to update subdirectory name
+	def updateSubdirectory(self, event = None):
+		if self.defaultOutputLocation.get() == 1:
+			self.targetSubdirectory.set(self.io.get())
+			self.subdirectory = True
+			self.subdirectoryFocusOut()
+		else:
+			self.targetSubdirectory.set('')
+			self.subdirectory = False
+			self.subdirectoryFocusOut()
+		self.getMasterFilename()
+
+	# Callback method to open file dialogue and allow selection of files
+	def addFiles(self, event = None, selected_files = None, suppressErrors = False):
+		if selected_files == None:
+			selected_files = tkFileDialog.askopenfilenames(parent = self.inputFrame, title = 'Add files', initialdir = settings.defaultSourceLocation)
+		for file in selected_files:
+			newFile = File(file, self.country.get())
+			if newFile.valid:
+				self.files.append(newFile)
+			elif not suppressErrors:
+				tkMessageBox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
+		self.printFiles()
+
+	# Callback method to open file dialogue and allow selection of all files in a directory
+	def addDirectory(self, event = None):
+		dirFiles = []
+		selectedDir = tkFileDialog.askdirectory(parent = self.inputFrame, title = 'Add directory', initialdir = settings.defaultSourceLocation)
+		if selectedDir != '':
+			for file in os.listdir(selectedDir):
+				fullfilename = "{}{}{}".format(selectedDir, slash, file)
+				if not file.startswith('.') and not os.path.isdir(fullfilename):
+					dirFiles.append(fullfilename)
+		if len(dirFiles) != 0:
+			self.addFiles(None, dirFiles, True)
+
+	# Callback method to remove file
+	def removeFile(self, event = None):
+		if event.widget.winfo_class() != 'TEntry' and event.widget.winfo_class() != 'TCombobox':
+			if self.fileListboxSelection == None:
+				return
+			self.files.remove(self.files[self.fileListboxSelection])
+			if len(self.files) == 0:
+				self.fileListboxSelection = None
+			elif self.fileListboxSelection > len(self.files) - 1:
+				self.fileListboxSelection = len(self.files) - 1
+			self.printFiles(event)
+ 
+	# Callback method to remove all files
+	def clearFiles(self, event = None, confirm = True):
+		if confirm == True:
+			if not tkMessageBox.askyesno('Are you sure?', 'Are you sure you want to clear the file list?'):
+				return
+		del self.files[:]
+		self.printFiles()
+		 
+	# Callback method to use date from selected file
+	def useDate(self):
+		self.scanDate.set(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat))
+		self.getMasterFilename()
+		self.axis.clear()
+
+	# Callback method to create master file
+	def createFile(self, event = None):
+		if len(self.files) == 0:
+			return
+		
+		# Check if user really wants to delete source files
+		if self.deleteSourceFiles.get() == 1 and tkMessageBox.askyesno('Are you sure?', 'Are you sure you want to delete the input files?'):
+			delSourceConfirmed = True
+		else:
+			delSourceConfirmed = False
+		 
+		# Determine full location to output
+		if self.targetSubdirectory.get() != '':
+			self.fullLocation = '{}{}{}'.format(self.scanOutputLocation.get(), self.targetSubdirectory.get(), slash)
+	 	
+	 	# Add all files into outputFile list if within limits
+		outputFile = []
+		statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}\n\n'.format(self.fullLocation)
+		for file in self.files:
+			for freq, value in file.frequencies:
+				if freq >= settings.lowFreqLimit and (settings.highFreqLimit == 0 or freq <= settings.highFreqLimit):
+					outputFile.append([float(freq), float(value)])
+		
+		# Remove duplicates
+		outputFile = sorted(outputFile)
+		i = 1
+		while i < len(outputFile):
+			if outputFile[i][0] == outputFile[i - 1][0]:
+				outputFile.remove(outputFile[i - 1])
+			else:
+				i += 1
+		
+		# Write original files with new filenames
+		if self.createDirectory():
+			for file in self.files:
+				if (self.writeFile('{}{}'.format(self.fullLocation, file.newFilename), file.frequencies)):
+					statement += '{}\n'.format(file.newFilename)
+				else:
+					return False
+		 	
+		 	# Write master file
+		 	if (self.writeFile('{}{}'.format(self.fullLocation, self.scanMasterFilename.get()), outputFile)):
+		 		statement += '{}\n'.format(self.scanMasterFilename.get())
+		 	else:
+		 		return False
+		 	
+			# Write defaults to settings.py
+			defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{}\'\ndefaultTown = \'{}\'\ndefaultCountry = \'{}\'\ndefaultDelete = {}'.format(self.venue.get(), self.town.get(), self.country.get(), self.deleteSourceFiles.get())
+			with open('{}{}settings.py'.format(scriptpath, slash), 'r+') as fp:
+				usersettings = fp.read(settings.settingsLength)
+				fp.seek(0)
+				fp.write('{}{}{}'.format(usersettings, len(usersettings), defaults))
+				fp.truncate()
+		 
+			if delSourceConfirmed:
+				statement += '\nThe following files were deleted:\n'
+				for file in self.files:
+					os.remove(file.fullfilename)
+					statement += '{}\n'.format(file.filename)
+				self.clearFiles(None, False)
+				tkMessageBox.showinfo('Success!', statement)
+			else:
+				if tkMessageBox.askyesno('Success!', '{}\nWould you like to clear the file list?'.format(statement)):
+					self.clearFiles(None, False)
+ 
+ 	# Method to write file to disk
+ 	def writeFile(self, target, array):
+		try:
+			with open(target, 'w') as fp:
+				for freq, value in array:
+					fp.write('{:09.4f},{:09.4f}\n'.format(freq, value))
+			return True
+		except IOError:
+			tkMessageBox.showwarning('Fail!', '{} could not be written.'.format(target))
+			return False
+ 	
+	# Callback method to create directory structure
+	def createDirectory(self):
+		if self.defaultOutputLocation.get() == 1 or self.targetSubdirectory != '':
+			try:
+				os.makedirs(self.fullLocation)
+				return True
+			except OSError:
+				tkMessageBox.showwarning('Directory already exists', '{} already exists. Please enter different sub-directory data.'.format(self.fullLocation))
+				return False
+		else:
+			return True
+	 
+	# Callback method to remove current preview
+	def clearPreview(self):
+		self.canvas._tkcanvas.destroy()
+ 
+	# Callback method to draw empty preview window
+	def displayEmptyPreview(self):
+		try:
+			self.clearPreview()
+		except AttributeError:
+			pass
+		self.fig = plt.figure(figsize = (3, 3), facecolor = 'white')
+		self.canvas = FigureCanvasTkAgg(self.fig, master = self.previewFrame)
+		self.canvas._tkcanvas.pack(side = Tkinter.TOP, fill = Tkinter.BOTH, expand = 0)
+		self.canvas.get_tk_widget().configure(highlightthickness = 0)
+ 
+	# Callback method to draw preview of self.fileListboxSelection
+	def drawPreview(self):
+		self.clearPreview()
+	 
+		self.axis = self.fig.add_subplot(111)
+		self.axis.set_axis_bgcolor('lightGrey')
+		self.axis.grid(linestyle = '-', color = 'grey')
+		self.axis.set_axisbelow(True)
+		self.axis.set_xlabel('Frequency /MHz')
+		self.axis.set_ylabel('Level /dBM')
+		for x in self.files[self.fileListboxSelection].frequencies:
+			try:
+				previous
+			except:
+				previous = [x[0], x[1]]
+				xValues = []
+				yValues = []
+			if previous[0] + (self.files[self.fileListboxSelection].resolution * 2) < x[0]:
+				xValues.append(previous[0] + self.files[self.fileListboxSelection].resolution)
+				yValues.append(-121)
+				xValues.append(x[0] - self.files[self.fileListboxSelection].resolution)
+				yValues.append(-121)
+			xValues.append(x[0])
+			yValues.append(x[1])
+			previous = x
+	 
+		miny = min(yValues)
+		miny = int((miny - 5) / 5) * 5 if miny > -95 or miny < -105 else -105
+		maxy = int((max(yValues) + 5) / 5) * 5 if max(yValues) > miny + 45 else miny + 45
+	 
+		self.axis.set_ylim(miny, maxy)
+		self.axis.plot(xValues, yValues, color = 'green')
+		self.axis.set_xlim(xValues[0], xValues[-1])
+	 
+		xTicks = []
+	 
+		tvCountry = self.country.get() if self.country.get() == 'United States of America' else 'UK'
+		for x in data.TVChannels[tvCountry]:
+			if self.files[self.fileListboxSelection].frequencies[0][0] <= x[1] and self.files[self.fileListboxSelection].frequencies[-1][0] >= x[1]:
+				xTicks.append(x[1])
+	 
+		self.axis.set_xticks(xTicks, minor = False)
+		self.axis.fill_between(xValues, int(miny) - 1, yValues, facecolor = 'lightGreen')
+
+		self.canvas = FigureCanvasTkAgg(self.fig, master = self.previewFrame)
+		self.canvas._tkcanvas.pack(side = Tkinter.TOP, fill = Tkinter.BOTH, expand = 0)
+		self.canvas.get_tk_widget().configure(highlightthickness = 0)
+
+	# Callback method to quit application
+	def _quit(self, event = ''):
+		self.window.quit()
+		self.window.destroy()
+		exit()
+
+	# Callback method to display about information
+	def _about(self):
+		tkMessageBox.showinfo('About', '{} {}\n\n© Stephen Bunting 2016\nhttp://www.stevebunting.com/'.format(data.title, data.version))
+
+	# Callback method to display settings box
+	def _settings(self, event = None):
+		if self.settingsWindowOpen == False:
+			self.settingsWindowOpen = True
+			self.settings = SettingsWindow()
+			self.settings.settingsWindow.mainloop()
+			self.settingsWindowOpen = False
+			reload(settings)
+			self.refresh()
+		else:
+			self.settings.bringtofront()
+		
+# Call main function
+if __name__ == '__main__':
+	main()
