@@ -3,6 +3,7 @@ THINGS TO DO BEFORE RELEASE
  - Prevent duplicate files on writing
  - Fix review graph scaling / axis labels
  - Need to create icon
+ - Settings.py should be created by program on first run
 
 BUGS TO FIX
  - Make window fixed width, automatically resizes when filenames get too long
