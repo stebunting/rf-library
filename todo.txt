@@ -1,5 +1,6 @@
 THINGS TO DO BEFORE RELEASE
  - Fix double typing in settings window
+   Caused by line 375, 'self.window.createcommand('::tk::mac::ShowPreferences', self._settings)'
  - Prevent duplicate files on writing
  - Fix review graph scaling / axis labels
  - Need to create icon

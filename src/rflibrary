@@ -11,7 +11,6 @@
 import platform, os, datetime, re, xml.etree.ElementTree
 
 # Import program data
-# Data - Program data
 import data
 
 # Import GUI functions
@@ -190,10 +189,10 @@ class SettingsWindow():
 		
 		self.settingsWindow.title('Settings')
 		
-		self.createSettingsFrames()
-		self.createSettingsWidgets()
+		self._createSettingsFrames()
+		self._createSettingsWidgets()
 	
-	def createSettingsFrames(self):
+	def _createSettingsFrames(self):
 		self.settingsMasterFrame = ttk.Frame(self.settingsWindow)
 		self.settingsMasterFrame.grid(padx = 0, pady = 0, sticky = 'NWSE')
 		
@@ -209,7 +208,8 @@ class SettingsWindow():
 		self.settingsButtonsFrame = ttk.Frame(self.settingsMasterFrame)
 		self.settingsButtonsFrame.grid(padx = 16, pady = 16, columnspan = 2, sticky = 'NWSE')
 			
-	def createSettingsWidgets(self):
+	def _createSettingsWidgets(self):
+	
 		# Initialise Tk variables
 		self.sourceFolder = Tkinter.StringVar()
 		self.scansFolder = Tkinter.StringVar()
@@ -220,7 +220,11 @@ class SettingsWindow():
 		self.surname = Tkinter.StringVar()
 
 		# Set Defaults		
-		if not settingsExists:
+		if settingsExists:
+			self.sourceFolder.set(settings.defaultSourceLocation)
+			self.scansFolder.set(settings.defaultLibraryLocation)
+			vars = [settings.lowFreqLimit, settings.highFreqLimit, settings.defaultDateFormat, settings.forename, settings.surname]
+		else:
 			if platform.system() == 'Darwin':
 				self.sourceFolder.set(os.path.expanduser('~/Documents'))
 				self.scansFolder.set(os.path.expanduser('~/Documents/Scans'))
@@ -228,10 +232,6 @@ class SettingsWindow():
 				self.sourceFolder.set(os.path.expanduser('~/Documents'))
 				self.scansFolder.set(os.path.expanduser('~/Documents/Scans'))
 			vars = [0, 0, 'yyyy-mm-dd', '', '']
-		else:
-			self.sourceFolder.set(settings.defaultSourceLocation)
-			self.scansFolder.set(settings.defaultLibraryLocation)
-			vars = [settings.lowFreqLimit, settings.highFreqLimit, settings.defaultDateFormat, settings.forename, settings.surname]
 		
 		fields = [self.lowFreqLimit, self.highFreqLimit, self.defaultDateFormat, self.forename, self.surname]
 		for field, var in zip(fields, vars):
@@ -241,14 +241,14 @@ class SettingsWindow():
 		ttk.Label(self.sourcePreferences, text = 'Default Source Folder').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 		self.sourceFolderLabel = ttk.Label(self.sourcePreferences, textvariable = self.sourceFolder)
 		self.sourceFolderLabel.grid(column = 1, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
-		self.changeSourceFolderButton = ttk.Button(self.sourcePreferences, text = 'Change Folder', command = self.changeSourceFolder)
+		self.changeSourceFolderButton = ttk.Button(self.sourcePreferences, text = 'Change Folder', command = self._changeSourceFolder)
 		self.changeSourceFolderButton.grid(column = 1, row = 1)
 		
 		# Scans Folder
 		ttk.Label(self.outputPreferences, text = 'Scans Folder').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 		self.scansFolderLabel = ttk.Label(self.outputPreferences, textvariable = self.scansFolder)
 		self.scansFolderLabel.grid(column = 1, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
-		self.changeBaseFolderButton = ttk.Button(self.outputPreferences, text = 'Change Folder', command = self.changeBaseFolder)
+		self.changeBaseFolderButton = ttk.Button(self.outputPreferences, text = 'Change Folder', command = self._changeBaseFolder)
 		self.changeBaseFolderButton.grid(column = 1, row = 1)
 		
 		# Directory Structure
@@ -288,28 +288,28 @@ class SettingsWindow():
 		self.cancelSettingsButton.grid(column = 1, row = 0)
 		
 		#Bindings
-		self.settingsWindow.bind('<Return>', self._saveSettings)
-		self.settingsWindow.bind('<Escape>', self._closeSettings)
+		self.settingsWindow.bind_all('<Return>', self._saveSettings)
+		self.settingsWindow.bind_all('<Escape>', self._closeSettings)
 		
 		# Add padding to all entry boxes
 		for widget in [self.changeSourceFolderButton, self.changeBaseFolderButton, self.forenameEntry, self.surnameEntry, self.lowFreqLimitEntry, self.highFreqLimitEntry, self.saveSettingsButton, self.cancelSettingsButton]:
 			widget.grid(sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 	
 	# Callback method to select default source folder
-	def changeSourceFolder(self):
+	def _changeSourceFolder(self):
 		dir = tkFileDialog.askdirectory(parent = self.settingsMasterFrame, title = 'Select Source Folder', initialdir = self.sourceFolder.get())
 		if dir != '':
 			self.sourceFolder.set(dir)
 			
 	# Callback method to select scans base folder
-	def changeBaseFolder(self):
+	def _changeBaseFolder(self):
 		dir = tkFileDialog.askdirectory(parent = self.settingsMasterFrame, title = 'Select Scan Folder', initialdir = self.scansFolder.get())
 		if dir != '':
 			self.scansFolder.set(dir)
-		
+	
 	# Callback method to save settings and close window	
 	def _saveSettings(self, event = None):
-	
+		
 		# Ensure limits are ints, else revert to default
 		if settingsExists:
 			defaults = [settings.lowFreqLimit, settings.highFreqLimit]
@@ -371,19 +371,19 @@ class GUI():
 		# Configure OS X Application menu
 		if platform.system() == 'Darwin':
 			self.window.createcommand('tkAboutDialog', self._about)
-			self.window.createcommand("::tk::mac::ShowPreferences", self._settings)
+			self.window.createcommand('::tk::mac::ShowPreferences', self._settings)
 		
 		# Build window
-		self.createStyles()
-		self.createFrames()
-		self.createMenu()
-		self.createWidgets()
+		self._createStyles()
+		self._createFrames()
+		self._createWidgets()
+		self._createMenu()
 		
 		# Open settings if settings uninitialised
 		if not settingsExists:
 			self._settings()
  		
-	def createStyles(self):
+	def _createStyles(self):
 		self.fontSize = 13
 		default_font = tkFont.nametofont('TkDefaultFont')
 		default_font.configure(size = self.fontSize)
@@ -409,7 +409,7 @@ class GUI():
 			'border':'0', 'sticky': 'nswe'})])
 		self.guiStyle.configure('Subdirectory.TEntry', fieldbackground = self.baseBackground, foreground = self.sdFocusColor)
  
-	def createFrames(self):
+	def _createFrames(self):
 		self.masterFrame = ttk.Frame(self.window)
 		self.masterFrame.grid(padx = 0, pady = 0, sticky = 'NWSE')
 	 
@@ -426,7 +426,7 @@ class GUI():
 		self.outputFrame = ttk.LabelFrame(self.masterFrame, text = 'Output Data')
 		self.outputFrame.grid(column = 0, row = 2, columnspan = 2, padx = 8, pady = 8, sticky = 'NWSE')
 	 
-	def createMenu(self):
+	def _createMenu(self):
 		self.menuBar = Tkinter.Menu(self.window)
 		
 		# File Menu
@@ -446,28 +446,33 @@ class GUI():
 	 
 		self.window.config(menu = self.menuBar)
 		
-		#self.window.bind('<Command-a>', self.addFiles)
-		#self.window.bind('<Command-d>', self.customDestination)
-		#self.window.bind('<Command-Return>', self.createFile)
-	 
-	def createWidgets(self):
+		self.window.bind_all('<Command-a>', self.addFiles)
+		self.window.bind_all('<Command-d>', self.customDestination)
+		self.window.bind_all('<Command-Return>', self.createFile)
+		
+	def _createWidgets(self):
+	
+		# Initialise Tkinter variables
+		self.numFiles = Tkinter.StringVar()
 		self.venue = Tkinter.StringVar()
 		self.town = Tkinter.StringVar()
 		self.country = Tkinter.StringVar()
+		self.scanDate = Tkinter.StringVar()
+		self.io = Tkinter.StringVar()
+		self.scanOutputLocation = Tkinter.StringVar()
+		self.targetSubdirectory = Tkinter.StringVar()
+		self.defaultOutputLocation = Tkinter.BooleanVar()
+		self.scanMasterFilename = Tkinter.StringVar()
 		self.deleteSourceFiles = Tkinter.BooleanVar()
 		
+		# Set default values
+		fields = [self.venue, self.town, self.country, self.deleteSourceFiles]
 		if settingsExists:
-			self.venue.set(settings.defaultVenue)
-			self.town.set(settings.defaultTown)
-			self.country.set(settings.defaultCountry)
-			self.deleteSourceFiles.set(settings.defaultDelete)
+			vars = [settings.defaultVenue, settings.defaultTown, settings.defaultCountry, settings.defaultDelete]
 		else:
-			self.venue.set('Venue')
-			self.town.set('Town')
-			self.country.set('United Kingdom')
-			self.deleteSourceFiles.set(False)
-			self.forename = ''
-			self.surname = ''
+			vars = ['Venue', 'Town', 'United Kingdom', False]
+		for field, var in zip(fields, vars):
+			field.set(var)
 		
 		# File List
 		ttk.Label(self.inputFrame, text = 'File List').grid(column = 0, row = 0, sticky = 'W')
@@ -494,7 +499,6 @@ class GUI():
 		self.useDateButton.grid(column = 3, row = 0, sticky = 'W', padx = data.padx_default, pady = 0)
 	 
 		# File Info status
-		self.numFiles = Tkinter.StringVar()
 		self.fileStatus = ttk.Label(self.inputFrame, textvariable = self.numFiles)
 		self.fileStatus.grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 	 
@@ -513,15 +517,14 @@ class GUI():
 		self.countryBox = ttk.Combobox(self.infoFrame, textvariable = self.country, font = 'TkDefaultFont {}'.format(self.fontSize))
 		self.countryBox['values'] = data.countries
 		self.countryBox.grid(column = 1, row = 2, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+		self.countryBox.bind('<<ComboboxSelected>>', self.refresh)
 	 
 		# Source Scan Date
-		self.scanDate = Tkinter.StringVar()
 		ttk.Label(self.infoFrame, text = 'Scan Date').grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 		self.dateEntry = ttk.Entry(self.infoFrame, textvariable = self.scanDate, font = 'TkDefaultFont {}'.format(self.fontSize))
 		self.dateEntry.grid(column = 1, row = 3)
 	 
 		# Inside / Outside
-		self.io = Tkinter.StringVar()
 		ttk.Label(self.infoFrame, text = 'Inside/Outside').grid(column = 0, row = 4, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 		self.ioBox = ttk.Combobox(self.infoFrame, textvariable = self.io, state = 'readonly', font = 'TkDefaultFont {}'.format(self.fontSize))
 		self.ioBox['values'] = ('Inside', 'Outside')
@@ -532,9 +535,7 @@ class GUI():
 		# Output Location
 		self.directoryFrame = ttk.Frame(self.outputFrame)
 		self.directoryFrame.grid(column = 1, row = 0, sticky = 'W')
-	 
-		self.scanOutputLocation = Tkinter.StringVar()
-		self.targetSubdirectory = Tkinter.StringVar()
+	 	
 		self.targetSubdirectory.set(self.io.get())
 		ttk.Label(self.outputFrame, text = 'Destination').grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 		ttk.Label(self.directoryFrame, textvariable = self.scanOutputLocation).grid(column = 0, row = 0, sticky = 'W', padx = 0, pady = data.pady_default)
@@ -552,13 +553,11 @@ class GUI():
 		self.customOutputButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 	 
 		# Use Default Output
-		self.defaultOutputLocation = Tkinter.BooleanVar()
 		self.defaultOutputLocation.set(1)
 		self.defaultOutputCheck = ttk.Radiobutton(self.customOutputFrame, text = 'Standard Destination', variable = self.defaultOutputLocation, command = self.updateSubdirectory)
 		self.defaultOutputCheck.grid(column = 1, row = 0)
 	 
 		# Output Master File Name
-		self.scanMasterFilename = Tkinter.StringVar()
 		ttk.Label(self.outputFrame, text = 'Master Filename').grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 		self.scanMasterFilenameEntry = ttk.Entry(self.outputFrame, textvariable = self.scanMasterFilename, font = 'TkDefaultFont {}'.format(self.fontSize))
 		self.scanMasterFilenameEntry.grid(column = 1, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
@@ -575,17 +574,16 @@ class GUI():
 		self.createFileButton = ttk.Button(self.outputEditFrame, text = 'Create File', command = self.createFile)
 		self.createFileButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 	 
-		# Add binding to all entry boxes to refresh information automatically
+		# Add styling to all entry boxes
 		for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox, self.defaultOutputCheck]:
 			x.grid(sticky = 'W', padx = data.padx_default, pady = data.pady_default)
-			x.bind('<KeyRelease>', self.getMasterFilename)
-		self.countryBox.bind('<<ComboboxSelected>>', self.refresh)
 	 	
 	 	# Key Bindings
-		self.window.bind('<Up>', self.scrollFileListbox)
-		self.window.bind('<Down>', self.scrollFileListbox)
-		self.window.bind('<Escape>', self.deselectFileListbox)
-		self.window.bind('<BackSpace>', self.removeFile)
+		self.window.bind_all('<KeyRelease>', self.getMasterFilename)
+		self.window.bind_all('<Up>', self.scrollFileListbox)
+		self.window.bind_all('<Down>', self.scrollFileListbox)
+		self.window.bind_all('<Escape>', self.deselectFileListbox)
+		self.window.bind_all('<BackSpace>', self.removeFile)
 	 	
 		# Initialise Lists
 		self.printFiles()
@@ -700,15 +698,15 @@ class GUI():
 				x.config(state = inputStatus)
 			if inputStatus == 'enabled':
 				inputStatus = 'normal'
-			for (menu, item) in [(self.editMenu, 'Remove File')]:
-				menu.entryconfig(item, state = inputStatus)
+			#for (menu, item) in [(self.editMenu, 'Remove File')]:
+			#	menu.entryconfig(item, state = inputStatus)
 		if outputStatus != None:
 			for x in [self.clearFilesButton, self.createFileButton]:
 				x.config(state = outputStatus)
 			if outputStatus == 'enabled':
 				outputStatus = 'normal'
-			for (menu, item) in [(self.editMenu, 'Clear Files'), (self.fileMenu, 'Create File')]:
-				menu.entryconfig(item, state = outputStatus)
+			#for (menu, item) in [(self.editMenu, 'Clear Files'), (self.fileMenu, 'Create File')]:
+			#	menu.entryconfig(item, state = outputStatus)
 
 	# Callback method when focused into Subdirectory box
 	def subdirectoryFocusIn(self, event = ''):
@@ -983,7 +981,7 @@ class GUI():
 		self.canvas.get_tk_widget().configure(highlightthickness = 0)
 
 	# Callback method to quit application
-	def _quit(self, event = ''):
+	def _quit(self, event = None):
 		self.window.quit()
 		self.window.destroy()
 		exit()
@@ -994,16 +992,20 @@ class GUI():
 
 	# Callback method to display settings box
 	def _settings(self, event = None):
-		global settingsExists
-		if self.settingsWindowOpen == False:
+		global settingsExists, settings
+		
+		if self.settingsWindowOpen:
+			self.settings.bringtofront()
+		else:
 			self.settingsWindowOpen = True
 			self.settings = SettingsWindow()
 			self.settings.settingsWindow.mainloop()
 			self.settingsWindowOpen = False
 			
 			# If opened for first time, import settings
-			if not settingsExists:
-				global settings
+			if settingsExists:
+				reload(settings)
+			else:
 				try:
 					import settings
 					settingsExists = True
@@ -1011,11 +1013,7 @@ class GUI():
 				# Quit if cancelled
 				except ImportError:
 					self._quit()
-			else:
-				reload(settings)
 			self.refresh()
-		else:
-			self.settings.bringtofront()
 		
 # Call main function
 if __name__ == '__main__':
