@@ -454,9 +454,9 @@ class GUI():
 	 
 		self.window.config(menu = self.menuBar)
 		
-		#self.window.bind_all('<Command-a>', self._addFiles)
-		#self.window.bind_all('<Command-d>', self._customDestination)
-		#self.window.bind_all('<Command-Return>', self._createFile)
+		self.window.bind_all('<Command-a>', self._addFiles)
+		self.window.bind_all('<Command-d>', self._customDestination)
+		self.window.bind_all('<Command-Return>', self._createFile)
 		
 	def _createWidgets(self):
 	
@@ -957,7 +957,7 @@ class GUI():
 	# Callback method to draw preview of self.fileListboxSelection
 	def _drawPreview(self):
 		self._clearPreview()
-	 
+	 	
 		self.axis = self.fig.add_subplot(111)
 		self.axis.set_axis_bgcolor('lightGrey')
 		self.axis.grid(linestyle = '-', color = 'grey')
