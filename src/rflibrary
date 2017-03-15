@@ -16,7 +16,8 @@ import data
 import Tkinter, ttk, tkFont, tkMessageBox, tkFileDialog
 
 # Import graph plotting functions
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Check for windows compatibility
@@ -33,8 +34,7 @@ try:
 except ImportError:
 	settingsExists = False
 	dateFormat = data.dateFormats.get('yyyy-mm-dd')
-
-					
+	
 ################################################################################
 ##########                         Start GUI                          ##########
 ################################################################################
@@ -426,13 +426,21 @@ class GUI():
 	 
 		self.previewFrame = ttk.LabelFrame(self.masterFrame, text = 'Source Preview')
 		self.previewFrame.grid(column = 1, row = 0, rowspan = 2, padx = 8, pady = 8, sticky = 'NWE')
-		self._displayEmptyPreview()
 					 
 		self.infoFrame = ttk.LabelFrame(self.masterFrame, text = 'Venue Information')
 		self.infoFrame.grid(column = 0, row = 1, padx = 8, pady = 8, sticky = 'NWSE')
 	 
 		self.outputFrame = ttk.LabelFrame(self.masterFrame, text = 'Output Data')
 		self.outputFrame.grid(column = 0, row = 2, columnspan = 2, padx = 8, pady = 8, sticky = 'NWSE')
+		
+		# Initialise graph window
+		self.fig = matplotlib.figure.Figure(figsize = (3.2, 2.65), dpi = 100, facecolor = 'white')
+		self.ax = self.fig.add_subplot(111)
+		self.ax.set_position([0.15, 0.1, 0.81, 0.81])
+		self.canvas = FigureCanvasTkAgg(self.fig, self.previewFrame)
+		self.canvas.show()
+		self.canvas.get_tk_widget().pack(side = Tkinter.TOP, fill = Tkinter.BOTH, expand = True)
+		self._clearPreview()
 	 
 	def _createMenu(self):
 		self.menuBar = Tkinter.Menu(self.window)
@@ -615,7 +623,6 @@ class GUI():
 	# Method to display file information
 	def _printFileData(self, event = None):
 		self.dataListbox.delete(0, Tkinter.END)
-		self._displayEmptyPreview()
 		try:
 			self.fileListboxSelection = int(event.widget.curselection()[0])
 		except (AttributeError, IndexError):
@@ -624,6 +631,7 @@ class GUI():
 		
 		if self.fileListboxSelection == None:
 			self.dataListbox.insert(Tkinter.END, 'No file selected')
+			self._clearPreview()
 		else:
 			self.fileListbox.select_set(self.fileListboxSelection)
 			self.dataListbox.insert(Tkinter.END, 'Filename: {}'.format(self.files[self.fileListboxSelection].filename))
@@ -642,7 +650,7 @@ class GUI():
 			self.dataListbox.insert(Tkinter.END, 'Data Points: {}'.format(self.files[self.fileListboxSelection].dataPoints))
 			self.dataListbox.insert(Tkinter.END, 'Mean Resolution: {:.3f}MHz'.format(self.files[self.fileListboxSelection].resolution))
 			self.dataListbox.insert(Tkinter.END, 'New Filename: {}'.format(self.files[self.fileListboxSelection].newFilename))
-			self._drawPreview()
+			self._updatePreview()
 		self._buttonDisable()
 
 	# Method to decide if buttons should be disabled or not
@@ -941,29 +949,29 @@ class GUI():
 	 
 	# Callback method to remove current preview
 	def _clearPreview(self):
-		self.canvas._tkcanvas.destroy()
- 
-	# Callback method to draw empty preview window
-	def _displayEmptyPreview(self):
-		try:
-			self._clearPreview()
-		except AttributeError:
-			pass
-		self.fig = plt.figure(figsize = (3, 3), facecolor = 'white')
-		self.canvas = FigureCanvasTkAgg(self.fig, master = self.previewFrame)
-		self.canvas._tkcanvas.pack(side = Tkinter.TOP, fill = Tkinter.BOTH, expand = 0)
-		self.canvas.get_tk_widget().configure(highlightthickness = 0)
+	
+		# Clear Graph
+		self.ax.clear()
+		
+		# Set Style
+		self.ax.set_facecolor('lightGrey')
+		self.ax.grid(linestyle = 'None')
+		self.ax.set_axisbelow(True)
+		self.ax.set_xticks([])
+		self.ax.set_yticks([])
+		self.ax.set_xlabel('Frequency /MHz')
+		self.ax.set_ylabel('Level /dBm')
+		
+		# Set Font
+		matplotlib.rcParams.update({'font.size': 9 })
+		
+		# Draw Canvas
+		self.canvas.draw()
  
 	# Callback method to draw preview of self.fileListboxSelection
-	def _drawPreview(self):
-		self._clearPreview()
-	 	
-		self.axis = self.fig.add_subplot(111)
-		self.axis.set_axis_bgcolor('lightGrey')
-		self.axis.grid(linestyle = '-', color = 'grey')
-		self.axis.set_axisbelow(True)
-		self.axis.set_xlabel('Frequency /MHz')
-		self.axis.set_ylabel('Level /dBM')
+	def _updatePreview(self):
+		
+		# Get x,y values
 		for x in self.files[self.fileListboxSelection].frequencies:
 			try:
 				previous
@@ -978,29 +986,39 @@ class GUI():
 				yValues.append(-121)
 			xValues.append(x[0])
 			yValues.append(x[1])
-			previous = x
-	 
-		miny = min(yValues)
-		miny = int((miny - 5) / 5) * 5 if miny > -95 or miny < -105 else -105
-		maxy = int((max(yValues) + 5) / 5) * 5 if max(yValues) > miny + 45 else miny + 45
-	 
-		self.axis.set_ylim(miny, maxy)
-		self.axis.plot(xValues, yValues, color = 'green')
-		self.axis.set_xlim(xValues[0], xValues[-1])
-	 
+			previous = x		
+		
+		# Get axis values
+		ymin = min(yValues)
+		ymax = max(yValues)
+		ymin = int((ymin - 5) / 5) * 5 if ymin > -95 or ymin < -105 else -105
+		ymax = int((ymax + 5) / 5) * 5 if ymax > ymin + 45 else ymin + 45
+		xmin = xValues[0]
+		xmax = xValues[-1]
+		
+		# Get x tick values
 		xTicks = []
-	 
 		tvCountry = self.country.get() if self.country.get() == 'United States of America' else 'UK'
 		for x in data.TVChannels[tvCountry]:
 			if self.files[self.fileListboxSelection].frequencies[0][0] <= x[1] and self.files[self.fileListboxSelection].frequencies[-1][0] >= x[1]:
 				xTicks.append(x[1])
-	 
-		self.axis.set_xticks(xTicks, minor = False)
-		self.axis.fill_between(xValues, int(miny) - 1, yValues, facecolor = 'lightGreen')
+		
+		# Clear previous graph
+		self.ax.clear()
+		
+		# Set Style
+		self.ax.get_yaxis().set_visible(True)
+		self.ax.get_xaxis().set_visible(True)
+		self.ax.grid(linestyle = '-', color = 'grey')
+		self.ax.fill_between(xValues, int(ymin) - 1, yValues, facecolor = 'lightGreen')
 
-		self.canvas = FigureCanvasTkAgg(self.fig, master = self.previewFrame)
-		self.canvas._tkcanvas.pack(side = Tkinter.TOP, fill = Tkinter.BOTH, expand = 0)
-		self.canvas.get_tk_widget().configure(highlightthickness = 0)
+		# Set axis/ticks
+		self.ax.axis([xmin, xmax, ymin, ymax])
+		self.ax.set_xticks(xTicks, minor = False)
+
+		# Draw Graph
+		self.ax.plot(xValues, yValues, color = 'green')
+		self.canvas.draw()
 
 	# Callback method to quit application
 	def _quit(self, event = None):
