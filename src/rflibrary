@@ -1,7 +1,6 @@
 #!/usr/bin/env python2.7
 # coding=utf-8
 
-# Imports
 # Import Python Modules
 # Platform - Check user operating system
 # OS - Path functions
@@ -158,7 +157,7 @@ class File():
 		
 	# Method to get new filename based on BestAudio naming structure
 	def getNewFilename(self):
-		if self.startFrequency == 80:
+		if 80 <= self.startFrequency <= 120:
 			self.newFilename = 'FM'
 		elif 54 <= self.startFrequency <= 88:
 			self.newFilename = '{:02}'.format((int(self.startFrequency) - 42) / 6)
@@ -166,14 +165,22 @@ class File():
 			self.newFilename = '{:02}'.format((int(self.startFrequency) - 132) / 6)
 		elif 470 <= self.startFrequency <= 890:
 			self.newFilename = '{:02}'.format((int(self.startFrequency) - 386) / 6)
-		elif self.startFrequency == 902:
+		elif 902 <= self.startFrequency <= 928:
 			self.newFilename = '900'
-		elif self.startFrequency == 1880:
-			self.newFilename = 'DECTEU'
-		elif self.startFrequency == 1920:
-			self.newFilename = 'DECTUSA'
+		elif 944 <= self.startFrequency <= 952:
+			self.newFilename = 'X1'
+		elif 1920 <= self.startFrequency <= 1930:
+			self.newFilename = 'DUSA'
+		elif 1910 <= self.startFrequency <= 1930:
+			self.newFilename = 'DSA'
+		elif 1910 <= self.startFrequency <= 1920:
+			self.newFilename = 'DBRA'
+		elif 1893 <= self.startFrequency <= 1906:
+			self.newFilename = 'DJAP'
+		elif 1880 <= self.startFrequency <= 1900:
+			self.newFilename = 'DEUR'
 		else:
-			self.newFilename = None
+			self.newFilename = "{:.0f}MHz".format(self.startFrequency)
 		self.newFilename = '{}.csv'.format(self.newFilename)
 
 ################################################################################
@@ -376,8 +383,8 @@ class GUI():
 		# Build window
 		self._createStyles()
 		self._createFrames()
-		self._createWidgets()
 		self._createMenu()
+		self._createWidgets()
 		
 		# Open settings if settings uninitialised
 		if not settingsExists:
@@ -418,7 +425,7 @@ class GUI():
 	 
 		self.previewFrame = ttk.LabelFrame(self.masterFrame, text = 'Source Preview')
 		self.previewFrame.grid(column = 1, row = 0, rowspan = 2, padx = 8, pady = 8, sticky = 'NWE')
-		self.displayEmptyPreview()
+		self._displayEmptyPreview()
 					 
 		self.infoFrame = ttk.LabelFrame(self.masterFrame, text = 'Venue Information')
 		self.infoFrame.grid(column = 0, row = 1, padx = 8, pady = 8, sticky = 'NWSE')
@@ -431,24 +438,24 @@ class GUI():
 		
 		# File Menu
 		self.fileMenu = Tkinter.Menu(self.menuBar, tearoff = False)
-		self.fileMenu.add_command(label = 'Add Files', accelerator = 'Command-a', command = self.addFiles)
-		self.fileMenu.add_command(label = 'Add Directory', accelerator = 'Command-shift-a', command = self.addDirectory)
+		self.fileMenu.add_command(label = 'Add Files', accelerator = 'Command-a', command = self._addFiles)
+		self.fileMenu.add_command(label = 'Add Directory', accelerator = 'Command-shift-a', command = self._addDirectory)
 		self.fileMenu.add_separator()
-		self.fileMenu.add_command(label = 'Set Destination', accelerator = 'Command-d', command = self.customDestination) 
-		self.fileMenu.add_command(label = 'Create File', accelerator = 'Command-Return', command = self.createFile)
+		self.fileMenu.add_command(label = 'Set Destination', accelerator = 'Command-d', command = self._customDestination) 
+		self.fileMenu.add_command(label = 'Create File', accelerator = 'Command-Return', command = self._createFile)
 		self.menuBar.add_cascade(label = 'File', menu = self.fileMenu)
 		
 		# Edit Menu
 		self.editMenu = Tkinter.Menu(self.menuBar, tearoff = False)
-		self.editMenu.add_command(label = 'Remove File', accelerator = 'BackSpace', command = self.removeFile)
-		self.editMenu.add_command(label = 'Clear Files', accelerator = 'Command-BackSpace', command = self.clearFiles)
+		self.editMenu.add_command(label = 'Remove File', accelerator = 'BackSpace', command = self._removeFile)
+		self.editMenu.add_command(label = 'Clear Files', accelerator = 'Command-BackSpace', command = self._clearFiles)
 		self.menuBar.add_cascade(label = 'Edit', menu = self.editMenu)
 	 
 		self.window.config(menu = self.menuBar)
 		
-		self.window.bind_all('<Command-a>', self.addFiles)
-		self.window.bind_all('<Command-d>', self.customDestination)
-		self.window.bind_all('<Command-Return>', self.createFile)
+		self.window.bind_all('<Command-a>', self._addFiles)
+		self.window.bind_all('<Command-d>', self._customDestination)
+		self.window.bind_all('<Command-Return>', self._createFile)
 		
 	def _createWidgets(self):
 	
@@ -477,7 +484,7 @@ class GUI():
 		# File List
 		ttk.Label(self.inputFrame, text = 'File List').grid(column = 0, row = 0, sticky = 'W')
 		self.fileListbox = Tkinter.Listbox(self.inputFrame, height = 8, width = 20)
-		self.fileListbox.bind('<<ListboxSelect>>', self.printFileData)
+		self.fileListbox.bind('<<ListboxSelect>>', self._printFileData)
 		self.fileListbox.grid(column = 0, row = 1, padx = data.padx_default, pady = data.pady_default)
 		
 		# Data List
@@ -489,13 +496,13 @@ class GUI():
 		# File List Edit Buttons
 		self.fileListEditFrame = ttk.Frame(self.inputFrame)
 		self.fileListEditFrame.grid(column = 0, row = 2, columnspan = 2, sticky = 'W')
-		self.addFilesButton = ttk.Button(self.fileListEditFrame, text = 'Add Files', command = self.addFiles)
+		self.addFilesButton = ttk.Button(self.fileListEditFrame, text = 'Add Files', command = self._addFiles)
 		self.addFilesButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
-		self.removeFileButton = ttk.Button(self.fileListEditFrame, text = 'Remove File', command = self.removeFile)
+		self.removeFileButton = ttk.Button(self.fileListEditFrame, text = 'Remove File', command = self._removeFile)
 		self.removeFileButton.grid(column = 1, row = 0, sticky = 'W', padx = data.padx_default, pady = 0)
-		self.clearFilesButton = ttk.Button(self.fileListEditFrame, text = 'Clear Files', command = self.clearFiles)
+		self.clearFilesButton = ttk.Button(self.fileListEditFrame, text = 'Clear Files', command = self._clearFiles)
 		self.clearFilesButton.grid(column = 2, row = 0, sticky = 'W', padx = data.padx_default, pady = 0)
-		self.useDateButton = ttk.Button(self.fileListEditFrame, text = 'Set Date', command = self.useDate)
+		self.useDateButton = ttk.Button(self.fileListEditFrame, text = 'Set Date', command = self._useDate)
 		self.useDateButton.grid(column = 3, row = 0, sticky = 'W', padx = data.padx_default, pady = 0)
 	 
 		# File Info status
@@ -517,7 +524,7 @@ class GUI():
 		self.countryBox = ttk.Combobox(self.infoFrame, textvariable = self.country, font = 'TkDefaultFont {}'.format(self.fontSize))
 		self.countryBox['values'] = data.countries
 		self.countryBox.grid(column = 1, row = 2, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
-		self.countryBox.bind('<<ComboboxSelected>>', self.refresh)
+		self.countryBox.bind('<<ComboboxSelected>>', self._refresh)
 	 
 		# Source Scan Date
 		ttk.Label(self.infoFrame, text = 'Scan Date').grid(column = 0, row = 3, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
@@ -530,7 +537,7 @@ class GUI():
 		self.ioBox['values'] = ('Inside', 'Outside')
 		self.ioBox.grid(column = 1, row = 4)
 		self.ioBox.current(0)
-		self.ioBox.bind('<<ComboboxSelected>>', self.updateSubdirectory)
+		self.ioBox.bind('<<ComboboxSelected>>', self._updateSubdirectory)
 	 
 		# Output Location
 		self.directoryFrame = ttk.Frame(self.outputFrame)
@@ -541,20 +548,20 @@ class GUI():
 		ttk.Label(self.directoryFrame, textvariable = self.scanOutputLocation).grid(column = 0, row = 0, sticky = 'W', padx = 0, pady = data.pady_default)
 		self.targetSubdirectoryEntry = ttk.Entry(self.directoryFrame, textvariable = self.targetSubdirectory, width = 10, font = 'TkDefaultFont {}'.format(self.fontSize), style = 'Subdirectory.TEntry')
 		self.targetSubdirectoryEntry.grid(column = 1, row = 0, sticky = 'W', padx = 0, pady = data.pady_default)
-		self.targetSubdirectoryEntry.bind('<FocusIn>', self.subdirectoryFocusIn)
-		self.targetSubdirectoryEntry.bind('<FocusOut>', self.subdirectoryFocusOut)
+		self.targetSubdirectoryEntry.bind('<FocusIn>', self._subdirectoryFocusIn)
+		self.targetSubdirectoryEntry.bind('<FocusOut>', self._subdirectoryFocusOut)
 	 
 		# Custom Output Frame
 		self.customOutputFrame = ttk.Frame(self.outputFrame)
 		self.customOutputFrame.grid(column = 1, row = 1, sticky = 'W')
 	 
 		# Custom Output
-		self.customOutputButton = ttk.Button(self.customOutputFrame, text = 'Set Destination', command = self.customDestination)
+		self.customOutputButton = ttk.Button(self.customOutputFrame, text = 'Set Destination', command = self._customDestination)
 		self.customOutputButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 	 
 		# Use Default Output
 		self.defaultOutputLocation.set(1)
-		self.defaultOutputCheck = ttk.Radiobutton(self.customOutputFrame, text = 'Standard Destination', variable = self.defaultOutputLocation, command = self.updateSubdirectory)
+		self.defaultOutputCheck = ttk.Radiobutton(self.customOutputFrame, text = 'Standard Destination', variable = self.defaultOutputLocation, command = self._updateSubdirectory)
 		self.defaultOutputCheck.grid(column = 1, row = 0)
 	 
 		# Output Master File Name
@@ -571,7 +578,7 @@ class GUI():
 		# Output Buttons
 		self.outputEditFrame = ttk.Frame(self.outputFrame)
 		self.outputEditFrame.grid(column = 0, row = 5, columnspan = 2, sticky = 'W')
-		self.createFileButton = ttk.Button(self.outputEditFrame, text = 'Create File', command = self.createFile)
+		self.createFileButton = ttk.Button(self.outputEditFrame, text = 'Create File', command = self._createFile)
 		self.createFileButton.grid(column = 0, row = 0, sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 	 
 		# Add styling to all entry boxes
@@ -579,34 +586,34 @@ class GUI():
 			x.grid(sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 	 	
 	 	# Key Bindings
-		self.window.bind_all('<KeyRelease>', self.getMasterFilename)
-		self.window.bind_all('<Up>', self.scrollFileListbox)
-		self.window.bind_all('<Down>', self.scrollFileListbox)
-		self.window.bind_all('<Escape>', self.deselectFileListbox)
-		self.window.bind_all('<BackSpace>', self.removeFile)
+		self.window.bind_all('<KeyRelease>', self._getMasterFilename)
+		self.window.bind_all('<Up>', self._scrollFileListbox)
+		self.window.bind_all('<Down>', self._scrollFileListbox)
+		self.window.bind_all('<Escape>', self._deselectFileListbox)
+		self.window.bind_all('<BackSpace>', self._removeFile)
 	 	
 		# Initialise Lists
-		self.printFiles()
+		self._printFiles()
 
 ################################################################################
 ##########                   GUI CALLBACK METHODS                     ##########
 ################################################################################
 			 
 	# Callback method to update filelist
-	def printFiles(self, event = None):
+	def _printFiles(self, event = None):
 		self.fileListbox.delete(0, Tkinter.END)
 		for file in self.files:
 			self.fileListbox.insert(Tkinter.END, file.filename)
-		self.printFileData(event)
-		self.updateFileStatus()
-		self.getScanDate()
+		self._printFileData(event)
+		self._updateFileStatus()
+		self._getScanDate()
 		if settingsExists:
-			self.getMasterFilename()
+			self._getMasterFilename()
 
 	# Method to display file information
-	def printFileData(self, event = None):
+	def _printFileData(self, event = None):
 		self.dataListbox.delete(0, Tkinter.END)
-		self.displayEmptyPreview()
+		self._displayEmptyPreview()
 		try:
 			self.fileListboxSelection = int(event.widget.curselection()[0])
 		except (AttributeError, IndexError):
@@ -633,20 +640,20 @@ class GUI():
 			self.dataListbox.insert(Tkinter.END, 'Data Points: {}'.format(self.files[self.fileListboxSelection].dataPoints))
 			self.dataListbox.insert(Tkinter.END, 'Mean Resolution: {:.3f}MHz'.format(self.files[self.fileListboxSelection].resolution))
 			self.dataListbox.insert(Tkinter.END, 'New Filename: {}'.format(self.files[self.fileListboxSelection].newFilename))
-			self.drawPreview()
-		self.buttonDisable()
+			self._drawPreview()
+		self._buttonDisable()
 
 	# Method to decide if buttons should be disabled or not
-	def buttonDisable(self):
+	def _buttonDisable(self):
 		if len(self.files) == 0:
-			self.buttonStatus('disabled', 'disabled')
+			self._buttonStatus('disabled', 'disabled')
 		elif self.fileListboxSelection == None:
-			self.buttonStatus('disabled', 'enabled')
+			self._buttonStatus('disabled', 'enabled')
 		else:
-			self.buttonStatus('enabled', 'enabled')
+			self._buttonStatus('enabled', 'enabled')
 
 	# Callback method to print number of files chosen
-	def updateFileStatus(self):
+	def _updateFileStatus(self):
 		plural = '' if len(self.files) == 1 else 's'
 		if len(self.files) == 0:
 			self.fileStatus.configure(foreground = 'red')
@@ -655,7 +662,7 @@ class GUI():
 		self.numFiles.set('{} file{} added'.format(len(self.files), plural))
  
 	# Callback method to get earliest date from all files or todays date (default)
-	def getScanDate(self):
+	def _getScanDate(self):
 		if len(self.files) == 0:
 			self.scanDateTimestamp = datetime.date.today()
 		else:
@@ -663,7 +670,7 @@ class GUI():
 		self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
 		
 	# Callback method to create master filename
-	def getMasterFilename(self, event = None):
+	def _getMasterFilename(self, event = None):
 		
 		# Calculate space/hyphen formatting
 		if settings.forename == '' and settings.surname == '':
@@ -692,30 +699,30 @@ class GUI():
 		self.scanOutputLocation.set(self.libraryLocation + self.targetLocation + slash)
  
 	# Callback method to disable/enable buttons/menu items based on selected files
-	def buttonStatus(self, inputStatus = None, outputStatus = None):
+	def _buttonStatus(self, inputStatus = None, outputStatus = None):
 		if inputStatus != None:
 			for x in [self.removeFileButton, self.useDateButton]:
 				x.config(state = inputStatus)
 			if inputStatus == 'enabled':
 				inputStatus = 'normal'
-			#for (menu, item) in [(self.editMenu, 'Remove File')]:
-			#	menu.entryconfig(item, state = inputStatus)
+			for (menu, item) in [(self.editMenu, 'Remove File')]:
+				menu.entryconfig(item, state = inputStatus)
 		if outputStatus != None:
 			for x in [self.clearFilesButton, self.createFileButton]:
 				x.config(state = outputStatus)
 			if outputStatus == 'enabled':
 				outputStatus = 'normal'
-			#for (menu, item) in [(self.editMenu, 'Clear Files'), (self.fileMenu, 'Create File')]:
-			#	menu.entryconfig(item, state = outputStatus)
+			for (menu, item) in [(self.editMenu, 'Clear Files'), (self.fileMenu, 'Create File')]:
+				menu.entryconfig(item, state = outputStatus)
 
 	# Callback method when focused into Subdirectory box
-	def subdirectoryFocusIn(self, event = ''):
+	def _subdirectoryFocusIn(self, event = ''):
 		if self.subdirectory == False:
 			self.targetSubdirectoryEntry.delete(0, Tkinter.END)
 			self.guiStyle.configure('Subdirectory.TEntry', foreground = self.sdFocusColor)
 	 
 	# Callback method when focused out from Subdirectory box
-	def subdirectoryFocusOut(self, event = ''):
+	def _subdirectoryFocusOut(self, event = ''):
 		if self.targetSubdirectory.get() == '':
 			self.subdirectory = False
 			self.targetSubdirectoryEntry.delete(0, Tkinter.END)
@@ -726,24 +733,24 @@ class GUI():
 			self.guiStyle.configure('Subdirectory.TEntry', foreground = self.sdFocusColor)
 	 
 	# Callback method to change destination to custom destination	
-	def customDestination(self, event = None):
+	def _customDestination(self, event = None):
 		customLocation = tkFileDialog.askdirectory(parent = self.masterFrame, title = 'Select Destination Folder')
 		if customLocation != '':
 			self.libraryLocation = customLocation
 			self.scanOutputLocation.set(self.libraryLocation)
 			self.defaultOutputLocation.set(0)
-			self.updateSubdirectory()
+			self._updateSubdirectory()
  
 	# Callback method to refresh file data, for use when country or settings change
-	def refresh(self, event = None):
+	def _refresh(self, event = None):
 		global dateFormat
 		dateFormat = data.dateFormats.get(settings.defaultDateFormat) if data.dateFormats.get(settings.defaultDateFormat) != None else data.dateFormats.get('yyyy-mm-dd')
 		for file in self.files:
 			file.updateTVChannels(self.country.get())
-		self.printFiles()
+		self._printFiles()
 
 	# Callback method to enable use of arrow keys to scroll through fileListbox
-	def scrollFileListbox(self, event = None):
+	def _scrollFileListbox(self, event = None):
 		if len(self.files) == 0:
 			return
 		elif self.fileListboxSelection == None and event.keysym == 'Down':
@@ -759,28 +766,28 @@ class GUI():
 		self.fileListbox.selection_clear(0, Tkinter.END)
 		self.fileListbox.select_set(self.fileListboxSelection)
 		self.fileListbox.see(self.fileListboxSelection)
-		self.printFileData(event)
+		self._printFileData(event)
 
 	# Callback method to deselect fileListbox
-	def deselectFileListbox(self, event = None):
+	def _deselectFileListbox(self, event = None):
 		self.fileListboxSelection = None
 		self.fileListbox.selection_clear(0, Tkinter.END)
-		self.printFileData()
+		self._printFileData()
 	 
 	# Callback method to update subdirectory name
-	def updateSubdirectory(self, event = None):
+	def _updateSubdirectory(self, event = None):
 		if self.defaultOutputLocation.get() == 1:
 			self.targetSubdirectory.set(self.io.get())
 			self.subdirectory = True
-			self.subdirectoryFocusOut()
+			self._subdirectoryFocusOut()
 		else:
 			self.targetSubdirectory.set('')
 			self.subdirectory = False
-			self.subdirectoryFocusOut()
-		self.getMasterFilename()
+			self._subdirectoryFocusOut()
+		self._getMasterFilename()
 
 	# Callback method to open file dialogue and allow selection of files
-	def addFiles(self, event = None, selected_files = None, suppressErrors = False):
+	def _addFiles(self, event = None, selected_files = None, suppressErrors = False):
 		if selected_files == None:
 			selected_files = tkFileDialog.askopenfilenames(parent = self.inputFrame, title = 'Add files', initialdir = settings.defaultSourceLocation)
 		for file in selected_files:
@@ -789,10 +796,10 @@ class GUI():
 				self.files.append(newFile)
 			elif not suppressErrors:
 				tkMessageBox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
-		self.printFiles()
+		self._printFiles()
 
 	# Callback method to open file dialogue and allow selection of all files in a directory
-	def addDirectory(self, event = None):
+	def _addDirectory(self, event = None):
 		dirFiles = []
 		selectedDir = tkFileDialog.askdirectory(parent = self.inputFrame, title = 'Add directory', initialdir = settings.defaultSourceLocation)
 		if selectedDir != '':
@@ -801,10 +808,10 @@ class GUI():
 				if not file.startswith('.') and not os.path.isdir(fullfilename):
 					dirFiles.append(fullfilename)
 		if len(dirFiles) != 0:
-			self.addFiles(None, dirFiles, True)
+			self._addFiles(None, dirFiles, True)
 
 	# Callback method to remove file
-	def removeFile(self, event = None):
+	def _removeFile(self, event = None):
 		if event.widget.winfo_class() != 'TEntry' and event.widget.winfo_class() != 'TCombobox':
 			if self.fileListboxSelection == None:
 				return
@@ -813,24 +820,24 @@ class GUI():
 				self.fileListboxSelection = None
 			elif self.fileListboxSelection > len(self.files) - 1:
 				self.fileListboxSelection = len(self.files) - 1
-			self.printFiles(event)
+			self._printFiles(event)
  
 	# Callback method to remove all files
-	def clearFiles(self, event = None, confirm = True):
+	def _clearFiles(self, event = None, confirm = True):
 		if confirm == True:
 			if not tkMessageBox.askyesno('Are you sure?', 'Are you sure you want to clear the file list?'):
 				return
 		del self.files[:]
-		self.printFiles()
+		self._printFiles()
 		 
 	# Callback method to use date from selected file
-	def useDate(self):
+	def _useDate(self):
 		self.scanDate.set(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat))
-		self.getMasterFilename()
+		self._getMasterFilename()
 		self.axis.clear()
 
 	# Callback method to create master file
-	def createFile(self, event = None):
+	def _createFile(self, event = None):
 		if len(self.files) == 0:
 			return
 		
@@ -846,6 +853,7 @@ class GUI():
 	 	
 	 	# Add all files into outputFile list if within limits
 		outputFile = []
+		filesWritten = 0
 		statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}\n\n'.format(self.fullLocation)
 		for file in self.files:
 			for freq, value in file.frequencies:
@@ -862,18 +870,22 @@ class GUI():
 				i += 1
 		
 		# Write original files with new filenames
-		if self.createDirectory():
+		if self._createDirectory():
 			for file in self.files:
-				if (self.writeFile('{}{}'.format(self.fullLocation, file.newFilename), file.frequencies)):
-					statement += '{}\n'.format(file.newFilename)
-				else:
+				writtenFilename = self._writeFile(self.fullLocation, file.newFilename, file.frequencies)
+				if not writtenFilename:
 					return False
+				else:
+					filesWritten += 1
+					statement += '{}\n'.format(writtenFilename)
 		 	
 		 	# Write master file
-		 	if (self.writeFile('{}{}'.format(self.fullLocation, self.scanMasterFilename.get()), outputFile)):
-		 		statement += '{}\n'.format(self.scanMasterFilename.get())
-		 	else:
+		 	writtenFilename = self._writeFile(self.fullLocation, self.scanMasterFilename.get(), outputFile)
+		 	if not writtenFilename:
 		 		return False
+		 	else:
+		 		filesWritten += 1
+		 		statement += '{}\n\n{} files written to disk.\n'.format(writtenFilename, filesWritten)
 		 	
 			# Write defaults to settings.py
 			defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{}\'\ndefaultTown = \'{}\'\ndefaultCountry = \'{}\'\ndefaultDelete = {}'.format(self.venue.get(), self.town.get(), self.country.get(), self.deleteSourceFiles.get())
@@ -888,25 +900,32 @@ class GUI():
 				for file in self.files:
 					os.remove(file.fullfilename)
 					statement += '{}\n'.format(file.filename)
-				self.clearFiles(None, False)
+				self._clearFiles(None, False)
 				tkMessageBox.showinfo('Success!', statement)
 			else:
 				if tkMessageBox.askyesno('Success!', '{}\nWould you like to clear the file list?'.format(statement)):
-					self.clearFiles(None, False)
+					self._clearFiles(None, False)
  
  	# Method to write file to disk
- 	def writeFile(self, target, array):
+ 	def _writeFile(self, dir, filename, array):
+ 		target = dir + filename
+ 		file, ext = os.path.splitext(filename)
+ 		duplicateCounter = 0
+		while os.path.isfile(target):
+			duplicateCounter += 1
+			filename = "{}-{}{}".format(file, duplicateCounter, ext)
+			target = dir + filename
 		try:
 			with open(target, 'w') as fp:
 				for freq, value in array:
 					fp.write('{:09.4f},{:09.4f}\n'.format(freq, value))
-			return True
+			return filename
 		except IOError:
 			tkMessageBox.showwarning('Fail!', '{} could not be written.'.format(target))
 			return False
  	
 	# Callback method to create directory structure
-	def createDirectory(self):
+	def _createDirectory(self):
 		if self.defaultOutputLocation.get() == 1 or self.targetSubdirectory != '':
 			try:
 				os.makedirs(self.fullLocation)
@@ -918,13 +937,13 @@ class GUI():
 			return True
 	 
 	# Callback method to remove current preview
-	def clearPreview(self):
+	def _clearPreview(self):
 		self.canvas._tkcanvas.destroy()
  
 	# Callback method to draw empty preview window
-	def displayEmptyPreview(self):
+	def _displayEmptyPreview(self):
 		try:
-			self.clearPreview()
+			self._clearPreview()
 		except AttributeError:
 			pass
 		self.fig = plt.figure(figsize = (3, 3), facecolor = 'white')
@@ -933,8 +952,8 @@ class GUI():
 		self.canvas.get_tk_widget().configure(highlightthickness = 0)
  
 	# Callback method to draw preview of self.fileListboxSelection
-	def drawPreview(self):
-		self.clearPreview()
+	def _drawPreview(self):
+		self._clearPreview()
 	 
 		self.axis = self.fig.add_subplot(111)
 		self.axis.set_axis_bgcolor('lightGrey')
@@ -1013,7 +1032,7 @@ class GUI():
 				# Quit if cancelled
 				except ImportError:
 					self._quit()
-			self.refresh()
+			self._refresh()
 		
 # Call main function
 if __name__ == '__main__':
