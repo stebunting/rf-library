@@ -156,6 +156,7 @@ class File():
 					break
 		
 	# Method to get new filename based on BestAudio naming structure
+	# 
 	def getNewFilename(self):
 		if 80 <= self.startFrequency <= 120:
 			self.newFilename = 'FM'
@@ -453,9 +454,9 @@ class GUI():
 	 
 		self.window.config(menu = self.menuBar)
 		
-		self.window.bind_all('<Command-a>', self._addFiles)
-		self.window.bind_all('<Command-d>', self._customDestination)
-		self.window.bind_all('<Command-Return>', self._createFile)
+		#self.window.bind_all('<Command-a>', self._addFiles)
+		#self.window.bind_all('<Command-d>', self._customDestination)
+		#self.window.bind_all('<Command-Return>', self._createFile)
 		
 	def _createWidgets(self):
 	
@@ -584,11 +585,12 @@ class GUI():
 		# Add styling to all entry boxes
 		for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox, self.defaultOutputCheck]:
 			x.grid(sticky = 'W', padx = data.padx_default, pady = data.pady_default)
+			x.bind('<KeyRelease>', self._getMasterFilename)
+		
 	 	
 	 	# Key Bindings
-		self.window.bind_all('<KeyRelease>', self._getMasterFilename)
-		self.window.bind_all('<Up>', self._scrollFileListbox)
-		self.window.bind_all('<Down>', self._scrollFileListbox)
+		self.window.bind('<Up>', self._scrollFileListbox)
+		self.window.bind('<Down>', self._scrollFileListbox)
 		self.window.bind_all('<Escape>', self._deselectFileListbox)
 		self.window.bind_all('<BackSpace>', self._removeFile)
 	 	
@@ -619,7 +621,7 @@ class GUI():
 		except (AttributeError, IndexError):
 			pass
 		self.fileListbox.selection_clear(0, Tkinter.END)
-			
+		
 		if self.fileListboxSelection == None:
 			self.dataListbox.insert(Tkinter.END, 'No file selected')
 		else:
@@ -716,7 +718,7 @@ class GUI():
 				menu.entryconfig(item, state = outputStatus)
 
 	# Callback method when focused into Subdirectory box
-	def _subdirectoryFocusIn(self, event = ''):
+	def _subdirectoryFocusIn(self, event = None):
 		if self.subdirectory == False:
 			self.targetSubdirectoryEntry.delete(0, Tkinter.END)
 			self.guiStyle.configure('Subdirectory.TEntry', foreground = self.sdFocusColor)
@@ -751,7 +753,7 @@ class GUI():
 
 	# Callback method to enable use of arrow keys to scroll through fileListbox
 	def _scrollFileListbox(self, event = None):
-		if len(self.files) == 0:
+		if len(self.files) == 0 or event.widget.winfo_class() == 'TEntry' or event.widget.winfo_class() == 'TCombobox':
 			return
 		elif self.fileListboxSelection == None and event.keysym == 'Down':
 			self.fileListboxSelection = 0
@@ -812,7 +814,7 @@ class GUI():
 
 	# Callback method to remove file
 	def _removeFile(self, event = None):
-		if event.widget.winfo_class() != 'TEntry' and event.widget.winfo_class() != 'TCombobox':
+		if event == None or (event.widget.winfo_class() != 'TEntry' and event.widget.winfo_class() != 'TCombobox'):
 			if self.fileListboxSelection == None:
 				return
 			self.files.remove(self.files[self.fileListboxSelection])
@@ -823,11 +825,12 @@ class GUI():
 			self._printFiles(event)
  
 	# Callback method to remove all files
-	def _clearFiles(self, event = None, confirm = True):
-		if confirm == True:
+	def _clearFiles(self, event = None, confirmRequired = True):
+		if confirmRequired:
 			if not tkMessageBox.askyesno('Are you sure?', 'Are you sure you want to clear the file list?'):
 				return
 		del self.files[:]
+		self.fileListboxSelection = None
 		self._printFiles()
 		 
 	# Callback method to use date from selected file
