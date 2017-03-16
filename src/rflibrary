@@ -493,7 +493,7 @@ class GUI():
 		# File List
 		ttk.Label(self.inputFrame, text = 'File List').grid(column = 0, row = 0, sticky = 'W')
 		self.fileListbox = Tkinter.Listbox(self.inputFrame, height = 8, width = 20)
-		self.fileListbox.bind('<<ListboxSelect>>', self._printFileData)
+		self.fileListbox.bind('<<ListboxSelect>>', self._selectFileItem)
 		self.fileListbox.grid(column = 0, row = 1, padx = data.padx_default, pady = data.pady_default)
 		
 		# Data List
@@ -595,12 +595,9 @@ class GUI():
 			x.grid(sticky = 'W', padx = data.padx_default, pady = data.pady_default)
 			x.bind('<KeyRelease>', self._getMasterFilename)
 		
-	 	
 	 	# Key Bindings
-		self.window.bind('<Up>', self._scrollFileListbox)
-		self.window.bind('<Down>', self._scrollFileListbox)
-		self.window.bind_all('<Escape>', self._deselectFileListbox)
-		self.window.bind_all('<BackSpace>', self._removeFile)
+		self.fileListbox.bind('<Escape>', self._deselectFileListbox)
+		self.fileListbox.bind('<BackSpace>', self._removeFile)
 	 	
 		# Initialise Lists
 		self._printFiles()
@@ -614,26 +611,33 @@ class GUI():
 		self.fileListbox.delete(0, Tkinter.END)
 		for file in self.files:
 			self.fileListbox.insert(Tkinter.END, file.filename)
-		self._printFileData(event)
+		self._selectFileItem(event)
 		self._updateFileStatus()
 		self._getScanDate()
 		if settingsExists:
 			self._getMasterFilename()
 
-	# Method to display file information
-	def _printFileData(self, event = None):
-		self.dataListbox.delete(0, Tkinter.END)
-		try:
-			self.fileListboxSelection = int(event.widget.curselection()[0])
-		except (AttributeError, IndexError):
-			pass
+	# Method to select fileListbox item
+	def _selectFileItem(self, event = None):
+		if event:
+			try:
+				self.fileListboxSelection = int(event.widget.curselection()[0])
+			except (AttributeError, IndexError):
+				pass
 		self.fileListbox.selection_clear(0, Tkinter.END)
-		
+		if self.fileListboxSelection != None:
+			self.fileListbox.select_set(self.fileListboxSelection)
+			self.fileListbox.activate(self.fileListboxSelection)
+		if event:
+			self.fileListbox.see(event.widget.curselection()[0])
+		self._printFileData()
+	
+	def _printFileData(self):
+		self.dataListbox.delete(0, Tkinter.END)
 		if self.fileListboxSelection == None:
 			self.dataListbox.insert(Tkinter.END, 'No file selected')
 			self._clearPreview()
 		else:
-			self.fileListbox.select_set(self.fileListboxSelection)
 			self.dataListbox.insert(Tkinter.END, 'Filename: {}'.format(self.files[self.fileListboxSelection].filename))
 			self.dataListbox.insert(Tkinter.END, 'Date: {}'.format(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat)))
 			self.dataListbox.insert(Tkinter.END, 'Scanner: {}'.format(self.files[self.fileListboxSelection].model))
@@ -759,30 +763,11 @@ class GUI():
 			file.updateTVChannels(self.country.get())
 		self._printFiles()
 
-	# Callback method to enable use of arrow keys to scroll through fileListbox
-	def _scrollFileListbox(self, event = None):
-		if len(self.files) == 0 or event.widget.winfo_class() == 'TEntry' or event.widget.winfo_class() == 'TCombobox':
-			return
-		elif self.fileListboxSelection == None and event.keysym == 'Down':
-			self.fileListboxSelection = 0
-		elif self.fileListboxSelection != len(self.files) - 1 and event.keysym == 'Down':
-			self.fileListboxSelection += 1
-		elif self.fileListboxSelection == None and event.keysym == 'Up':
-			self.fileListboxSelection = len(self.files) - 1
-		elif self.fileListboxSelection > 0 and event.keysym == 'Up':
-			self.fileListboxSelection -= 1
-		else:
-			return
-		self.fileListbox.selection_clear(0, Tkinter.END)
-		self.fileListbox.select_set(self.fileListboxSelection)
-		self.fileListbox.see(self.fileListboxSelection)
-		self._printFileData(event)
-
 	# Callback method to deselect fileListbox
 	def _deselectFileListbox(self, event = None):
 		self.fileListboxSelection = None
 		self.fileListbox.selection_clear(0, Tkinter.END)
-		self._printFileData()
+		self._selectFileItem()
 	 
 	# Callback method to update subdirectory name
 	def _updateSubdirectory(self, event = None):
