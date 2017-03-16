@@ -1,3 +1,4 @@
+# coding=utf-8
 # Software Details
 title = "RF Library"
 version = "v0.3"
@@ -201,7 +202,7 @@ countries = (
 	'Comoros',
 	'Congo',
 	'Costa Rica',
-	'C%ste d\'Ivoire' % chr(244),
+	'C{}te d\'Ivoire'.format(chr(244)),
 	'Croatia',
 	'Cuba',
 	'Cyprus',

@@ -6,3 +6,9 @@ This app started as a personal project for me to expedite the process of taking 
 It started as a command line script, but then I started adding new features in order to organise my library of scans, format the files in such a way that they were quick to upload to http://www.bestaudio.com/spectrum-scans/ (an international scan repository maintained by Pete Erskine) and recognise more file types. Then I realised that this might be of use to other people, so here we are.
 
 Written in Python v3.6 on OS X.
+
+Requirements
+------------
+Python 3.6
+ActiveTCL 8.5.18.0
+Matplotlib 2.0.0
