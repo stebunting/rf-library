@@ -201,7 +201,7 @@ countries = (
 	'Comoros',
 	'Congo',
 	'Costa Rica',
-	'C%ste d\'Ivoire' % unichr(244),
+	'C%ste d\'Ivoire' % chr(244),
 	'Croatia',
 	'Cuba',
 	'Cyprus',
