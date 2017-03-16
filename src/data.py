@@ -1,4 +1,3 @@
-# coding=utf-8
 # Software Details
 title = "RF Library"
 version = "v0.3"

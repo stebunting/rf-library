@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# coding=utf-8
 
 # Import Python Modules
 # Platform - Check user operating system
@@ -7,7 +6,8 @@
 # Datetime - Creation date conversion
 # Re - Regular Expressions
 # xml.etree.ElementTree - XML Parsing
-import platform, os, datetime, re, xml.etree.ElementTree
+# importlib - Import Functions
+import platform, os, datetime, re, xml.etree.ElementTree, importlib
 
 # Import program data
 import data
@@ -156,11 +156,11 @@ class File():
 		if 80 <= self.startFrequency <= 120:
 			self.newFilename = 'FM'
 		elif 54 <= self.startFrequency <= 88:
-			self.newFilename = '{:02}'.format((int(self.startFrequency) - 42) / 6)
+			self.newFilename = '{:02d}'.format((int(self.startFrequency) - 42) // 6)
 		elif 174 <= self.startFrequency <= 216:
-			self.newFilename = '{:02}'.format((int(self.startFrequency) - 132) / 6)
+			self.newFilename = '{:02d}'.format((int(self.startFrequency) - 132) // 6)
 		elif 470 <= self.startFrequency <= 890:
-			self.newFilename = '{:02}'.format((int(self.startFrequency) - 386) / 6)
+			self.newFilename = '{:02d}'.format((int(self.startFrequency) - 386) // 6)
 		elif 902 <= self.startFrequency <= 928:
 			self.newFilename = '900'
 		elif 944 <= self.startFrequency <= 952:
@@ -443,7 +443,7 @@ class GUI():
 		# File Menu
 		self.fileMenu = tk.Menu(self.menuBar, tearoff = False)
 		self.fileMenu.add_command(label = 'Add Files', accelerator = 'Command-a', command = self._addFiles)
-		self.fileMenu.add_command(label = 'Add Directory', accelerator = 'Command-shift-a', command = self._addDirectory)
+		self.fileMenu.add_command(label = 'Add Directory', accelerator = 'Command-Shift-a', command = self._addDirectory)
 		self.fileMenu.add_separator()
 		self.fileMenu.add_command(label = 'Set Destination', accelerator = 'Command-d', command = self._customDestination) 
 		self.fileMenu.add_command(label = 'Create File', accelerator = 'Command-Return', command = self._createFile)
@@ -458,8 +458,10 @@ class GUI():
 		self.window.config(menu = self.menuBar)
 		
 		self.window.bind_all('<Command-a>', self._addFiles)
+		self.window.bind_all('<Command-Shift-a>', self._addDirectory)
 		self.window.bind_all('<Command-d>', self._customDestination)
 		self.window.bind_all('<Command-Return>', self._createFile)
+		self.window.bind_all('<Command-BackSpace>', self._clearFiles)
 		
 	def _createWidgets(self):
 	
@@ -1029,7 +1031,7 @@ class GUI():
 			
 			# If opened for first time, import settings
 			if settingsExists:
-				reload(settings)
+				importlib.reload(settings)
 			else:
 				try:
 					import settings

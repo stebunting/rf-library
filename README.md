@@ -10,5 +10,7 @@ Written in Python v3.6 on OS X.
 Requirements
 ------------
 Python 3.6
+
 ActiveTCL 8.5.18.0
+
 Matplotlib 2.0.0
