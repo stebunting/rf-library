@@ -9,9 +9,10 @@ from setuptools import setup
 import data
 
 APP = ['rflibrary']
-APP_NAME = data.title
+APP_NAME = 'RFLibrary'
 DATA_FILES = ['data.py', 'settings.py', 'gui.ico']
 OPTIONS = {
+    'includes':'tkinter',
 	'iconfile':'rflibrary.icns',
 	'plist': {
 	'CFBundleName': APP_NAME,

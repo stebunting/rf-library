@@ -49,6 +49,7 @@ subdirectory                         ???
 settingsWindowOpen                   True if settings open, false if not
 ioGuess                              Positive int if inside, negative int if outside
 ioFixed                              Bool to say whether user has changed io box
+customMasterFilename                 Bool to say whether user has entered custom master filename
 scanDateTimestamp                    Timestamp of current scan date
 libraryLocation                      Location to top of library with trailing slash
                                      /Users/Ste/Documents/Audio/RF/Scans/
@@ -78,6 +79,7 @@ scanOutputLocation                   StringVar    Full Location to file with tra
 targetSubdirectory                   StringVar    Subdirectory Variable
 defaultOutputLocation                BooleanVar   Custom (0)/Standard (1) Output Directory
 scanMasterFilename                   StringVar    Output filename Variable
+defaultMasterFilename                BooleanVar   Custom (0)/Standard (1) Master Filename
 deleteSourceFiles                    BooleanVar   (1) to delete input files on creation
 
 
@@ -109,9 +111,9 @@ window                               Tk
 -------- customOutputButton          Button       Button to select custom output location
 -------- defaultOutputCheck          Radiobutton  Button to show/select custom/standard output location
 ------ scanMasterFilenameEntry       Entry        Output filename Entry Box
+------ defaultMasterFilenameCheck    Button       Button to select custom master filename
 ------ deleteSourceFilesCheck        Checkbutton  Button to enable deletion of input files
------- outputEditFrame               Frame        Frame to hold create button
--------- createFileButton            Button       Button to create output file
+------ createFileButton              Button       Button to create output file
 -- menuBar                           Menu         Menu bar
 ---- fileMenu                        Menu         File menu
 ---- helpMenu                        Menu         Help menu

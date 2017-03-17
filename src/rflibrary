@@ -13,6 +13,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.font as tkfont
 import tkinter.messagebox as tkmessagebox
+import tkinter.filedialog as tkfiledialog
 
 # Import Matplotlib graph plotting functions
 import matplotlib
@@ -191,7 +192,7 @@ class File():
             self.newFilename = '{:.0f}MHz'.format(self.startFrequency)
         self.newFilename = '{}.csv'.format(self.newFilename)
     
-    # Method to guess whether file is inside or outside
+    # Method to guess whether scan is inside or outside
     def ioRead(self):
         self.io = 0
         lowercaseFilename = self.file.lower()
@@ -330,13 +331,13 @@ class SettingsWindow():
     
     # Method to select default source folder
     def _changeSourceFolder(self):
-        dir = tk.filedialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=self.sourceFolder.get())
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=self.sourceFolder.get())
         if dir != '':
             self.sourceFolder.set(dir)
             
     # Method to select scans base folder
     def _changeBaseFolder(self):
-        dir = tk.filedialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=self.scansFolder.get())
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=self.scansFolder.get())
         if dir != '':
             self.scansFolder.set(dir)
     
@@ -395,6 +396,7 @@ class GUI():
         self.settingsWindowOpen = False
         self.ioGuess = 0
         self.ioFixed = False
+        self.customMasterFilename = False
         
         # Create instance
         self.window = tk.Tk()
@@ -512,6 +514,7 @@ class GUI():
         self.targetSubdirectory = tk.StringVar()
         self.defaultOutputLocation = tk.BooleanVar()
         self.scanMasterFilename = tk.StringVar()
+        self.defaultMasterFilename = tk.BooleanVar()
         self.deleteSourceFiles = tk.BooleanVar()
         
         # Set default values
@@ -606,22 +609,27 @@ class GUI():
         self.defaultOutputCheck = ttk.Radiobutton(self.customOutputFrame, text='Standard Destination', variable=self.defaultOutputLocation, command=self._updateSubdirectory)
         self.defaultOutputCheck.grid(column=1, row=0)
      
-        # Output Master File Name
+        # Custom Filename Frame
         ttk.Label(self.outputFrame, text='Master Filename').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        
+        # Output Master Filename
         self.scanMasterFilenameEntry = ttk.Entry(self.outputFrame, textvariable=self.scanMasterFilename, font='TkDefaultFont {}'.format(self.fontSize))
         self.scanMasterFilenameEntry.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.scanMasterFilenameEntry.config(width=60)
+        self.scanMasterFilenameEntry.bind('<KeyRelease>', self._customMasterFilename)
+        
+        # Use Default Filename
+        self.defaultMasterFilename.set(1)
+        self.defaultMasterFilenameCheck = ttk.Radiobutton(self.outputFrame, text='Standard Filename', variable=self.defaultMasterFilename, command=self._standardMasterFilename)
+        self.defaultMasterFilenameCheck.grid(column=1, row=4, sticky='W')
      
         # Delete Source Files
-        ttk.Label(self.outputFrame, text='Delete Source Files').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, variable=self.deleteSourceFiles)
-        self.deleteSourceFilesCheck.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, text='Delete Source Files', variable=self.deleteSourceFiles)
+        self.deleteSourceFilesCheck.grid(column=1, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
      
         # Output Buttons
-        self.outputEditFrame = ttk.Frame(self.outputFrame)
-        self.outputEditFrame.grid(column=0, row=5, columnspan=2, sticky='W')
-        self.createFileButton = ttk.Button(self.outputEditFrame, text='Create File', command=self._createFile)
-        self.createFileButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.createFileButton = ttk.Button(self.outputFrame, text='Create File', command=self._createFile)
+        self.createFileButton.grid(column=1, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
      
         # Add styling to all entry boxes
         for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox, self.defaultOutputCheck]:
@@ -720,6 +728,10 @@ class GUI():
     # Method to create master filename
     def _getMasterFilename(self, event=None):
         
+        # Return if user has entered a custom master filename
+        if self.customMasterFilename:
+            return
+            
         # Calculate space/hyphen formatting
         if settings.forename == '' and settings.surname == '':
             name = ''
@@ -789,7 +801,7 @@ class GUI():
      
     # Method to change destination to custom destination    
     def _customDestination(self, event=None):
-        customLocation = tk.filedialog.askdirectory(parent=self.masterFrame, title='Select Destination Folder')
+        customLocation = tkfiledialog.askdirectory(parent=self.masterFrame, title='Select Destination Folder')
         if customLocation != '':
             self.libraryLocation = customLocation
             self.scanOutputLocation.set(self.libraryLocation)
@@ -815,7 +827,18 @@ class GUI():
         self.ioFixed = True
         self.ioBox.selection_clear()
         self._updateSubdirectory()
-        
+    
+    # Method to declare user has entered a custom Master Filename    
+    def _customMasterFilename(self, event=None):
+        self.customMasterFilename = True
+        self.defaultMasterFilename.set(0)
+    
+    # Method to declare user wants to use the standard Filename    
+    def _standardMasterFilename(self, event=None):
+        self.customMasterFilename = False
+        self.defaultMasterFilename.set(1)
+        self._getMasterFilename()
+            
     # Method to update subdirectory name
     def _updateSubdirectory(self, event=None):
         if self.defaultOutputLocation.get() == 1:
@@ -831,7 +854,7 @@ class GUI():
     # Method to open file dialogue and allow selection of files
     def _addFiles(self, event=None, selected_files=None, suppressErrors=False):
         if selected_files == None:
-            selected_files = tk.filedialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=settings.defaultSourceLocation)
+            selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=settings.defaultSourceLocation)
         for file in selected_files:
             newFile = File(file, self.country.get())
             if newFile.valid:
@@ -849,7 +872,7 @@ class GUI():
     # Method to open file dialogue and allow selection of all files in a directory
     def _addDirectory(self, event=None):
         dirFiles = []
-        selectedDir = tk.filedialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=settings.defaultSourceLocation)
+        selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=settings.defaultSourceLocation)
         if selectedDir != '':
             for file in os.listdir(selectedDir):
                 fullfilename = '{}{}{}'.format(selectedDir, slash, file)
