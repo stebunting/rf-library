@@ -51,18 +51,19 @@ class File():
     def __init__(self, name, tvCountry):
         self.fullfilename = name
         self.filename = os.path.basename(self.fullfilename)
+        self.file, self.ext = os.path.splitext(self.filename)
         self.path = os.path.dirname(self.fullfilename)
         self.valid = True
         self.readFile()
         if self.valid:
             self.updateTVChannels(tvCountry)
             self.getNewFilename()
+            self.ioRead()
         
     # Method to check validity and get file details
     def readFile(self):
         # Ensure file has valid extension
-        file, ext = os.path.splitext(self.filename)
-        if ext.lower() != '.csv' and ext.lower() != '.sdb2':
+        if self.ext.lower() != '.csv' and self.ext.lower() != '.sdb2':
             self.valid = False
             return
         
@@ -90,7 +91,8 @@ class File():
         self.startFrequency = min(freq[0] for freq in self.frequencies)
         self.stopFrequency = max(freq[0] for freq in self.frequencies)
         self.dataPoints = len(self.frequencies)
-        self.resolution = (self.stopFrequency - self.startFrequency) / (self.dataPoints - 1)
+        self.resolution = ((self.stopFrequency - self.startFrequency)
+                          / (self.dataPoints - 1))
     
     # Parse an XML scan created by Shure WWB6 and hardware
     def parseShureScan(self):
@@ -101,8 +103,11 @@ class File():
             self.model = 'Shure AXT600'
         else:
             self.model = 'Shure {} ({})'.format(model, xmldoc.attrib['band'])
-        self.frequencies = [[float(freq.text) / 1000, float(level.text)] for freq, level in zip(xmldoc[0][0], xmldoc[0][1])]
-        self.creationDate = datetime.datetime.fromtimestamp(float(xmldoc[0][1].attrib['date_time']) / 1000)
+        self.frequencies = []
+        for freq, level in zip(xmldoc[0][0], xmldoc[0][1]):
+            self.frequencies.append([float(freq.text) / 1000, float(level.text)])
+        self.creationDate = datetime.datetime.fromtimestamp(
+                            float(xmldoc[0][1].attrib['date_time']) / 1000)
             
     # Parse a CSV file
     def parseCSVScan(self, model):
@@ -136,24 +141,29 @@ class File():
     
     # Method to return creation date from file
     def getCreationDate(self):
-        self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_birthtime)
+        self.creationDate = datetime.datetime.fromtimestamp(
+                            os.stat(self.fullfilename).st_birthtime)
     
     # Method to get TV channels
     def updateTVChannels(self, tvCountry):
-        tvCountry = tvCountry if tvCountry == 'United States of America' else 'UK'
+        if tvCountry == 'United States of America':
+            tvCountry = tvCountry
+        else:
+            tvCountry = 'UK'
         self.startTVChannel = None
         self.stopTVChannel = None
         for chan in data.TVChannels[tvCountry]:
             if self.startTVChannel == None:
-                if self.startFrequency >= float(chan[1]) and self.startFrequency < float(chan[2]):
+                if (self.startFrequency >= float(chan[1]) and
+                    self.startFrequency < float(chan[2])):
                     self.startTVChannel = chan[0]
             else:
-                if self.stopFrequency > float(chan[1]) and self.stopFrequency <= float(chan[2]):
+                if (self.stopFrequency > float(chan[1]) and
+                    self.stopFrequency <= float(chan[2])):
                     self.stopTVChannel = chan[0]
                     break
         
     # Method to get new filename based on BestAudio naming structure
-    # 
     def getNewFilename(self):
         if 80 <= self.startFrequency <= 120:
             self.newFilename = 'FM'
@@ -180,6 +190,15 @@ class File():
         else:
             self.newFilename = '{:.0f}MHz'.format(self.startFrequency)
         self.newFilename = '{}.csv'.format(self.newFilename)
+    
+    # Method to guess whether file is inside or outside
+    def ioRead(self):
+        self.io = 0
+        lowercaseFilename = self.file.lower()
+        if 'in' in lowercaseFilename:
+            self.io = 1
+        elif 'out' in lowercaseFilename:
+            self.io = -1
 
 ################################################################################
 ##########                  SETTINGS WINDOW OBJECT                    ##########
@@ -197,22 +216,28 @@ class SettingsWindow():
         self._createSettingsFrames()
         self._createSettingsWidgets()
     
+    # Create settings frames
     def _createSettingsFrames(self):
         self.settingsMasterFrame = ttk.Frame(self.settingsWindow)
         self.settingsMasterFrame.grid(padx=0, pady=0, sticky='NWSE')
         
-        self.sourcePreferences = ttk.LabelFrame(self.settingsMasterFrame, text='Source Preferences')
+        self.sourcePreferences = ttk.LabelFrame(
+            self.settingsMasterFrame, text='Source Preferences')
         self.sourcePreferences.grid(padx=16, pady=16, sticky='NWSE')
         
-        self.outputPreferences = ttk.LabelFrame(self.settingsMasterFrame, text='Output Preferences')
+        self.outputPreferences = ttk.LabelFrame(
+            self.settingsMasterFrame, text='Output Preferences')
         self.outputPreferences.grid(padx=16, pady=16, sticky='NWSE')
         
-        self.personalData = ttk.LabelFrame(self.settingsMasterFrame, text='Personal Data')
+        self.personalData = ttk.LabelFrame(
+            self.settingsMasterFrame, text='Personal Data')
         self.personalData.grid(padx=16, pady=16, sticky='NWSE')
         
         self.settingsButtonsFrame = ttk.Frame(self.settingsMasterFrame)
-        self.settingsButtonsFrame.grid(padx=16, pady=16, columnspan=2, sticky='NWSE')
-            
+        self.settingsButtonsFrame.grid(
+            padx=16, pady=16, columnspan=2, sticky='NWSE')
+    
+    # Create settings widgets
     def _createSettingsWidgets(self):
     
         # Initialise Tk variables
@@ -228,7 +253,9 @@ class SettingsWindow():
         if settingsExists:
             self.sourceFolder.set(settings.defaultSourceLocation)
             self.scansFolder.set(settings.defaultLibraryLocation)
-            vars = [settings.lowFreqLimit, settings.highFreqLimit, settings.defaultDateFormat, settings.forename, settings.surname]
+            vars = [settings.lowFreqLimit, settings.highFreqLimit,
+                    settings.defaultDateFormat, settings.forename,
+                    settings.surname]
         else:
             if platform.system() == 'Darwin':
                 self.sourceFolder.set(os.path.expanduser('~/Documents'))
@@ -238,7 +265,8 @@ class SettingsWindow():
                 self.scansFolder.set(os.path.expanduser('~/Documents/Scans'))
             vars = [0, 0, 'yyyy-mm-dd', '', '']
         
-        fields = [self.lowFreqLimit, self.highFreqLimit, self.defaultDateFormat, self.forename, self.surname]
+        fields = [self.lowFreqLimit, self.highFreqLimit, self.defaultDateFormat,
+                  self.forename, self.surname]
         for field, var in zip(fields, vars):
             field.set(var)
         
@@ -356,6 +384,8 @@ settingsLength = """.format(self.forename.get(), self.surname.get(), self.source
 ################################################################################
 
 class GUI():
+
+    # Initialise class
     def __init__(self):
  
         # Variables
@@ -363,7 +393,9 @@ class GUI():
         self.fileListboxSelection = None
         self.subdirectory = True
         self.settingsWindowOpen = False
-         
+        self.ioGuess = 0
+        self.ioFixed = False
+        
         # Create instance
         self.window = tk.Tk()
         
@@ -387,7 +419,8 @@ class GUI():
         # Open settings if settings uninitialised
         if not settingsExists:
             self._settings()
-         
+    
+    # Create styles for GUI
     def _createStyles(self):
         self.fontSize = 13
         default_font = tkfont.nametofont('TkDefaultFont')
@@ -413,7 +446,8 @@ class GUI():
                 'sticky': 'nswe'})],
             'border':'0', 'sticky': 'nswe'})])
         self.guiStyle.configure('Subdirectory.TEntry', fieldbackground=self.baseBackground, foreground=self.sdFocusColor)
- 
+
+    # Create GUI frames
     def _createFrames(self):
         self.masterFrame = ttk.Frame(self.window)
         self.masterFrame.grid(padx=0, pady=0, sticky='NWSE')
@@ -438,7 +472,8 @@ class GUI():
         self.canvas.show()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self._clearPreview()
-     
+    
+    # Create GUI menu
     def _createMenu(self):
         self.menuBar = tk.Menu(self.window)
         
@@ -462,7 +497,8 @@ class GUI():
         self.window.bind_all('<Command-a>', self._addFiles)
         self.window.bind_all('<Command-Shift-a>', self._addDirectory)
         self.window.bind_all('<Command-d>', self._customDestination)
-        
+    
+    # Create GUI widgets
     def _createWidgets(self):
     
         # Initialise tkinter variables
@@ -543,7 +579,7 @@ class GUI():
         self.ioBox['values'] = ('Inside', 'Outside')
         self.ioBox.grid(column=1, row=4)
         self.ioBox.current(0)
-        self.ioBox.bind('<<ComboboxSelected>>', self._updateSubdirectory)
+        self.ioBox.bind('<<ComboboxSelected>>', self._ioBoxEdit)
      
         # Output Location
         self.directoryFrame = ttk.Frame(self.outputFrame)
@@ -724,16 +760,15 @@ class GUI():
             for x in [self.clearFilesButton, self.createFileButton]:
                 x.config(state=outputStatus)
             if outputStatus == 'enabled':
-                self.window.bind_all('<Command-BackSpace>', self._clearFiles)
+                #self.window.bind('<Command-BackSpace>', self._clearFiles)
                 self.window.bind_all('<Command-Return>', self._createFile)
                 self.editMenu.entryconfig('Clear Files', state='normal')
                 self.fileMenu.entryconfig('Create File', state='normal')
             else:
-                self.window.unbind_all('<Command-BackSpace>')
+                self.window.unbind('<Command-BackSpace>')
                 self.window.unbind_all('<Command-Return>')
                 self.editMenu.entryconfig('Clear Files', state='disabled')
                 self.fileMenu.entryconfig('Create File', state='disabled')
-                
 
     # Method when focused into Subdirectory box
     def _subdirectoryFocusIn(self, event=None):
@@ -775,6 +810,12 @@ class GUI():
         self.fileListbox.selection_clear(0, tk.END)
         self._selectFileItem()
      
+    # Method called after IObox edited
+    def _ioBoxEdit(self, event=None):
+        self.ioFixed = True
+        self.ioBox.selection_clear()
+        self._updateSubdirectory()
+        
     # Method to update subdirectory name
     def _updateSubdirectory(self, event=None):
         if self.defaultOutputLocation.get() == 1:
@@ -794,9 +835,15 @@ class GUI():
         for file in selected_files:
             newFile = File(file, self.country.get())
             if newFile.valid:
+                self.ioGuess += newFile.io
                 self.files.append(newFile)
             elif not suppressErrors:
                 tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
+        if not self.ioFixed:
+            if self.ioGuess >= 0:
+                self.ioBox.current(0)
+            else:
+                self.ioBox.current(1)
         self._printFiles()
 
     # Method to open file dialogue and allow selection of all files in a directory
@@ -830,13 +877,13 @@ class GUI():
                 return
         del self.files[:]
         self.fileListboxSelection = None
+        self.ioFixed = False
         self._printFiles()
          
     # Method to use date from selected file
     def _useDate(self):
         self.scanDate.set(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat))
         self._getMasterFilename()
-        self.axis.clear()
 
     # Method to create master file
     def _createFile(self, event=None):

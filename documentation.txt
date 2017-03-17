@@ -35,6 +35,7 @@ stopTVChannel				Stop TV channel
 dataPoints					Number of data points
 resolution					Average resolution
 newFilename					New filename (based on TV channel)
+io                          Guess whether scan is inside (>0) or outside (<0)
 
 ################################################################################
 ##########                        GUI Object                          ##########
@@ -45,6 +46,9 @@ newFilename					New filename (based on TV channel)
 files[]						Array to hold all input files
 fileListboxSelection		Index of current selected input file
 subdirectory				???
+settingsWindowOpen			True if settings open, false if not
+ioGuess                     Positive int if inside, negative int if outside
+ioFixed                     Bool to say whether user has changed io box
 scanDateTimestamp			Timestamp of current scan date
 libraryLocation				Location to top of library with trailing slash
 							/Users/Ste/Documents/Audio/RF/Scans/
