@@ -3,6 +3,7 @@
 # Import Python Modules
 import platform
 import os
+import sys
 import importlib
 import datetime
 import re
@@ -22,6 +23,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Import program data
 import data
+import settings
 
 # Check for windows compatibility
 slash = '\\' if platform.system() == 'Windows' else '/'
@@ -31,13 +33,13 @@ scriptpath = os.path.dirname(os.path.realpath(__file__))
 
 # Load settings if it exists yet
 try:
-    import settings
+    settings.settingsLength
     settingsExists = True
     if data.dateFormats.get(settings.defaultDateFormat):
         dateFormat = data.dateFormats.get(settings.defaultDateFormat) 
     else:
         data.dateFormats.get('yyyy-mm-dd')
-except ImportError:
+except AttributeError:
     settingsExists = False
     dateFormat = data.dateFormats.get('yyyy-mm-dd')
     
@@ -403,6 +405,7 @@ class GUI():
         
         # Configure main window
         self.window.resizable(width=False, height=False)
+        self.window.geometry("840x672")
         self.window.title(data.title)
         self.window.config(background='lightGrey')
         self.window.iconbitmap('gui.ico')
@@ -437,34 +440,23 @@ class GUI():
         self.guiStyle.configure('TLabelframe.Label', font='Arial 16')
         self.guiStyle.map('TRadiobutton', background=[('hover', self.baseBackground)])
         self.guiStyle.map('TCheckbutton', background=[('hover', self.baseBackground)])
-     
-        self.guiStyle.element_create('plain.field', 'from', 'clam')
-        self.guiStyle.layout('Subdirectory.TEntry',
-            [('Entry.plain.field', {'children':
-                [('Entry.background', {'children':
-                    [('Entry.padding', {'children':
-                        [('Entry.textarea', {'sticky': 'nswe'})],
-                    'sticky': 'nswe'})],
-                'sticky': 'nswe'})],
-            'border':'0', 'sticky': 'nswe'})])
-        self.guiStyle.configure('Subdirectory.TEntry', fieldbackground=self.baseBackground, foreground=self.sdFocusColor)
-
+        
     # Create GUI frames
     def _createFrames(self):
         self.masterFrame = ttk.Frame(self.window)
-        self.masterFrame.grid(padx=0, pady=0, sticky='NWSE')
+        self.masterFrame.grid(padx=0, pady=0, sticky='NWE')
      
         self.inputFrame = ttk.LabelFrame(self.masterFrame, text='Source Data')
-        self.inputFrame.grid(column=0, row=0, padx=10, pady=10, sticky='NWSE')
+        self.inputFrame.grid(column=0, row=0, padx=10, pady=10, sticky='NWE')
      
         self.previewFrame = ttk.LabelFrame(self.masterFrame, text='Source Preview')
         self.previewFrame.grid(column=1, row=0, rowspan=2, padx=8, pady=8, sticky='NWE')
-                     
+                          
         self.infoFrame = ttk.LabelFrame(self.masterFrame, text='Venue Information')
-        self.infoFrame.grid(column=0, row=1, padx=8, pady=8, sticky='NWSE')
+        self.infoFrame.grid(column=0, row=1, padx=8, pady=8, sticky='NWE')
      
         self.outputFrame = ttk.LabelFrame(self.masterFrame, text='Output Data')
-        self.outputFrame.grid(column=0, row=2, columnspan=2, padx=8, pady=8, sticky='NWSE')
+        self.outputFrame.grid(column=0, row=2, columnspan=3, padx=8, pady=8, sticky='NWE')
         
         # Initialise graph window
         self.fig = matplotlib.figure.Figure(figsize=(3.2, 2.65), dpi=100, facecolor='white')
@@ -510,7 +502,7 @@ class GUI():
         self.country = tk.StringVar()
         self.scanDate = tk.StringVar()
         self.io = tk.StringVar()
-        self.scanOutputLocation = tk.StringVar()
+        self.scanOutputLocationDisplay = tk.StringVar()
         self.targetSubdirectory = tk.StringVar()
         self.defaultOutputLocation = tk.BooleanVar()
         self.scanMasterFilename = tk.StringVar()
@@ -555,85 +547,77 @@ class GUI():
         self.fileStatus.grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
      
         # Source Venue Data
-        ttk.Label(self.infoFrame, text='Venue').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.venueEntry = ttk.Entry(self.infoFrame, textvariable=self.venue, font='TkDefaultFont {}'.format(self.fontSize))
+        ttk.Label(self.infoFrame, text='Venue', width=12).grid(column=0, row=0, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.venueEntry = ttk.Entry(self.infoFrame, textvariable=self.venue, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.venueEntry.grid(column=1, row=0)
 
         # Source Town Data
-        ttk.Label(self.infoFrame, text='Town').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.townEntry = ttk.Entry(self.infoFrame, textvariable=self.town, font='TkDefaultFont {}'.format(self.fontSize))
+        ttk.Label(self.infoFrame, text='Town', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.townEntry = ttk.Entry(self.infoFrame, textvariable=self.town, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.townEntry.grid(column=1, row=1)
 
         # Source Country Data
-        ttk.Label(self.infoFrame, text='Country').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.countryBox = ttk.Combobox(self.infoFrame, textvariable=self.country, font='TkDefaultFont {}'.format(self.fontSize))
+        ttk.Label(self.infoFrame, text='Country', width=12).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.countryBox = ttk.Combobox(self.infoFrame, textvariable=self.country, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.countryBox['values'] = data.countries
         self.countryBox.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.countryBox.bind('<<ComboboxSelected>>', self._refresh)
      
         # Source Scan Date
-        ttk.Label(self.infoFrame, text='Scan Date').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.dateEntry = ttk.Entry(self.infoFrame, textvariable=self.scanDate, font='TkDefaultFont {}'.format(self.fontSize))
+        ttk.Label(self.infoFrame, text='Scan Date', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.dateEntry = ttk.Entry(self.infoFrame, textvariable=self.scanDate, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.dateEntry.grid(column=1, row=3)
      
         # Inside / Outside
-        ttk.Label(self.infoFrame, text='Inside/Outside').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.ioBox = ttk.Combobox(self.infoFrame, textvariable=self.io, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
+        ttk.Label(self.infoFrame, text='Inside/Outside', width=12).grid(column=0, row=4, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.ioBox = ttk.Combobox(self.infoFrame, textvariable=self.io, width=20, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
         self.ioBox['values'] = ('Inside', 'Outside')
         self.ioBox.grid(column=1, row=4)
         self.ioBox.current(0)
         self.ioBox.bind('<<ComboboxSelected>>', self._ioBoxEdit)
      
         # Output Location
-        self.directoryFrame = ttk.Frame(self.outputFrame)
-        self.directoryFrame.grid(column=1, row=0, sticky='W')
-         
         self.targetSubdirectory.set(self.io.get())
-        ttk.Label(self.outputFrame, text='Destination').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        ttk.Label(self.directoryFrame, textvariable=self.scanOutputLocation).grid(column=0, row=0, sticky='W', padx=0, pady=data.pady_default)
-        self.targetSubdirectoryEntry = ttk.Entry(self.directoryFrame, textvariable=self.targetSubdirectory, width=10, font='TkDefaultFont {}'.format(self.fontSize), style='Subdirectory.TEntry')
-        self.targetSubdirectoryEntry.grid(column=1, row=0, sticky='W', padx=0, pady=data.pady_default)
-        self.targetSubdirectoryEntry.bind('<FocusIn>', self._subdirectoryFocusIn)
-        self.targetSubdirectoryEntry.bind('<FocusOut>', self._subdirectoryFocusOut)
-     
-        # Custom Output Frame
-        self.customOutputFrame = ttk.Frame(self.outputFrame)
-        self.customOutputFrame.grid(column=1, row=1, sticky='W')
-     
-        # Custom Output
-        self.customOutputButton = ttk.Button(self.customOutputFrame, text='Set Destination', command=self._customDestination)
-        self.customOutputButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-     
-        # Use Default Output
-        self.defaultOutputLocation.set(1)
-        self.defaultOutputCheck = ttk.Radiobutton(self.customOutputFrame, text='Standard Destination', variable=self.defaultOutputLocation, command=self._updateSubdirectory)
-        self.defaultOutputCheck.grid(column=1, row=0)
-     
-        # Custom Filename Frame
-        ttk.Label(self.outputFrame, text='Master Filename').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Destination', width=12).grid(column=0, row=0, columnspan = 2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.targetDirFrame = ttk.Frame(self.outputFrame)
+        self.targetDirFrame.grid(column=1, row=0, sticky='W')
+        self.targetDirectory = ttk.Label(self.targetDirFrame, textvariable=self.scanOutputLocationDisplay, width=77)
+        self.targetDirectory.pack()
         
+        # Subdirectory
+        ttk.Label(self.outputFrame, text='Subdirectory', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.targetSubdirectoryEntry = ttk.Entry(self.outputFrame, textvariable=self.targetSubdirectory, width=20, font='TkDefaultFont {}'.format(self.fontSize), style='Subdirectory.TEntry')
+        self.targetSubdirectoryEntry.grid(column=1, row=1, sticky='W', padx=0, pady=data.pady_default)
+     
         # Output Master Filename
+        ttk.Label(self.outputFrame, text='Master Filename', width=12).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.scanMasterFilenameEntry = ttk.Entry(self.outputFrame, textvariable=self.scanMasterFilename, font='TkDefaultFont {}'.format(self.fontSize))
-        self.scanMasterFilenameEntry.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.scanMasterFilenameEntry.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.scanMasterFilenameEntry.config(width=60)
         self.scanMasterFilenameEntry.bind('<KeyRelease>', self._customMasterFilename)
         
-        # Use Default Filename
+        # Options
+        ttk.Label(self.outputFrame, text='Options', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.defaultOutputLocation.set(1)
+        self.defaultOutputCheck = ttk.Radiobutton(self.outputFrame, text='Standard Destination', variable=self.defaultOutputLocation, command=self._updateSubdirectory)
+        self.defaultOutputCheck.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.defaultMasterFilename.set(1)
         self.defaultMasterFilenameCheck = ttk.Radiobutton(self.outputFrame, text='Standard Filename', variable=self.defaultMasterFilename, command=self._standardMasterFilename)
-        self.defaultMasterFilenameCheck.grid(column=1, row=4, sticky='W')
-     
-        # Delete Source Files
+        self.defaultMasterFilenameCheck.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, text='Delete Source Files', variable=self.deleteSourceFiles)
         self.deleteSourceFilesCheck.grid(column=1, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
-     
+        
         # Output Buttons
-        self.createFileButton = ttk.Button(self.outputFrame, text='Create File', command=self._createFile)
-        self.createFileButton.grid(column=1, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.outputButtons = ttk.Frame(self.outputFrame)
+        self.outputButtons.grid(column=1, row=6, sticky='W')
+        self.createFileButton = ttk.Button(self.outputButtons, text='Create File', command=self._createFile)
+        self.createFileButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.customOutputButton = ttk.Button(self.outputButtons, text='Set Destination', command=self._customDestination)
+        self.customOutputButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
      
         # Add styling to all entry boxes
-        for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox, self.defaultOutputCheck]:
-            x.grid(sticky='W', padx=data.padx_default, pady=data.pady_default)
+        for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox, self.targetSubdirectoryEntry]:
+            x.grid(sticky='NW', padx=data.padx_default, pady=data.pady_default)
             x.bind('<KeyRelease>', self._getMasterFilename)
         
          # Key Bindings
@@ -756,8 +740,17 @@ class GUI():
             self.targetLocation = ('{}{}{} {}{}{}'.format(self.country.get(), slash, self.town.get(), self.venue.get(), slash, year))
         else:
             self.targetLocation = ''
-        self.scanOutputLocation.set(self.libraryLocation + self.targetLocation + slash)
+        self.scanOutputLocation = self.libraryLocation + self.targetLocation
+        if self.targetSubdirectory.get():
+            self.scanOutputLocation += slash + self.targetSubdirectory.get()
+        self._setOutputLocationDisplay()
  
+    def _setOutputLocationDisplay(self):
+        displayLocation = self.scanOutputLocation
+        while len(displayLocation) > 90:
+            displayLocation = '...{}{}'.format(slash, displayLocation.split(slash, 2)[2])
+        self.scanOutputLocationDisplay.set(displayLocation)
+        
     # Method to disable/enable buttons/menu items based on selected files
     def _buttonStatus(self, inputStatus=None, outputStatus=None):
         if inputStatus != None:
@@ -781,30 +774,14 @@ class GUI():
                 self.window.unbind_all('<Command-Return>')
                 self.editMenu.entryconfig('Clear Files', state='disabled')
                 self.fileMenu.entryconfig('Create File', state='disabled')
-
-    # Method when focused into Subdirectory box
-    def _subdirectoryFocusIn(self, event=None):
-        if self.subdirectory == False:
-            self.targetSubdirectoryEntry.delete(0, tk.END)
-            self.guiStyle.configure('Subdirectory.TEntry', foreground=self.sdFocusColor)
-     
-    # Method when focused out from Subdirectory box
-    def _subdirectoryFocusOut(self, event=None):
-        if self.targetSubdirectory.get() == '':
-            self.subdirectory = False
-            self.targetSubdirectoryEntry.delete(0, tk.END)
-            self.targetSubdirectoryEntry.insert(0, 'Subdirectory')
-            self.guiStyle.configure('Subdirectory.TEntry', foreground=self.sdNoFocusColor)
-        else:
-            self.subdirectory = True
-            self.guiStyle.configure('Subdirectory.TEntry', foreground=self.sdFocusColor)
      
     # Method to change destination to custom destination    
     def _customDestination(self, event=None):
         customLocation = tkfiledialog.askdirectory(parent=self.masterFrame, title='Select Destination Folder')
         if customLocation != '':
             self.libraryLocation = customLocation
-            self.scanOutputLocation.set(self.libraryLocation)
+            self.scanOutputLocation = self.libraryLocation
+            self._setOutputLocationDisplay()
             self.defaultOutputLocation.set(0)
             self._updateSubdirectory()
  
@@ -839,16 +816,14 @@ class GUI():
         self.defaultMasterFilename.set(1)
         self._getMasterFilename()
             
-    # Method to update subdirectory name
+    # Method to update subdirectory name when standard destination called
     def _updateSubdirectory(self, event=None):
         if self.defaultOutputLocation.get() == 1:
             self.targetSubdirectory.set(self.io.get())
             self.subdirectory = True
-            self._subdirectoryFocusOut()
         else:
             self.targetSubdirectory.set('')
             self.subdirectory = False
-            self._subdirectoryFocusOut()
         self._getMasterFilename()
 
     # Method to open file dialogue and allow selection of files
@@ -919,14 +894,10 @@ class GUI():
         else:
             delSourceConfirmed = False
          
-        # Determine full location to output
-        if self.targetSubdirectory.get() != '':
-            self.fullLocation = '{}{}{}'.format(self.scanOutputLocation.get(), self.targetSubdirectory.get(), slash)
-         
          # Add all files into outputFile list if within limits
         outputFile = []
         filesWritten = 0
-        statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}\n\n'.format(self.fullLocation)
+        statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}{}\n\n'.format(self.scanOutputLocation, slash)
         for file in self.files:
             for freq, value in file.frequencies:
                 if freq >= settings.lowFreqLimit and (settings.highFreqLimit == 0 or freq <= settings.highFreqLimit):
@@ -944,7 +915,7 @@ class GUI():
         # Write original files with new filenames
         if self._createDirectory():
             for file in self.files:
-                writtenFilename = self._writeFile(self.fullLocation, file.newFilename, file.frequencies)
+                writtenFilename = self._writeFile(self.scanOutputLocation, file.newFilename, file.frequencies)
                 if not writtenFilename:
                     return False
                 else:
@@ -952,7 +923,7 @@ class GUI():
                     statement += '{}\n'.format(writtenFilename)
         
             # Write master file
-            writtenFilename = self._writeFile(self.fullLocation, self.scanMasterFilename.get(), outputFile)
+            writtenFilename = self._writeFile(self.scanOutputLocation, self.scanMasterFilename.get(), outputFile)
             if not writtenFilename:
                 return False
             else:
@@ -980,13 +951,13 @@ class GUI():
  
      # Method to write file to disk
     def _writeFile(self, dir, filename, array):
-        target = dir + filename
+        target = dir + slash + filename
         file, ext = os.path.splitext(filename)
         duplicateCounter = 0
         while os.path.isfile(target):
             duplicateCounter += 1
             filename = '{}-{}{}'.format(file, duplicateCounter, ext)
-            target = dir + filename
+            target = dir + slash + filename
         try:
             with open(target, 'w') as fp:
                 for freq, value in array:
@@ -1000,10 +971,10 @@ class GUI():
     def _createDirectory(self):
         if self.defaultOutputLocation.get() == 1 or self.targetSubdirectory != '':
             try:
-                os.makedirs(self.fullLocation)
+                os.makedirs('{}{}'.format(self.scanOutputLocation, slash))
                 return True
             except OSError:
-                tkmessagebox.showwarning('Directory already exists', '{} already exists. Please enter different sub-directory data.'.format(self.fullLocation))
+                tkmessagebox.showwarning('Directory already exists', '{}{} already exists. Please enter different sub-directory data.'.format(self.scanOutputLocation, slash))
                 return False
         else:
             return True
@@ -1090,7 +1061,7 @@ class GUI():
     def _quit(self, event=None):
         self.window.quit()
         self.window.destroy()
-        exit()
+        sys.exit()
 
     # Method to display about information
     def _about(self):
@@ -1107,18 +1078,14 @@ class GUI():
             self.settings = SettingsWindow()
             self.settings.settingsWindow.mainloop()
             self.settingsWindowOpen = False
+            importlib.reload(settings)
+            try:
+                settings.settingsLength
+                settingsExists = True
             
-            # If opened for first time, import settings
-            if settingsExists:
-                importlib.reload(settings)
-            else:
-                try:
-                    import settings
-                    settingsExists = True
-                
-                # Quit if cancelled
-                except ImportError:
-                    self._quit()
+            # Quit if cancelled
+            except AttributeError:
+                self._quit()
             self._refresh()
 
 ################################################################################

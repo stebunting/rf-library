@@ -106,14 +106,15 @@ window                               Tk
 ------ ioBox                         Combobox     Inside / Outside Dropdown Box
 ---- outputFrame                     Frame        Output file data frame
 ------ directoryFrame                Frame        
+-------- targetDirectory             Label        Target directory
 -------- targetSubdirectoryEntry     Entry        Subdirectory Entry Box
------- customOutputFrame             Frame        Frame to hold custom output buttons
--------- customOutputButton          Button       Button to select custom output location
--------- defaultOutputCheck          Radiobutton  Button to show/select custom/standard output location
 ------ scanMasterFilenameEntry       Entry        Output filename Entry Box
------- defaultMasterFilenameCheck    Button       Button to select custom master filename
+------ defaultOutputCheck            Radiobutton  Button to show/select custom/standard output location
+------ defaultMasterFilenameCheck    Radiobutton  Button to select custom master filename
 ------ deleteSourceFilesCheck        Checkbutton  Button to enable deletion of input files
------- createFileButton              Button       Button to create output file
+------ outputButtons
+-------- createFileButton            Button       Button to create output file
+-------- customOutputButton          Button       Button to select custom output location
 -- menuBar                           Menu         Menu bar
 ---- fileMenu                        Menu         File menu
 ---- helpMenu                        Menu         Help menu
