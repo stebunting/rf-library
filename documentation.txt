@@ -4,17 +4,17 @@
 
 #### VARIABLES ####
 
-settings.forename					User's forename
-settings.surname					User's surname
-settings.defaultSourceLocation		First place to look for scans
-settings.defaultLibraryLocation		User defined location to top of library without trailing slash
-settings.lowfreqlimit				Low frequency limit for output
-settings.highfreqlimit				High frequency limit for output
-settings.settingslength				Length of user settings in settings.py
-settings.defaultVenue				Continuity, last venue used
-settings.defaultTown				Continuity, last town used
-settings.defaultCountry				Continuity, last country used
-settings.defaultDelete				Continuity, deleted input files last time or not
+settings.forename                    User's forename
+settings.surname                     User's surname
+settings.defaultSourceLocation       First place to look for scans
+settings.defaultLibraryLocation      User defined location to top of library without trailing slash
+settings.lowfreqlimit                Low frequency limit for output
+settings.highfreqlimit               High frequency limit for output
+settings.settingslength              Length of user settings in settings.py
+settings.defaultVenue                Continuity, last venue used
+settings.defaultTown                 Continuity, last town used
+settings.defaultCountry              Continuity, last country used
+settings.defaultDelete               Continuity, deleted input files last time or not
 
 ################################################################################
 ##########                       File Object                          ##########
@@ -23,19 +23,19 @@ settings.defaultDelete				Continuity, deleted input files last time or not
 
 #### VARIABLES ####
 
-fullfilename				Full path and filename
-filename					Filename
-path						Path to file (no trailing slash)
-creationDate				Date file was created (maybe...), datetime object
-model						Scanner model
-startFrequency				Start frequency
-stopFrequency				Stop frequency
-startTVChannel				Start TV channel
-stopTVChannel				Stop TV channel
-dataPoints					Number of data points
-resolution					Average resolution
-newFilename					New filename (based on TV channel)
-io                          Guess whether scan is inside (>0) or outside (<0)
+fullfilename                         Full path and filename
+filename                             Filename
+path                                 Path to file (no trailing slash)
+creationDate                         Date file was created (maybe...), datetime object
+model                                Scanner model
+startFrequency                       Start frequency
+stopFrequency                        Stop frequency
+startTVChannel                       Start TV channel
+stopTVChannel                        Stop TV channel
+dataPoints                           Number of data points
+resolution                           Average resolution
+newFilename                          New filename (based on TV channel)
+io                                   Guess whether scan is inside (>0) or outside (<0)
 
 ################################################################################
 ##########                        GUI Object                          ##########
@@ -43,24 +43,24 @@ io                          Guess whether scan is inside (>0) or outside (<0)
 
 #### VARIABLES ####
 
-files[]						Array to hold all input files
-fileListboxSelection		Index of current selected input file
-subdirectory				???
-settingsWindowOpen			True if settings open, false if not
-ioGuess                     Positive int if inside, negative int if outside
-ioFixed                     Bool to say whether user has changed io box
-scanDateTimestamp			Timestamp of current scan date
-libraryLocation				Location to top of library with trailing slash
-							/Users/Ste/Documents/Audio/RF/Scans/
-targetLocation				Location to file from top of library without trailing slash
-							Sweden/Stockholm Globen/2017/Inside
-settingsWindowOpen			True if settings open, false if not
+files[]                              Array to hold all input files
+fileListboxSelection                 Index of current selected input file
+subdirectory                         ???
+settingsWindowOpen                   True if settings open, false if not
+ioGuess                              Positive int if inside, negative int if outside
+ioFixed                              Bool to say whether user has changed io box
+scanDateTimestamp                    Timestamp of current scan date
+libraryLocation                      Location to top of library with trailing slash
+                                     /Users/Ste/Documents/Audio/RF/Scans/
+targetLocation                       Location to file from top of library without trailing slash
+                                     Sweden/Stockholm Globen/2017/Inside
+settingsWindowOpen                   True if settings open, false if not
 
 
-createStyles()					Method		Define styles
-createFrames()					Method		Define main frames
-createMenu()					Method		Create menu
-createWidgets()					Method		Create widgets
+createStyles()                       Method       Define styles
+createFrames()                       Method       Define main frames
+createMenu()                         Method       Create menu
+createWidgets()                      Method       Create widgets
 
 
 ################################################################################
@@ -69,64 +69,64 @@ createWidgets()					Method		Create widgets
 
 #### VARIABLES ####
 
-venue							StringVar	Scan Venue Variable
-town							StringVar	Scan Town Variable
-country							StringVar	Scan Country Variable
-scanDate						StringVar	Scan Date Variable
-io								StringVar	Scan Inside/Outside Variable
-scanOutputLocation				StringVar	Full Location to file with trailing slash
-targetSubdirectory				StringVar	Subdirectory Variable
-defaultOutputLocation			BooleanVar	Custom (0)/Standard (1) Output Directory
-scanMasterFilename				StringVar	Output filename Variable
-deleteSourceFiles				BooleanVar	(1) to delete input files on creation
+venue                                StringVar    Scan Venue Variable
+town                                 StringVar    Scan Town Variable
+country                              StringVar    Scan Country Variable
+scanDate                             StringVar    Scan Date Variable
+io                                   StringVar    Scan Inside/Outside Variable
+scanOutputLocation                   StringVar    Full Location to file with trailing slash
+targetSubdirectory                   StringVar    Subdirectory Variable
+defaultOutputLocation                BooleanVar   Custom (0)/Standard (1) Output Directory
+scanMasterFilename                   StringVar    Output filename Variable
+deleteSourceFiles                    BooleanVar   (1) to delete input files on creation
 
 
 #### WIDGETS ####
 
-window							Tk
--- masterFrame					Frame
----- inputFrame					Frame		Input data frame
------- fileListbox				Listbox		List of input files
------- dataListbox				Listbox		Information about currently selected file
------- fileListEditFrame		Frame		Frame to store input buttons (add, remove, clear, set date)
--------- addFilesButton			Button		Button to add files to input list
--------- removeFileButton		Button		Button to remove current selected file
--------- clearFilesButton		Button		Button to clear all input files
--------- useDateButton			Button		Button to set date to current file
------- numFiles					StringVar	Number of files in input list
------- fileStatus				Label		Number of files added
----- previewFrame				Frame		Input chart frame
----- infoFrame					Frame		Venue information frame
------- venueEntry				Entry		Venue Entry Box
------- townEntry				Entry		Town Entry Box
------- countryBox				Combobox	Country Dropdown Box
------- dateEntry				Entry		Date Entry Box
------- ioBox					Combobox	Inside / Outside Dropdown Box
----- outputFrame				Frame		Output file data frame
------- directoryFrame			Frame		
--------- targetSubdirectoryEntryEntry		Subdirectory Entry Box
------- customOutputFrame		Frame		Frame to hold custom output buttons
--------- customOutputButton		Button		Button to select custom output location
--------- defaultOutputCheck		Radiobutton	Button to show/select custom/standard output location
------- scanMasterFilenameEntry	Entry		Output filename Entry Box
------- deleteSourceFilesCheck	Checkbutton	Button to enable deletion of input files
------- outputEditFrame			Frame		Frame to hold create button
--------- createFileButton		Button		Button to create output file
--- menuBar						Menu		Menu bar
----- fileMenu					Menu		File menu
----- helpMenu					Menu		Help menu
+window                               Tk
+-- masterFrame                       Frame
+---- inputFrame                      Frame        Input data frame
+------ fileListbox                   Listbox      List of input files
+------ dataListbox                   Listbox      Information about currently selected file
+------ fileListEditFrame             Frame        Frame to store input buttons (add, remove, clear, set date)
+-------- addFilesButton              Button       Button to add files to input list
+-------- removeFileButton            Button       Button to remove current selected file
+-------- clearFilesButton            Button       Button to clear all input files
+-------- useDateButton               Button       Button to set date to current file
+------ numFiles                      StringVar    Number of files in input list
+------ fileStatus                    Label        Number of files added
+---- previewFrame                    Frame        Input chart frame
+---- infoFrame                       Frame        Venue information frame
+------ venueEntry                    Entry        Venue Entry Box
+------ townEntry                     Entry        Town Entry Box
+------ countryBox                    Combobox     Country Dropdown Box
+------ dateEntry                     Entry        Date Entry Box
+------ ioBox                         Combobox     Inside / Outside Dropdown Box
+---- outputFrame                     Frame        Output file data frame
+------ directoryFrame                Frame        
+-------- targetSubdirectoryEntry     Entry        Subdirectory Entry Box
+------ customOutputFrame             Frame        Frame to hold custom output buttons
+-------- customOutputButton          Button       Button to select custom output location
+-------- defaultOutputCheck          Radiobutton  Button to show/select custom/standard output location
+------ scanMasterFilenameEntry       Entry        Output filename Entry Box
+------ deleteSourceFilesCheck        Checkbutton  Button to enable deletion of input files
+------ outputEditFrame               Frame        Frame to hold create button
+-------- createFileButton            Button       Button to create output file
+-- menuBar                           Menu         Menu bar
+---- fileMenu                        Menu         File menu
+---- helpMenu                        Menu         Help menu
 
 
 #### BINDINGS ####
 
-<Up>						Move up fileListbox
-<Down>						Move down fileListbox
-<Escape>					Deselect fileListbox
-<BackSpace>					Remove current fileListboxSelection
-<Return>					Create file
-<KeyRelease>				Update master filename
-<<ListboxSelect>>			Update dataFilebox
-<<ComboboxSelected>>		Refresh
+<Up>                        Move up fileListbox
+<Down>                      Move down fileListbox
+<Escape>                    Deselect fileListbox
+<BackSpace>                 Remove current fileListboxSelection
+<Return>                    Create file
+<KeyRelease>                Update master filename
+<<ListboxSelect>>           Update dataFilebox
+<<ComboboxSelected>>        Refresh
 
 ################################################################################
 ##########                      Settings Object                       ##########
@@ -134,34 +134,34 @@ window							Tk
 
 #### VARIABLES ####
  
-sourceFolder					StringVar	Default Source Folder Variable
-defaultDateFormat				StringVar	Date Format Variable
-lowFreqLimit					IntVar		Output Low Frequency Limit Variable
-highFreqLimit					IntVar		Output High Frequency Limit Variable
-forename						StringVar	Forename Variable
-surname							StringVar	Surname Variable
+sourceFolder                         StringVar    Default Source Folder Variable
+defaultDateFormat                    StringVar    Date Format Variable
+lowFreqLimit                         IntVar       Output Low Frequency Limit Variable
+highFreqLimit                        IntVar       Output High Frequency Limit Variable
+forename                             StringVar    Forename Variable
+surname                              StringVar    Surname Variable
 
 
 #### WIDGETS ####
  
-settingsWindow					Toplevel
--- settingsMasterFrame			Frame
----- sourcePreferences			Frame		Frame to store source preference widgets
------- sourceFolderLabel		Label		Default Source Folder Label
------- changeBaseFolderButton	Button		Button to choose default source folder
----- outputPreferences			Frame		Frame to store output preference widgets
------- dateFormatBox			Combobox	Date Format dropdown menu
------- lowFreqLimitEntry		Entry		Low Frequency Limit Entry Box
------- highFreqLimitEntry		Entry		High Frequency Limit Entry Box
----- personalData				Frame		Frame to store personal data widgets
------- forenameEntry			Entry		Forename Entry Box
------- surnameEntry				Entry		Surname Entry Box
----- settingsButtonsFrame		Frame		Frame to store settings buttons
------- saveSettingsButton		Button		Button to save settings and exit back to program
------- cancelSettingsButton		Button		Button to exit back to program without saving changes
+settingsWindow                       Toplevel
+-- settingsMasterFrame               Frame
+---- sourcePreferences               Frame        Frame to store source preference widgets
+------ sourceFolderLabel             Label        Default Source Folder Label
+------ changeBaseFolderButton        Button       Button to choose default source folder
+---- outputPreferences               Frame        Frame to store output preference widgets
+------ dateFormatBox                 Combobox     Date Format dropdown menu
+------ lowFreqLimitEntry             Entry        Low Frequency Limit Entry Box
+------ highFreqLimitEntry            Entry        High Frequency Limit Entry Box
+---- personalData                    Frame        Frame to store personal data widgets
+------ forenameEntry                 Entry        Forename Entry Box
+------ surnameEntry                  Entry        Surname Entry Box
+---- settingsButtonsFrame            Frame        Frame to store settings buttons
+------ saveSettingsButton            Button       Button to save settings and exit back to program
+------ cancelSettingsButton          Button       Button to exit back to program without saving changes
 
 
 #### BINDINGS ####
  
-<Return>					Save Settings
-<Escape>					Cancel without saving
+<Return>                    Save Settings
+<Escape>                    Cancel without saving
