@@ -42,6 +42,13 @@ try:
 except AttributeError:
     settingsExists = False
     dateFormat = data.dateFormats.get('yyyy-mm-dd')
+
+# Helper function to format directory
+def dir_format(display_location, max_length):
+    display_location = display_location.replace(os.path.expanduser("~"), '~', 1)
+    while len(display_location) > max_length:
+        display_location = '...{}{}'.format(slash, display_location.split(slash, 2)[2])
+    return display_location
     
 ################################################################################
 ##########                        FILE OBJECT                         ##########
@@ -215,6 +222,8 @@ class SettingsWindow():
         self.settingsWindow.lift()
         
         self.settingsWindow.title('Settings')
+        self.settingsWindow.resizable(width=False, height=False)
+        self.settingsWindow.geometry("509x516")
         
         self._createSettingsFrames()
         self._createSettingsWidgets()
@@ -244,8 +253,8 @@ class SettingsWindow():
     def _createSettingsWidgets(self):
     
         # Initialise Tk variables
-        self.sourceFolder = tk.StringVar()
-        self.scansFolder = tk.StringVar()
+        self.sourceFolderDisplay = tk.StringVar()
+        self.scansFolderDisplay = tk.StringVar()
         self.lowFreqLimit = tk.IntVar()
         self.highFreqLimit = tk.IntVar()
         self.defaultDateFormat = tk.StringVar()
@@ -254,19 +263,21 @@ class SettingsWindow():
 
         # Set Defaults        
         if settingsExists:
-            self.sourceFolder.set(settings.defaultSourceLocation)
-            self.scansFolder.set(settings.defaultLibraryLocation)
+            self.sourceFolder = settings.defaultSourceLocation
+            self.scansFolder = settings.defaultLibraryLocation
             vars = [settings.lowFreqLimit, settings.highFreqLimit,
                     settings.defaultDateFormat, settings.forename,
                     settings.surname]
         else:
             if platform.system() == 'Darwin':
-                self.sourceFolder.set(os.path.expanduser('~/Documents'))
-                self.scansFolder.set(os.path.expanduser('~/Documents/Scans'))
+                self.sourceFolder = os.path.expanduser('~/Documents')
+                self.scansFolder = os.path.expanduser('~/Documents/Scans')
             elif platform.system() == 'Windows':
-                self.sourceFolder.set(os.path.expanduser('~/Documents'))
-                self.scansFolder.set(os.path.expanduser('~/Documents/Scans'))
+                self.sourceFolder = os.path.expanduser('~/Documents')
+                self.scansFolder = os.path.expanduser('~/Documents/Scans')
             vars = [0, 0, 'yyyy-mm-dd', '', '']
+        self.sourceFolderDisplay.set(dir_format(self.sourceFolder, 50))
+        self.scansFolderDisplay.set(dir_format(self.scansFolder, 50))
         
         fields = [self.lowFreqLimit, self.highFreqLimit, self.defaultDateFormat,
                   self.forename, self.surname]
@@ -274,46 +285,46 @@ class SettingsWindow():
             field.set(var)
         
         # Source Folder
-        ttk.Label(self.sourcePreferences, text='Default Source Folder').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.sourceFolderLabel = ttk.Label(self.sourcePreferences, textvariable=self.sourceFolder)
+        ttk.Label(self.sourcePreferences, text='Default Source Folder', width='15').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.sourceFolderLabel = ttk.Label(self.sourcePreferences, textvariable=self.sourceFolderDisplay, width='36')
         self.sourceFolderLabel.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.changeSourceFolderButton = ttk.Button(self.sourcePreferences, text='Change Folder', command=self._changeSourceFolder)
         self.changeSourceFolderButton.grid(column=1, row=1)
         
         # Scans Folder
-        ttk.Label(self.outputPreferences, text='Scans Folder').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.scansFolderLabel = ttk.Label(self.outputPreferences, textvariable=self.scansFolder)
+        ttk.Label(self.outputPreferences, text='Scans Folder', width='15').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.scansFolderLabel = ttk.Label(self.outputPreferences, textvariable=self.scansFolderDisplay, width='36')
         self.scansFolderLabel.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.changeBaseFolderButton = ttk.Button(self.outputPreferences, text='Change Folder', command=self._changeBaseFolder)
         self.changeBaseFolderButton.grid(column=1, row=1)
         
         # Directory Structure
-        ttk.Label(self.outputPreferences, text='Directory Structure').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Directory Structure', width='15').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         ttk.Label(self.outputPreferences, text='/country/town venue/year/subdirectory').grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Date Format
-        ttk.Label(self.outputPreferences, text='Date Format').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Date Format', width='15').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.dateFormatBox = ttk.Combobox(self.outputPreferences, textvariable=self.defaultDateFormat)
         self.dateFormatBox['values'] = [key for key in data.dateFormats]
         self.dateFormatBox.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Low Frequency Limit
-        ttk.Label(self.outputPreferences, text='Low Frequency Limit').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Low Frequency Limit', width='15').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.lowFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.lowFreqLimit)
         self.lowFreqLimitEntry.grid(column=1, row=4)
         
         # High Frequency Limit
-        ttk.Label(self.outputPreferences, text='High Frequency Limit').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='High Frequency Limit', width='15').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.highFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.highFreqLimit)
         self.highFreqLimitEntry.grid(column=1, row=5)
         
         # Forename Entry
-        ttk.Label(self.personalData, text='Forename').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.personalData, text='Forename', width='15').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.forenameEntry = ttk.Entry(self.personalData, textvariable=self.forename)
         self.forenameEntry.grid(column=1, row=0)
         
         # Surname Entry
-        ttk.Label(self.personalData, text='Surname').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.personalData, text='Surname', width='15').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.surnameEntry = ttk.Entry(self.personalData, textvariable=self.surname)
         self.surnameEntry.grid(column=1, row=1)
         
@@ -333,15 +344,17 @@ class SettingsWindow():
     
     # Method to select default source folder
     def _changeSourceFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=self.sourceFolder.get())
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=self.sourceFolder)
         if dir != '':
-            self.sourceFolder.set(dir)
+            self.sourceFolder = dir
+            self.sourceFolderDisplay.set(dir_format(self.sourceFolder, 50))
             
     # Method to select scans base folder
     def _changeBaseFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=self.scansFolder.get())
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=self.scansFolder)
         if dir != '':
-            self.scansFolder.set(dir)
+            self.scansFolder = dir
+            self.scansFolderDisplay.set(dir_format(self.scansFolder, 50))
     
     # Method to save settings and close window    
     def _saveSettings(self, event=None):
@@ -366,8 +379,9 @@ defaultLibraryLocation = '{}'
 defaultDateFormat = '{}'
 lowFreqLimit = {}
 highFreqLimit = {}
-settingsLength = """.format(self.forename.get(), self.surname.get(), self.sourceFolder.get(),
-            self.scansFolder.get(), self.defaultDateFormat.get(), int(self.lowFreqLimit.get()), int(self.highFreqLimit.get()))
+settingsLength = """.format(self.forename.get(), self.surname.get(),
+            self.sourceFolder, self.scansFolder, self.defaultDateFormat.get(),
+            int(self.lowFreqLimit.get()), int(self.highFreqLimit.get()))
         defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{0}\'\ndefaultTown = \'{1}\'\ndefaultCountry = \'{2}\'\ndefaultDelete = {3}'.format(*continuityData)
         open('{}{}settings.py'.format(scriptpath, slash), 'w').write('{}{}{}'.format(settingsToSave, str(len(settingsToSave)), defaults))
         self._closeSettings()
@@ -741,13 +755,7 @@ class GUI():
         self.scanOutputLocation = self.libraryLocation + self.targetLocation
         if self.targetSubdirectory.get():
             self.scanOutputLocation += slash + self.targetSubdirectory.get()
-        self._setOutputLocationDisplay()
- 
-    def _setOutputLocationDisplay(self):
-        displayLocation = self.scanOutputLocation
-        while len(displayLocation) > 90:
-            displayLocation = '...{}{}'.format(slash, displayLocation.split(slash, 2)[2])
-        self.scanOutputLocationDisplay.set(displayLocation)
+        self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))
         
     # Method to disable/enable buttons/menu items based on selected files
     def _buttonStatus(self, inputStatus=None, outputStatus=None):
@@ -779,7 +787,7 @@ class GUI():
         if customLocation != '':
             self.libraryLocation = customLocation
             self.scanOutputLocation = self.libraryLocation
-            self._setOutputLocationDisplay()
+            self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))
             self.defaultOutputLocation.set(0)
             self._updateSubdirectory()
  
