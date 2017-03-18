@@ -223,7 +223,7 @@ class SettingsWindow():
         
         self.settingsWindow.title('Settings')
         self.settingsWindow.resizable(width=False, height=False)
-        self.settingsWindow.geometry("509x516")
+        self.settingsWindow.geometry("509x544")
         
         self._createSettingsFrames()
         self._createSettingsWidgets()
@@ -255,6 +255,8 @@ class SettingsWindow():
         # Initialise Tk variables
         self.sourceFolderDisplay = tk.StringVar()
         self.scansFolderDisplay = tk.StringVar()
+        self.dirStructure = tk.StringVar()
+        self.fileStructure = tk.StringVar()
         self.lowFreqLimit = tk.IntVar()
         self.highFreqLimit = tk.IntVar()
         self.defaultDateFormat = tk.StringVar()
@@ -265,6 +267,8 @@ class SettingsWindow():
         if settingsExists:
             self.sourceFolder = settings.defaultSourceLocation
             self.scansFolder = settings.defaultLibraryLocation
+            self.dirStructure.set(settings.dirStructure)
+            self.fileStructure.set(settings.fileStructure)
             vars = [settings.lowFreqLimit, settings.highFreqLimit,
                     settings.defaultDateFormat, settings.forename,
                     settings.surname]
@@ -275,6 +279,11 @@ class SettingsWindow():
             elif platform.system() == 'Windows':
                 self.sourceFolder = os.path.expanduser('~/Documents')
                 self.scansFolder = os.path.expanduser('~/Documents/Scans')
+            else:
+                self.sourceFolder = os.path.expanduser('/')
+                self.scansFolder = os.path.expanduser('/')
+            self.dirStructure.set('%c{}%t %v{}%y'.format(slash, slash, slash, slash))
+            self.fileStructure.set('%t %v-%c %y-%d-%m %i %f'.format(slash, slash, slash, slash))
             vars = [0, 0, 'yyyy-mm-dd', '', '']
         self.sourceFolderDisplay.set(dir_format(self.sourceFolder, 50))
         self.scansFolderDisplay.set(dir_format(self.scansFolder, 50))
@@ -300,23 +309,29 @@ class SettingsWindow():
         
         # Directory Structure
         ttk.Label(self.outputPreferences, text='Directory Structure', width='15').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        ttk.Label(self.outputPreferences, text='/country/town venue/year/subdirectory').grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.dirStructureEntry = ttk.Entry(self.outputPreferences, textvariable=self.dirStructure, width='35')
+        self.dirStructureEntry.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        
+        # Filename Structure
+        ttk.Label(self.outputPreferences, text='Filename Structure', width='15').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.fileStructureEntry = ttk.Entry(self.outputPreferences, textvariable=self.fileStructure, width='35')
+        self.fileStructureEntry.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Date Format
         ttk.Label(self.outputPreferences, text='Date Format', width='15').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.dateFormatBox = ttk.Combobox(self.outputPreferences, textvariable=self.defaultDateFormat)
         self.dateFormatBox['values'] = [key for key in data.dateFormats]
-        self.dateFormatBox.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.dateFormatBox.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Low Frequency Limit
         ttk.Label(self.outputPreferences, text='Low Frequency Limit', width='15').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.lowFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.lowFreqLimit)
-        self.lowFreqLimitEntry.grid(column=1, row=4)
+        self.lowFreqLimitEntry.grid(column=1, row=5)
         
         # High Frequency Limit
         ttk.Label(self.outputPreferences, text='High Frequency Limit', width='15').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.highFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.highFreqLimit)
-        self.highFreqLimitEntry.grid(column=1, row=5)
+        self.highFreqLimitEntry.grid(column=1, row=6)
         
         # Forename Entry
         ttk.Label(self.personalData, text='Forename', width='15').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
@@ -376,12 +391,14 @@ forename = '{}'
 surname = '{}'
 defaultSourceLocation = '{}'
 defaultLibraryLocation = '{}'
+dirStructure = '{}'
+fileStructure = '{}'
 defaultDateFormat = '{}'
 lowFreqLimit = {}
 highFreqLimit = {}
-settingsLength = """.format(self.forename.get(), self.surname.get(),
-            self.sourceFolder, self.scansFolder, self.defaultDateFormat.get(),
-            int(self.lowFreqLimit.get()), int(self.highFreqLimit.get()))
+settingsLength = """.format(self.forename.get(), self.surname.get(), self.sourceFolder,
+            self.scansFolder, self.dirStructure.get().strip('/'), self.fileStructure.get(),
+            self.defaultDateFormat.get(), int(self.lowFreqLimit.get()), int(self.highFreqLimit.get()))
         defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{0}\'\ndefaultTown = \'{1}\'\ndefaultCountry = \'{2}\'\ndefaultDelete = {3}'.format(*continuityData)
         open('{}{}settings.py'.format(scriptpath, slash), 'w').write('{}{}{}'.format(settingsToSave, str(len(settingsToSave)), defaults))
         self._closeSettings()
@@ -413,6 +430,7 @@ class GUI():
         self.ioGuess = 0
         self.ioFixed = False
         self.customMasterFilename = False
+        self.customSubdirectory = False
         
         # Create instance
         self.window = tk.Tk()
@@ -581,6 +599,7 @@ class GUI():
         ttk.Label(self.infoFrame, text='Scan Date', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.dateEntry = ttk.Entry(self.infoFrame, textvariable=self.scanDate, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.dateEntry.grid(column=1, row=3)
+        self.dateEntry.config(state='readonly')
      
         # Inside / Outside
         ttk.Label(self.infoFrame, text='Inside/Outside', width=12).grid(column=0, row=4, sticky='NW', padx=data.padx_default, pady=data.pady_default)
@@ -600,6 +619,7 @@ class GUI():
         ttk.Label(self.outputFrame, text='Subdirectory', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.targetSubdirectoryEntry = ttk.Entry(self.outputFrame, textvariable=self.targetSubdirectory, width=20, font='TkDefaultFont {}'.format(self.fontSize), style='Subdirectory.TEntry')
         self.targetSubdirectoryEntry.grid(column=1, row=1, sticky='W', padx=0, pady=data.pady_default)
+        self.targetSubdirectoryEntry.bind('<KeyRelease>', self._customSubDirectory)
      
         # Output Master Filename
         ttk.Label(self.outputFrame, text='Master Filename', width=12).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
@@ -628,7 +648,7 @@ class GUI():
         self.customOutputButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
      
         # Add styling to all entry boxes
-        for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox, self.targetSubdirectoryEntry]:
+        for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox]:
             x.grid(sticky='NW', padx=data.padx_default, pady=data.pady_default)
             x.bind('<KeyRelease>', self._getMasterFilename)
         
@@ -720,41 +740,39 @@ class GUI():
         else:
             self.scanDateTimestamp = min([file.creationDate for file in self.files])
         self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
-        
+    
+    # Method to convert user input directory structure into path
+    def parse_structure(self, s):
+        for old, new in [('%c', self.country.get()),
+                         ('%t', self.town.get()),
+                         ('%v', self.venue.get()),
+                         ('%y', str(self.scanDateTimestamp.year)),
+                         ('%i', self.io.get()),
+                         ('%s', self.targetSubdirectory.get()),
+                         ('%f', settings.forename),
+                         ('%n', settings.surname),
+                         ('%m', '{:02d}'.format(self.scanDateTimestamp.month)),
+                         ('%M', self.scanDateTimestamp.strftime("%B")),
+                         ('%d', '{:02d}'.format(self.scanDateTimestamp.day))]:
+            s = s.replace(old, new)
+        return s
+    
     # Method to create master filename
     def _getMasterFilename(self, event=None):
         
         # Return if user has entered a custom master filename
         if self.customMasterFilename:
             return
-            
-        # Calculate space/hyphen formatting
-        if settings.forename == '' and settings.surname == '':
-            name = ''
-        elif settings.forename == '' or settings.surname == '':
-            name = ' {}{}'.format(settings.surname, settings.forename)
-        else:
-            name = ' {}-{}'.format(settings.surname, settings.forename)
-        if self.town.get() == '' and self.venue.get() == '':
-            townspace = ''
-            hyphen = ''
-        elif self.town.get() == '' or self.venue.get() == '':
-            townspace = ''
-            hyphen = '-'
-        else:
-            townspace = ' '
-            hyphen = '-'
         
-        self.scanMasterFilename.set('{}{}{}{}{} {} {}{}.csv'.format(self.town.get(), townspace, self.venue.get(), hyphen, self.country.get(), self.scanDate.get(), self.io.get(), name))
-        year = self.scanDateTimestamp.year
+        self.scanMasterFilename.set(self.parse_structure(settings.fileStructure + '.csv'))
         if self.defaultOutputLocation.get() == 1:
             self.libraryLocation = settings.defaultLibraryLocation + slash
-            self.targetLocation = ('{}{}{} {}{}{}'.format(self.country.get(), slash, self.town.get(), self.venue.get(), slash, year))
+            self.targetLocation = self.parse_structure(settings.dirStructure + '/%s').rstrip('/')
         else:
-            self.targetLocation = ''
+            self.targetLocation = self.targetSubdirectory.get()
+            if self.targetSubdirectory.get() != '':
+                self.targetLocation = slash + self.targetLocation
         self.scanOutputLocation = self.libraryLocation + self.targetLocation
-        if self.targetSubdirectory.get():
-            self.scanOutputLocation += slash + self.targetSubdirectory.get()
         self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))
         
     # Method to disable/enable buttons/menu items based on selected files
@@ -809,7 +827,13 @@ class GUI():
     def _ioBoxEdit(self, event=None):
         self.ioFixed = True
         self.ioBox.selection_clear()
-        self._updateSubdirectory()
+        if not self.customSubdirectory:
+            self._updateSubdirectory()
+    
+    # Method called after subdirectory edited
+    def _customSubDirectory(self, event=None):
+        self.customSubdirectory = True
+        self._getMasterFilename()
     
     # Method to declare user has entered a custom Master Filename    
     def _customMasterFilename(self, event=None):
@@ -975,16 +999,12 @@ class GUI():
      
     # Method to create directory structure
     def _createDirectory(self):
-        if self.defaultOutputLocation.get() == 1 or self.targetSubdirectory != '':
-            try:
-                os.makedirs('{}{}'.format(self.scanOutputLocation, slash))
-                return True
-            except OSError:
-                tkmessagebox.showwarning('Directory already exists', '{}{} already exists. Please enter different sub-directory data.'.format(self.scanOutputLocation, slash))
-                return False
-        else:
+        try:
+            os.makedirs('{}{}'.format(self.scanOutputLocation, slash))
             return True
-     
+        except OSError:
+            return tkmessagebox.askyesno('Directory already exists', '{}{} already exists. Are you sure?.'.format(self.scanOutputLocation, slash))
+            
     # Method to remove current preview
     def _clearPreview(self):
     

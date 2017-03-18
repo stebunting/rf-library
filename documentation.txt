@@ -50,6 +50,7 @@ settingsWindowOpen                   True if settings open, false if not
 ioGuess                              Positive int if inside, negative int if outside
 ioFixed                              Bool to say whether user has changed io box
 customMasterFilename                 Bool to say whether user has entered custom master filename
+customSubdirectory                   Bool to say whether user has entered custom subdirectory
 scanDateTimestamp                    Timestamp of current scan date
 libraryLocation                      Location to top of library with trailing slash
                                      /Users/Ste/Documents/Audio/RF/Scans/
@@ -140,6 +141,7 @@ sourceFolder                                      Default Source Folder Variable
 sourceFolderDisplay                  StringVar    Default Source Folder Variable (display only)
 scansFolder                                       Default Scans Folder Variable
 scansFolderDisplay                   StringVar    Default Scans Location Variable (display only)
+dirStructure                         StringVar    Directory Structure
 defaultDateFormat                    StringVar    Date Format Variable
 lowFreqLimit                         IntVar       Output Low Frequency Limit Variable
 highFreqLimit                        IntVar       Output High Frequency Limit Variable
@@ -154,6 +156,8 @@ settingsWindow                       Toplevel
 ---- sourcePreferences               Frame        Frame to store source preference widgets
 ------ sourceFolderLabel             Label        Default Source Folder Label
 ------ changeBaseFolderButton        Button       Button to choose default source folder
+------ dirStructureEntry             Entry        Directory Structure Entry Box
+------ fileStructureEntry            Entry        File Structure Entry Box
 ---- outputPreferences               Frame        Frame to store output preference widgets
 ------ dateFormatBox                 Combobox     Date Format dropdown menu
 ------ lowFreqLimitEntry             Entry        Low Frequency Limit Entry Box
