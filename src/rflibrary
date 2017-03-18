@@ -579,10 +579,8 @@ class GUI():
         # Output Location
         self.targetSubdirectory.set(self.io.get())
         ttk.Label(self.outputFrame, text='Destination', width=12).grid(column=0, row=0, columnspan = 2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-        self.targetDirFrame = ttk.Frame(self.outputFrame)
-        self.targetDirFrame.grid(column=1, row=0, sticky='W')
-        self.targetDirectory = ttk.Label(self.targetDirFrame, textvariable=self.scanOutputLocationDisplay, width=77)
-        self.targetDirectory.pack()
+        self.targetDirectory = ttk.Label(self.outputFrame, textvariable=self.scanOutputLocationDisplay, width=77)
+        self.targetDirectory.grid(column=1, row=0, sticky='W')
         
         # Subdirectory
         ttk.Label(self.outputFrame, text='Subdirectory', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)

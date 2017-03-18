@@ -105,9 +105,8 @@ window                               Tk
 ------ dateEntry                     Entry        Date Entry Box
 ------ ioBox                         Combobox     Inside / Outside Dropdown Box
 ---- outputFrame                     Frame        Output file data frame
------- directoryFrame                Frame        
--------- targetDirectory             Label        Target directory
--------- targetSubdirectoryEntry     Entry        Subdirectory Entry Box
+------ targetDirectory               Label        Target directory
+------ targetSubdirectoryEntry       Entry        Subdirectory Entry Box
 ------ scanMasterFilenameEntry       Entry        Output filename Entry Box
 ------ defaultOutputCheck            Radiobutton  Button to show/select custom/standard output location
 ------ defaultMasterFilenameCheck    Radiobutton  Button to select custom master filename
