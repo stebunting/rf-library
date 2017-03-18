@@ -28,6 +28,20 @@ import settings
 # Find script path for writing to settings.py
 scriptpath = os.path.dirname(os.path.realpath(__file__))
 
+# Helper function to set dateFormat
+def set_date_format():
+    if data.dateFormats.get(settings.defaultDateFormat):
+        return data.dateFormats.get(settings.defaultDateFormat) 
+    else:
+        return data.dateFormats.get(defaultDateFormat)
+        
+# Helper function to format directory
+def dir_format(display_location, max_length):
+    display_location = display_location.replace(os.path.expanduser("~"), '~', 1)
+    while len(display_location) > max_length:
+        display_location = '...{}{}'.format(data.slash, display_location.split(data.slash, 2)[2])
+    return display_location
+
 # Load settings if it exists yet
 try:
     settings.settingsLength
@@ -36,20 +50,7 @@ try:
 except AttributeError:
     settingsExists = False
     dateFormat = data.dateFormats.get(data.defaultDateFormat)
-
-# Helper function to set dateFormat
-def set_date_format():
-    if data.dateFormats.get(settings.defaultDateFormat):
-        return data.dateFormats.get(settings.defaultDateFormat) 
-    else:
-        return data.dateFormats.get(defaultDateFormat)
     
-# Helper function to format directory
-def dir_format(display_location, max_length):
-    display_location = display_location.replace(os.path.expanduser("~"), '~', 1)
-    while len(display_location) > max_length:
-        display_location = '...{}{}'.format(data.slash, display_location.split(data.slash, 2)[2])
-    return display_location
     
 ################################################################################
 ##########                        FILE OBJECT                         ##########
