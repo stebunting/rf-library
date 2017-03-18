@@ -1,3 +1,8 @@
+import platform
+
+# Check for windows compatibility
+slash = '\\' if platform.system() == 'Windows' else '/'
+
 # Software Details
 title = "RF Library"
 version = "v0.3"
@@ -5,6 +10,11 @@ version = "v0.3"
 # GUI Constants
 padx_default = 2
 pady_default = 2
+
+# Defaults
+defaultDirStructure = '%c/%t %v/%y'.format(slash, slash)
+defaultFileStructure = '%t %v-%c %y-%d-%m %i %n-%f'
+defaultDateFormat = 'yyyy-mm-dd'
 
 # Variables
 TVChannels = {

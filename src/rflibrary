@@ -25,9 +25,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import data
 import settings
 
-# Check for windows compatibility
-slash = '\\' if platform.system() == 'Windows' else '/'
-
 # Find script path for writing to settings.py
 scriptpath = os.path.dirname(os.path.realpath(__file__))
 
@@ -35,19 +32,23 @@ scriptpath = os.path.dirname(os.path.realpath(__file__))
 try:
     settings.settingsLength
     settingsExists = True
-    if data.dateFormats.get(settings.defaultDateFormat):
-        dateFormat = data.dateFormats.get(settings.defaultDateFormat) 
-    else:
-        data.dateFormats.get('yyyy-mm-dd')
+    dateFormat = set_date_format()
 except AttributeError:
     settingsExists = False
-    dateFormat = data.dateFormats.get('yyyy-mm-dd')
+    dateFormat = data.dateFormats.get(data.defaultDateFormat)
 
+# Helper function to set dateFormat
+def set_date_format():
+    if data.dateFormats.get(settings.defaultDateFormat):
+        return data.dateFormats.get(settings.defaultDateFormat) 
+    else:
+        return data.dateFormats.get(defaultDateFormat)
+    
 # Helper function to format directory
 def dir_format(display_location, max_length):
     display_location = display_location.replace(os.path.expanduser("~"), '~', 1)
     while len(display_location) > max_length:
-        display_location = '...{}{}'.format(slash, display_location.split(slash, 2)[2])
+        display_location = '...{}{}'.format(data.slash, display_location.split(data.slash, 2)[2])
     return display_location
     
 ################################################################################
@@ -282,9 +283,9 @@ class SettingsWindow():
             else:
                 self.sourceFolder = os.path.expanduser('/')
                 self.scansFolder = os.path.expanduser('/')
-            self.dirStructure.set('%c{}%t %v{}%y'.format(slash, slash, slash, slash))
-            self.fileStructure.set('%t %v-%c %y-%d-%m %i %f'.format(slash, slash, slash, slash))
-            vars = [0, 0, 'yyyy-mm-dd', '', '']
+            self.dirStructure.set(data.defaultDirStructure)
+            self.fileStructure.set(data.defaultFileStructure)
+            vars = [0, 0, data.defaultDateFormat, '', '']
         self.sourceFolderDisplay.set(dir_format(self.sourceFolder, 50))
         self.scansFolderDisplay.set(dir_format(self.scansFolder, 50))
         
@@ -318,18 +319,18 @@ class SettingsWindow():
         self.fileStructureEntry.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Date Format
-        ttk.Label(self.outputPreferences, text='Date Format', width='15').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Date Format', width='15').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.dateFormatBox = ttk.Combobox(self.outputPreferences, textvariable=self.defaultDateFormat)
         self.dateFormatBox['values'] = [key for key in data.dateFormats]
         self.dateFormatBox.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Low Frequency Limit
-        ttk.Label(self.outputPreferences, text='Low Frequency Limit', width='15').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Low Frequency Limit', width='15').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.lowFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.lowFreqLimit)
         self.lowFreqLimitEntry.grid(column=1, row=5)
         
         # High Frequency Limit
-        ttk.Label(self.outputPreferences, text='High Frequency Limit', width='15').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='High Frequency Limit', width='15').grid(column=0, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.highFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.highFreqLimit)
         self.highFreqLimitEntry.grid(column=1, row=6)
         
@@ -400,7 +401,7 @@ settingsLength = """.format(self.forename.get(), self.surname.get(), self.source
             self.scansFolder, self.dirStructure.get().strip('/'), self.fileStructure.get(),
             self.defaultDateFormat.get(), int(self.lowFreqLimit.get()), int(self.highFreqLimit.get()))
         defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{0}\'\ndefaultTown = \'{1}\'\ndefaultCountry = \'{2}\'\ndefaultDelete = {3}'.format(*continuityData)
-        open('{}{}settings.py'.format(scriptpath, slash), 'w').write('{}{}{}'.format(settingsToSave, str(len(settingsToSave)), defaults))
+        open('{}{}settings.py'.format(scriptpath, data.slash), 'w').write('{}{}{}'.format(settingsToSave, str(len(settingsToSave)), defaults))
         self._closeSettings()
     
     # Method to close settings window
@@ -766,12 +767,12 @@ class GUI():
         
         self.scanMasterFilename.set(self.parse_structure(settings.fileStructure + '.csv'))
         if self.defaultOutputLocation.get() == 1:
-            self.libraryLocation = settings.defaultLibraryLocation + slash
+            self.libraryLocation = settings.defaultLibraryLocation + data.slash
             self.targetLocation = self.parse_structure(settings.dirStructure + '/%s').rstrip('/')
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
-                self.targetLocation = slash + self.targetLocation
+                self.targetLocation = data.slash + self.targetLocation
         self.scanOutputLocation = self.libraryLocation + self.targetLocation
         self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))
         
@@ -812,7 +813,7 @@ class GUI():
     # Method to refresh file data, for use when country or settings change
     def _refresh(self, event=None):
         global dateFormat
-        dateFormat = data.dateFormats.get(settings.defaultDateFormat) if data.dateFormats.get(settings.defaultDateFormat) != None else data.dateFormats.get('yyyy-mm-dd')
+        dateFormat = set_date_format()
         for file in self.files:
             file.updateTVChannels(self.country.get())
         self._printFiles()
@@ -880,7 +881,7 @@ class GUI():
         selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=settings.defaultSourceLocation)
         if selectedDir != '':
             for file in os.listdir(selectedDir):
-                fullfilename = '{}{}{}'.format(selectedDir, slash, file)
+                fullfilename = '{}{}{}'.format(selectedDir, data.slash, file)
                 if not file.startswith('.') and not os.path.isdir(fullfilename):
                     dirFiles.append(fullfilename)
         if len(dirFiles) != 0:
@@ -927,7 +928,7 @@ class GUI():
          # Add all files into outputFile list if within limits
         outputFile = []
         filesWritten = 0
-        statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}{}\n\n'.format(self.scanOutputLocation, slash)
+        statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}{}\n\n'.format(self.scanOutputLocation, data.slash)
         for file in self.files:
             for freq, value in file.frequencies:
                 if freq >= settings.lowFreqLimit and (settings.highFreqLimit == 0 or freq <= settings.highFreqLimit):
@@ -962,7 +963,7 @@ class GUI():
              
             # Write defaults to settings.py
             defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{}\'\ndefaultTown = \'{}\'\ndefaultCountry = \'{}\'\ndefaultDelete = {}'.format(self.venue.get(), self.town.get(), self.country.get(), self.deleteSourceFiles.get())
-            with open('{}{}settings.py'.format(scriptpath, slash), 'r+') as fp:
+            with open('{}{}settings.py'.format(scriptpath, data.slash), 'r+') as fp:
                 usersettings = fp.read(settings.settingsLength)
                 fp.seek(0)
                 fp.write('{}{}{}'.format(usersettings, len(usersettings), defaults))
@@ -981,13 +982,13 @@ class GUI():
  
      # Method to write file to disk
     def _writeFile(self, dir, filename, array):
-        target = dir + slash + filename
+        target = dir + data.slash + filename
         file, ext = os.path.splitext(filename)
         duplicateCounter = 0
         while os.path.isfile(target):
             duplicateCounter += 1
             filename = '{}-{}{}'.format(file, duplicateCounter, ext)
-            target = dir + slash + filename
+            target = dir + data.slash + filename
         try:
             with open(target, 'w') as fp:
                 for freq, value in array:
@@ -1000,10 +1001,10 @@ class GUI():
     # Method to create directory structure
     def _createDirectory(self):
         try:
-            os.makedirs('{}{}'.format(self.scanOutputLocation, slash))
+            os.makedirs('{}{}'.format(self.scanOutputLocation, data.slash))
             return True
         except OSError:
-            return tkmessagebox.askyesno('Directory already exists', '{}{} already exists. Are you sure?.'.format(self.scanOutputLocation, slash))
+            return tkmessagebox.askyesno('Directory already exists', '{}{} already exists. Are you sure?.'.format(self.scanOutputLocation, data.slash))
             
     # Method to remove current preview
     def _clearPreview(self):
