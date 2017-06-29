@@ -221,7 +221,7 @@ class SettingsWindow():
     # Initialise class
     def __init__(self):
         self.settingsWindow = tk.Toplevel(takefocus=True)
-        self.settingsWindow.lift()
+        self.bringtofront()
         
         self.settingsWindow.title('Settings')
         self.settingsWindow.resizable(width=False, height=False)
@@ -412,8 +412,7 @@ settingsLength = """.format(self.forename.get(), self.surname.get(), self.source
     
     # Method to bring settings window to front
     def bringtofront(self):
-        self.settingsWindow.grab_set()
-        self.settingsWindow.grab_release()
+        self.settingsWindow.lift()
     
 ################################################################################
 ##########                         GUI OBJECT                         ##########

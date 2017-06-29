@@ -20,7 +20,6 @@ APP_NAME = 'RFLibrary'
 DATA_FILES = ['data.py', 'settings.py', 'gui.ico']
 if sys.platform == 'darwin':
     OPTIONS = {
-        'includes':'tkinter',
         'iconfile':'rflibrary.icns',
         'plist': {
         'CFBundleName': APP_NAME,
