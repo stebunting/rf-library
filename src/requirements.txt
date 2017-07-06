@@ -1,6 +1,7 @@
 cycler==0.10.0
 matplotlib==2.0.2
 numpy==1.13.0
+PyInstaller==3.3.dev0+abfc80661
 pyparsing==2.2.0
 python-dateutil==2.6.0
 pytz==2017.2

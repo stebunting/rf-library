@@ -9,6 +9,9 @@ import sys
 from setuptools import setup
 import data
 
+from os import getcwd
+from pathlib import Path
+
 if sys.platform == 'win32':
     import ez_setup
     ez_setup.use_setuptools()
@@ -20,13 +23,17 @@ APP_NAME = 'RFLibrary'
 DATA_FILES = ['data.py', 'settings.py', 'gui.ico']
 if sys.platform == 'darwin':
     OPTIONS = {
-        'iconfile':'rflibrary.icns',
+    	'bdist_base': str(Path(getcwd()).parent) + '/build',
+    	'dist_dir': str(Path(getcwd()).parent) + '/dist',
+        'iconfile': 'rflibrary.icns',
         'plist': {
-        'CFBundleName': APP_NAME,
-        'CFBundleDisplayName': APP_NAME,
-        'CFBundleVersion': data.version,
-        'CFBundleShortVersionString': data.version, }
+	        'CFBundleName': APP_NAME,
+    	    'CFBundleDisplayName': APP_NAME,
+        	'CFBundleVersion': data.version,
+        	'CFBundleShortVersionString': data.version,
         }
+    }
+
 elif sys.platform == 'win32':
      extra_options = dict(
          setup_requires=['py2exe'],

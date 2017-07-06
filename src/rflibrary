@@ -979,7 +979,7 @@ class GUI():
             else:
                 if tkmessagebox.askyesno('Success!', '{}\nWould you like to clear the file list?'.format(statement)):
                     self._clearFiles(None, False)
- 
+
      # Method to write file to disk
     def _writeFile(self, dir, filename, array):
         target = dir + data.slash + filename
@@ -1031,6 +1031,7 @@ class GUI():
     def _updatePreview(self):
         
         # Get x,y values
+        mean = 0
         for x in self.files[self.fileListboxSelection].frequencies:
             try:
                 previous
@@ -1038,17 +1039,21 @@ class GUI():
                 previous = [x[0], x[1]]
                 xValues = []
                 yValues = []
+            mean += x[1]
             if previous[0] + (self.files[self.fileListboxSelection].resolution * 2) < x[0]:
                 xValues.append(previous[0] + self.files[self.fileListboxSelection].resolution)
-                yValues.append(-121)
+                yValues.append(-200)
                 xValues.append(x[0] - self.files[self.fileListboxSelection].resolution)
-                yValues.append(-121)
+                yValues.append(-200)
             xValues.append(x[0])
             yValues.append(x[1])
             previous = x
         
+        # Calculate mean value for potential scaling
+        mean /= len(self.files[self.fileListboxSelection].frequencies)
+        
         # Get axis values
-        ymin = min(yValues)
+        ymin = min(i for i in yValues if i > -120)
         ymax = max(yValues)
         ymin = int((ymin - 5) / 5) * 5 if ymin > -95 or ymin < -105 else -105
         ymax = int((ymax + 5) / 5) * 5 if ymax > ymin + 45 else ymin + 45
