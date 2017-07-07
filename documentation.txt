@@ -143,8 +143,8 @@ scansFolder                                       Default Scans Folder Variable
 scansFolderDisplay                   StringVar    Default Scans Location Variable (display only)
 dirStructure                         StringVar    Directory Structure
 defaultDateFormat                    StringVar    Date Format Variable
-lowFreqLimit                         IntVar       Output Low Frequency Limit Variable
-highFreqLimit                        IntVar       Output High Frequency Limit Variable
+lowFreqLimit                         StringVar    Output Low Frequency Limit Variable
+highFreqLimit                        StringVar    Output High Frequency Limit Variable
 forename                             StringVar    Forename Variable
 surname                              StringVar    Surname Variable
 

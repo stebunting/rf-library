@@ -1,20 +1,44 @@
 import platform
+import os
 
 # Check for windows compatibility
 slash = '\\' if platform.system() == 'Windows' else '/'
 
 # Software Details
 title = "RF Library"
-version = "v0.3"
+version = "v0.4"
 
 # GUI Constants
 padx_default = 2
 pady_default = 2
 
 # Defaults
-defaultDirStructure = '%c/%t %v/%y'.format(slash, slash)
-defaultFileStructure = '%t %v-%c %y-%d-%m %i %n-%f'
 defaultDateFormat = 'yyyy-mm-dd'
+
+plist = {
+	'forename': '',
+	'surname': '',
+	'dirStructure': '%c/%t %v/%y',
+	'fileStructure': '%t %v-%c %y-%d-%m %i %n-%f',
+	'defaultDateFormat': 'yyyy-dd-mm',
+	'lowFreqLimit': 0,
+	'highFreqLimit': 2000,
+
+	# Continuity Settings
+	'defaultVenue': 'Venue',
+	'defaultTown': 'Town',
+	'defaultCountry': 'United Kingdom',
+	'defaultDelete': False
+}
+if platform.system() == 'Darwin':
+    plist['defaultSourceLocation'] = os.path.expanduser('~/Documents')
+    plist['defaultLibraryLocation'] = os.path.expanduser('~/Documents/Scans')
+elif platform.system() == 'Windows':
+    plist['defaultSourceLocation'] = os.path.expanduser('~/Documents')
+    plist['defaultLibraryLocation'] = os.path.expanduser('~/Documents/Scans')
+else:
+    plist['defaultSourceLocation'] = os.path.expanduser('/')
+    plist['defaultLibraryLocation'] = os.path.expanduser('/')
 
 # Variables
 TVChannels = {
@@ -369,4 +393,6 @@ countries = (
 dateFormats = {
 	'yyyy-mm-dd': '%Y-%m-%d',
 	'yyyy-dd-mm': '%Y-%d-%m',
+	'dd-mm-yyyy': '%d-%m-%Y',
+	'mm-dd-yyyy': '%m-%d-%Y'
 }

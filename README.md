@@ -13,4 +13,4 @@ Python 3.6
 
 ActiveTCL 8.5.18.0
 
-Matplotlib 2.0.0
+Matplotlib 2.0.2

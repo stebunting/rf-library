@@ -2,3 +2,7 @@ src/__pycache__
 build
 dist
 Scans
+src/build
+src/dist
+src/backup
+

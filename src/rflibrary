@@ -4,10 +4,11 @@
 import platform
 import os
 import sys
-import importlib
 import datetime
 import re
 import xml.etree.ElementTree
+import plistlib
+import webbrowser
 
 # Import Tkinter GUI functions
 import tkinter as tk
@@ -23,15 +24,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Import program data
 import data
-import settings
 
-# Find script path for writing to settings.py
-scriptpath = os.path.dirname(os.path.realpath(__file__))
+# Define location of plist file
+plistName = os.path.expanduser("~") + '/Library/Preferences/com.stevebunting.rflibrary.plist'
 
 # Helper function to set dateFormat
 def set_date_format():
-    if data.dateFormats.get(settings.defaultDateFormat):
-        return data.dateFormats.get(settings.defaultDateFormat) 
+    if data.dateFormats.get(pl['defaultDateFormat']):
+        return data.dateFormats.get(pl['defaultDateFormat'])
     else:
         return data.dateFormats.get(defaultDateFormat)
         
@@ -42,16 +42,75 @@ def dir_format(display_location, max_length):
         display_location = '...{}{}'.format(data.slash, display_location.split(data.slash, 2)[2])
     return display_location
 
-# Load settings if it exists yet
-try:
-    settings.settingsLength
-    settingsExists = True
-    dateFormat = set_date_format()
-except AttributeError:
+# Load settings plist if it exists yet
+settingsExists = True
+if not os.path.isfile(plistName):
     settingsExists = False
-    dateFormat = data.dateFormats.get(data.defaultDateFormat)
+    with open(plistName, 'wb') as fp:
+        plistlib.dump(data.plist, fp)
+    os.chmod(plistName, 0o600)
+with open(plistName, 'rb') as fp:
+    pl = plistlib.load(fp)
+
+dateFormat = set_date_format()
+
+################################################################################
+##########                      TOOLTIP OBJECT                        ##########
+################################################################################
+
+# SOURCE: https://stackoverflow.com/questions/3221956/what-is-the-simplest-way-to-make-tooltips-in-tkinter
+
+class CreateToolTip(object):
     
-    
+    def __init__(self, widget, text='widget info'):
+        self.waittime = 500     #miliseconds
+        self.wraplength = 180   #pixels
+        self.widget = widget
+        self.text = text
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.leave)
+        self.widget.bind("<ButtonPress>", self.leave)
+        self.id = None
+        self.tw = None
+
+    def enter(self, event=None):
+        self.schedule()
+
+    def leave(self, event=None):
+        self.unschedule()
+        self.hidetip()
+
+    def schedule(self):
+        self.unschedule()
+        self.id = self.widget.after(self.waittime, self.showtip)
+
+    def unschedule(self):
+        id = self.id
+        self.id = None
+        if id:
+            self.widget.after_cancel(id)
+
+    def showtip(self, event=None):
+        x = y = 0
+        x, y, cx, cy = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+        self.tw = tk.Toplevel(self.widget)
+        # Leaves only the label and removes the app window
+        self.tw.overrideredirect(True)
+        self.tw.wm_geometry("+%d+%d" % (x, y))
+        label = ttk.Label(self.tw, text=self.text, justify='left',
+                       background="#ffffff", relief='solid', borderwidth=1,
+                       wraplength = self.wraplength)
+        label.pack(ipadx=1)
+        
+
+    def hidetip(self):
+        tw = self.tw
+        self.tw = None
+        if tw:
+            tw.destroy()
+
 ################################################################################
 ##########                        FILE OBJECT                         ##########
 ################################################################################
@@ -259,89 +318,71 @@ class SettingsWindow():
         self.scansFolderDisplay = tk.StringVar()
         self.dirStructure = tk.StringVar()
         self.fileStructure = tk.StringVar()
-        self.lowFreqLimit = tk.IntVar()
-        self.highFreqLimit = tk.IntVar()
+        self.lowFreqLimit = tk.StringVar()
+        self.highFreqLimit = tk.StringVar()
         self.defaultDateFormat = tk.StringVar()
         self.forename = tk.StringVar()
         self.surname = tk.StringVar()
 
-        # Set Defaults        
-        if settingsExists:
-            self.sourceFolder = settings.defaultSourceLocation
-            self.scansFolder = settings.defaultLibraryLocation
-            self.dirStructure.set(settings.dirStructure)
-            self.fileStructure.set(settings.fileStructure)
-            vars = [settings.lowFreqLimit, settings.highFreqLimit,
-                    settings.defaultDateFormat, settings.forename,
-                    settings.surname]
-        else:
-            if platform.system() == 'Darwin':
-                self.sourceFolder = os.path.expanduser('~/Documents')
-                self.scansFolder = os.path.expanduser('~/Documents/Scans')
-            elif platform.system() == 'Windows':
-                self.sourceFolder = os.path.expanduser('~/Documents')
-                self.scansFolder = os.path.expanduser('~/Documents/Scans')
-            else:
-                self.sourceFolder = os.path.expanduser('/')
-                self.scansFolder = os.path.expanduser('/')
-            self.dirStructure.set(data.defaultDirStructure)
-            self.fileStructure.set(data.defaultFileStructure)
-            vars = [0, 0, data.defaultDateFormat, '', '']
-        self.sourceFolderDisplay.set(dir_format(self.sourceFolder, 50))
-        self.scansFolderDisplay.set(dir_format(self.scansFolder, 50))
-        
-        fields = [self.lowFreqLimit, self.highFreqLimit, self.defaultDateFormat,
-                  self.forename, self.surname]
+        # Set Variables
+        vars = [pl['dirStructure'], pl['fileStructure'],
+                dir_format(pl['defaultSourceLocation'], 50), dir_format(pl['defaultLibraryLocation'], 50),
+                pl['lowFreqLimit'], pl['highFreqLimit'],
+                pl['defaultDateFormat'], pl['forename'],
+                pl['surname']]
+        fields = [self.dirStructure, self.fileStructure, self.sourceFolderDisplay,
+                  self.scansFolderDisplay, self.lowFreqLimit, self.highFreqLimit,
+                  self.defaultDateFormat, self.forename, self.surname]
         for field, var in zip(fields, vars):
             field.set(var)
         
         # Source Folder
-        ttk.Label(self.sourcePreferences, text='Default Source Folder', width='15').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.sourcePreferences, text='Default Source Folder', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.sourceFolderLabel = ttk.Label(self.sourcePreferences, textvariable=self.sourceFolderDisplay, width='36')
         self.sourceFolderLabel.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.changeSourceFolderButton = ttk.Button(self.sourcePreferences, text='Change Folder', command=self._changeSourceFolder)
         self.changeSourceFolderButton.grid(column=1, row=1)
         
         # Scans Folder
-        ttk.Label(self.outputPreferences, text='Scans Folder', width='15').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Scans Folder', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.scansFolderLabel = ttk.Label(self.outputPreferences, textvariable=self.scansFolderDisplay, width='36')
         self.scansFolderLabel.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.changeBaseFolderButton = ttk.Button(self.outputPreferences, text='Change Folder', command=self._changeBaseFolder)
         self.changeBaseFolderButton.grid(column=1, row=1)
         
         # Directory Structure
-        ttk.Label(self.outputPreferences, text='Directory Structure', width='15').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Directory Structure', width='16').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.dirStructureEntry = ttk.Entry(self.outputPreferences, textvariable=self.dirStructure, width='35')
         self.dirStructureEntry.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Filename Structure
-        ttk.Label(self.outputPreferences, text='Filename Structure', width='15').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Filename Structure', width='16').grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.fileStructureEntry = ttk.Entry(self.outputPreferences, textvariable=self.fileStructure, width='35')
         self.fileStructureEntry.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Date Format
-        ttk.Label(self.outputPreferences, text='Date Format', width='15').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Date Format', width='16').grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.dateFormatBox = ttk.Combobox(self.outputPreferences, textvariable=self.defaultDateFormat)
         self.dateFormatBox['values'] = [key for key in data.dateFormats]
         self.dateFormatBox.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Low Frequency Limit
-        ttk.Label(self.outputPreferences, text='Low Frequency Limit', width='15').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='Low Frequency Limit', width='16').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.lowFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.lowFreqLimit)
         self.lowFreqLimitEntry.grid(column=1, row=5)
         
         # High Frequency Limit
-        ttk.Label(self.outputPreferences, text='High Frequency Limit', width='15').grid(column=0, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputPreferences, text='High Frequency Limit', width='16').grid(column=0, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.highFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.highFreqLimit)
         self.highFreqLimitEntry.grid(column=1, row=6)
         
         # Forename Entry
-        ttk.Label(self.personalData, text='Forename', width='15').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.personalData, text='Forename', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.forenameEntry = ttk.Entry(self.personalData, textvariable=self.forename)
         self.forenameEntry.grid(column=1, row=0)
         
         # Surname Entry
-        ttk.Label(self.personalData, text='Surname', width='15').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.personalData, text='Surname', width='16').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.surnameEntry = ttk.Entry(self.personalData, textvariable=self.surname)
         self.surnameEntry.grid(column=1, row=1)
         
@@ -361,48 +402,38 @@ class SettingsWindow():
     
     # Method to select default source folder
     def _changeSourceFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=self.sourceFolder)
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=pl['defaultSourceLocation'])
         if dir != '':
-            self.sourceFolder = dir
-            self.sourceFolderDisplay.set(dir_format(self.sourceFolder, 50))
+            pl['defaultSourceLocation'] = dir
+            self.sourceFolderDisplay.set(dir_format(pl['defaultSourceLocation'], 50))
             
     # Method to select scans base folder
     def _changeBaseFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=self.scansFolder)
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=pl['defaultLibraryLocation'])
         if dir != '':
-            self.scansFolder = dir
-            self.scansFolderDisplay.set(dir_format(self.scansFolder, 50))
+            pl['defaultLibraryLocation'] = dir
+            self.scansFolderDisplay.set(dir_format(pl['defaultLibraryLocation'], 50))
     
     # Method to save settings and close window    
     def _saveSettings(self, event=None):
         
         # Ensure limits are ints, else revert to default
-        if settingsExists:
-            defaults = [settings.lowFreqLimit, settings.highFreqLimit]
-            continuityData = [settings.defaultVenue, settings.defaultTown, settings.defaultCountry, settings.defaultDelete]
-        else:
-            defaults = [0, 0]
-            continuityData = ['Venue', 'Town', 'United Kingdom', False]
+        defaults = [pl['lowFreqLimit'], pl['highFreqLimit']]
         for var, default in zip([self.lowFreqLimit, self.highFreqLimit], defaults):
             try:
                 int(var.get())
             except ValueError:
                 var.set(default)
-        settingsToSave = """# User Settings
-forename = '{}'
-surname = '{}'
-defaultSourceLocation = '{}'
-defaultLibraryLocation = '{}'
-dirStructure = '{}'
-fileStructure = '{}'
-defaultDateFormat = '{}'
-lowFreqLimit = {}
-highFreqLimit = {}
-settingsLength = """.format(self.forename.get(), self.surname.get(), self.sourceFolder,
-            self.scansFolder, self.dirStructure.get().strip('/'), self.fileStructure.get(),
-            self.defaultDateFormat.get(), int(self.lowFreqLimit.get()), int(self.highFreqLimit.get()))
-        defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{0}\'\ndefaultTown = \'{1}\'\ndefaultCountry = \'{2}\'\ndefaultDelete = {3}'.format(*continuityData)
-        open('{}{}settings.py'.format(scriptpath, data.slash), 'w').write('{}{}{}'.format(settingsToSave, str(len(settingsToSave)), defaults))
+
+        pl['forename'] = self.forename.get()
+        pl['surname'] = self.surname.get()
+        pl['dirStructure'] = self.dirStructure.get().strip('/')
+        pl['fileStructure'] = self.fileStructure.get()
+        pl['defaultDateFormat'] = self.defaultDateFormat.get()
+        pl['lowFreqLimit'] = int(self.lowFreqLimit.get())
+        pl['highFreqLimit'] = int(self.highFreqLimit.get())
+        with open(plistName, 'wb') as fp:
+            plistlib.dump(pl, fp)
         self._closeSettings()
     
     # Method to close settings window
@@ -518,6 +549,11 @@ class GUI():
         self.editMenu.add_command(label='Remove File', accelerator='BackSpace', command=self._removeFile)
         self.editMenu.add_command(label='Clear Files', accelerator='Command-BackSpace', command=self._clearFiles)
         self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
+
+        # Help Menu
+        self.helpMenu = tk.Menu(self.menuBar, tearoff=False)
+        self.helpMenu.add_command(label='Documentation', command=self._openHTTP)
+        self.menuBar.add_cascade(label='Help', menu=self.helpMenu)
      
         self.window.config(menu=self.menuBar)
         
@@ -544,10 +580,7 @@ class GUI():
         
         # Set default values
         fields = [self.venue, self.town, self.country, self.deleteSourceFiles]
-        if settingsExists:
-            vars = [settings.defaultVenue, settings.defaultTown, settings.defaultCountry, settings.defaultDelete]
-        else:
-            vars = ['Venue', 'Town', 'United Kingdom', False]
+        vars = [pl['defaultVenue'], pl['defaultTown'], pl['defaultCountry'], pl['defaultDelete']]
         for field, var in zip(fields, vars):
             field.set(var)
         
@@ -639,7 +672,8 @@ class GUI():
         self.defaultMasterFilenameCheck.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, text='Delete Source Files', variable=self.deleteSourceFiles)
         self.deleteSourceFilesCheck.grid(column=1, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        
+        CreateToolTip(self.deleteSourceFilesCheck, 'Check this box for the source files to be deleted on file creation.')
+
         # Output Buttons
         self.outputButtons = ttk.Frame(self.outputFrame)
         self.outputButtons.grid(column=1, row=6, sticky='W')
@@ -750,8 +784,8 @@ class GUI():
                          ('%y', str(self.scanDateTimestamp.year)),
                          ('%i', self.io.get()),
                          ('%s', self.targetSubdirectory.get()),
-                         ('%f', settings.forename),
-                         ('%n', settings.surname),
+                         ('%f', pl['forename']),
+                         ('%n', pl['surname']),
                          ('%m', '{:02d}'.format(self.scanDateTimestamp.month)),
                          ('%M', self.scanDateTimestamp.strftime("%B")),
                          ('%d', '{:02d}'.format(self.scanDateTimestamp.day))]:
@@ -765,10 +799,10 @@ class GUI():
         if self.customMasterFilename:
             return
         
-        self.scanMasterFilename.set(self.parse_structure(settings.fileStructure + '.csv'))
+        self.scanMasterFilename.set(self.parse_structure(pl['fileStructure'] + '.csv'))
         if self.defaultOutputLocation.get() == 1:
-            self.libraryLocation = settings.defaultLibraryLocation + data.slash
-            self.targetLocation = self.parse_structure(settings.dirStructure + '/%s').rstrip('/')
+            self.libraryLocation = pl['defaultLibraryLocation'] + data.slash
+            self.targetLocation = self.parse_structure(pl['dirStructure'] + '/%s').rstrip('/')
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
@@ -857,10 +891,19 @@ class GUI():
             self.subdirectory = False
         self._getMasterFilename()
 
+    # Method to update ioBox and Subdirectory when Inside v Outside changes
+    def _setIO(self):
+        if not self.ioFixed:
+            if self.ioGuess >= 0:
+                self.ioBox.current(0)
+            else:
+                self.ioBox.current(1)
+            self._updateSubdirectory()
+
     # Method to open file dialogue and allow selection of files
     def _addFiles(self, event=None, selected_files=None, suppressErrors=False):
         if selected_files == None:
-            selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=settings.defaultSourceLocation)
+            selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=pl['defaultSourceLocation'])
         for file in selected_files:
             newFile = File(file, self.country.get())
             if newFile.valid:
@@ -868,17 +911,13 @@ class GUI():
                 self.files.append(newFile)
             elif not suppressErrors:
                 tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
-        if not self.ioFixed:
-            if self.ioGuess >= 0:
-                self.ioBox.current(0)
-            else:
-                self.ioBox.current(1)
+        self._setIO()
         self._printFiles()
 
     # Method to open file dialogue and allow selection of all files in a directory
     def _addDirectory(self, event=None):
         dirFiles = []
-        selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=settings.defaultSourceLocation)
+        selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=pl['defaultSourceLocation'])
         if selectedDir != '':
             for file in os.listdir(selectedDir):
                 fullfilename = '{}{}{}'.format(selectedDir, data.slash, file)
@@ -892,6 +931,8 @@ class GUI():
         if event == None or (event.widget.winfo_class() != 'TEntry' and event.widget.winfo_class() != 'TCombobox'):
             if self.fileListboxSelection == None:
                 return
+            self.ioGuess -= self.files[self.fileListboxSelection].io
+            self._setIO()
             self.files.remove(self.files[self.fileListboxSelection])
             if len(self.files) == 0:
                 self.fileListboxSelection = None
@@ -907,6 +948,7 @@ class GUI():
         del self.files[:]
         self.fileListboxSelection = None
         self.ioFixed = False
+        self.ioGuess = 0
         self._printFiles()
          
     # Method to use date from selected file
@@ -931,7 +973,7 @@ class GUI():
         statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}{}\n\n'.format(self.scanOutputLocation, data.slash)
         for file in self.files:
             for freq, value in file.frequencies:
-                if freq >= settings.lowFreqLimit and (settings.highFreqLimit == 0 or freq <= settings.highFreqLimit):
+                if freq >= pl['lowFreqLimit'] and (pl['highFreqLimit'] == 0 or freq <= pl['highFreqLimit']):
                     outputFile.append([float(freq), float(value)])
         
         # Remove duplicates
@@ -961,13 +1003,14 @@ class GUI():
                 filesWritten += 1
                 statement += '{}\n\n{} files written to disk.\n'.format(writtenFilename, filesWritten)
              
-            # Write defaults to settings.py
-            defaults = '\n\n# Continuity Settings\ndefaultVenue = \'{}\'\ndefaultTown = \'{}\'\ndefaultCountry = \'{}\'\ndefaultDelete = {}'.format(self.venue.get(), self.town.get(), self.country.get(), self.deleteSourceFiles.get())
-            with open('{}{}settings.py'.format(scriptpath, data.slash), 'r+') as fp:
-                usersettings = fp.read(settings.settingsLength)
-                fp.seek(0)
-                fp.write('{}{}{}'.format(usersettings, len(usersettings), defaults))
-                fp.truncate()
+            # Write defaults to plist
+            vars = [self.venue, self.town, self.country, self.deleteSourceFiles]
+            fields = [pl['defaultVenue'], pl['defaultTown'], pl['defaultCountry'], pl['defaultDelete']]
+            for field, var in zip(fields, vars):
+                field = vars.get()
+
+            with open(plistName, 'wb') as fp:
+                plistlib.dump(pl, fp)
          
             if delSourceConfirmed:
                 statement += '\nThe following files were deleted:\n'
@@ -980,7 +1023,7 @@ class GUI():
                 if tkmessagebox.askyesno('Success!', '{}\nWould you like to clear the file list?'.format(statement)):
                     self._clearFiles(None, False)
 
-     # Method to write file to disk
+    # Method to write file to disk
     def _writeFile(self, dir, filename, array):
         target = dir + data.slash + filename
         file, ext = os.path.splitext(filename)
@@ -1097,7 +1140,12 @@ class GUI():
 
     # Method to display about information
     def _about(self):
-        tkmessagebox.showinfo('About', '{} {}\n\n{} Stephen Bunting 2016\nhttp://www.stevebunting.com/'.format(data.title, data.version, chr(169)))
+        tkmessagebox.showinfo('About', '{} {}\n\n{} Stephen Bunting 2017\nhttp://www.stevebunting.com/'.format(data.title, data.version, chr(169)))
+
+    # Method to open docs in web browser
+    def _openHTTP(self):
+        browser=webbrowser.get('Safari')
+        browser.open('https://rflibrary.stevebunting.com/documentation.php')
 
     # Method to display settings box
     def _settings(self, event=None):
@@ -1110,14 +1158,6 @@ class GUI():
             self.settings = SettingsWindow()
             self.settings.settingsWindow.mainloop()
             self.settingsWindowOpen = False
-            importlib.reload(settings)
-            try:
-                settings.settingsLength
-                settingsExists = True
-            
-            # Quit if cancelled
-            except AttributeError:
-                self._quit()
             self._refresh()
 
 ################################################################################
@@ -1127,3 +1167,4 @@ class GUI():
 if __name__ == '__main__':
     gui = GUI()
     gui.window.mainloop()
+
