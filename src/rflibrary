@@ -427,13 +427,22 @@ class SettingsWindow():
     # Method to save settings and close window    
     def _saveSettings(self, event=None):
         
-        # Ensure limits are ints, else revert to default
+        # Ensure limits are good ints else revert to default
         defaults = [pl['lowFreqLimit'], pl['highFreqLimit']]
         for var, default in zip([self.lowFreqLimit, self.highFreqLimit], defaults):
-            try:
-                int(var.get())
-            except ValueError:
-                var.set(default)
+            if var.get() == '':
+                var.set(0)
+            else:
+                try:
+                    int(var.get())
+                except ValueError:
+                    var.set(default)
+            if int(var.get()) < 0:
+                var.set(0)
+        if int(self.lowFreqLimit.get()) > int(self.highFreqLimit.get()):
+            self.lowFreqLimit.set(self.highFreqLimit.get())
+        elif int(self.highFreqLimit.get()) < int(self.lowFreqLimit.get()):
+            self.highFreqLimit.set(self.lowFreqLimit.get())
 
         pl['forename'] = self.forename.get()
         pl['surname'] = self.surname.get()

@@ -6,7 +6,7 @@ slash = '\\' if platform.system() == 'Windows' else '/'
 
 # Software Details
 title = "RF Library"
-version = "v0.4"
+version = "v0.41"
 
 # GUI Constants
 padx_default = 2
