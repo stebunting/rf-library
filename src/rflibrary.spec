@@ -34,5 +34,6 @@ app = BUNDLE(exe,
               'CFBundleName': 'RF Library',
               'CFBundleDisplayName': 'RF Library',
               'CFBundleVersion': 0.4,
+              'CFBundleShortVersionString': 0.4,
               'CFBundleGetInfoString': '0.4 © Steve Bunting 2017'
             })
