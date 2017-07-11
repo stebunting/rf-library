@@ -30,8 +30,8 @@ plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary
 
 # Helper function to set dateFormat
 def set_date_format():
-    if data.dateFormats.get(pl['defaultDateFormat']):
-        return data.dateFormats.get(pl['defaultDateFormat'])
+    if data.dateFormats.get(plist['defaultDateFormat']):
+        return data.dateFormats.get(plist['defaultDateFormat'])
     else:
         return data.dateFormats.get(defaultDateFormat)
         
@@ -49,28 +49,28 @@ if not os.path.isfile(plistName):
     fp = open(plistName, 'wb')
     fp.close()
     os.chmod(plistName, 0o600)
-    pl = dict()
+    plist = dict()
 else:
     with open(plistName, 'rb') as fp:
-        pl = plistlib.load(fp)
+        plist = plistlib.load(fp)
 
 # Check for preferences and add default if not there
 vars = ['forename', 'surname', 'dirStructure', 'fileStructure', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
 defaults = ['', '', '%c/%t %v/%y', '%t %v-%c %y-%d-%m %i %n-%f', 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
 for var, default in zip(vars, defaults):
-    if not pl.get(var):
-        pl[var] = default
-if not pl.get('defaultLibraryLocation'):
+    if not plist.get(var):
+        plist[var] = default
+if not plist.get('defaultLibraryLocation'):
     if platform.system() == 'Darwin':
-        pl['defaultLibraryLocation'] = os.path.expanduser('~/Documents/Scans')
+        plist['defaultLibraryLocation'] = os.path.expanduser('~/Documents/Scans')
     elif platform.system() == 'Windows':
-        pl['defaultLibraryLocation'] = os.path.expanduser('~/My Documents/Scans')
+        plist['defaultLibraryLocation'] = os.path.expanduser('~/My Documents/Scans')
     else:
-        pl['defaultLibraryLocation'] = os.path.expanduser('/')
+        plist['defaultLibraryLocation'] = os.path.expanduser('/')
 
 if not settingsExists:
     with open(plistName, 'wb') as fp:
-        plistlib.dump(pl, fp)
+        plistlib.dump(plist, fp)
 
 dateFormat = set_date_format()
 
@@ -344,11 +344,11 @@ class SettingsWindow():
         self.surname = tk.StringVar()
 
         # Set Variables
-        vars = [pl['dirStructure'], pl['fileStructure'],
-                dir_format(pl['defaultSourceLocation'], 50), dir_format(pl['defaultLibraryLocation'], 50),
-                pl['lowFreqLimit'], pl['highFreqLimit'],
-                pl['defaultDateFormat'], pl['forename'],
-                pl['surname']]
+        vars = [plist['dirStructure'], plist['fileStructure'],
+                dir_format(plist['defaultSourceLocation'], 50), dir_format(plist['defaultLibraryLocation'], 50),
+                plist['lowFreqLimit'], plist['highFreqLimit'],
+                plist['defaultDateFormat'], plist['forename'],
+                plist['surname']]
         fields = [self.dirStructure, self.fileStructure, self.sourceFolderDisplay,
                   self.scansFolderDisplay, self.lowFreqLimit, self.highFreqLimit,
                   self.defaultDateFormat, self.forename, self.surname]
@@ -424,23 +424,23 @@ class SettingsWindow():
     
     # Method to select default source folder
     def _changeSourceFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=pl['defaultSourceLocation'])
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=plist['defaultSourceLocation'])
         if dir != '':
-            pl['defaultSourceLocation'] = dir
-            self.sourceFolderDisplay.set(dir_format(pl['defaultSourceLocation'], 50))
+            plist['defaultSourceLocation'] = dir
+            self.sourceFolderDisplay.set(dir_format(plist['defaultSourceLocation'], 50))
             
     # Method to select scans base folder
     def _changeBaseFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=pl['defaultLibraryLocation'])
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=plist['defaultLibraryLocation'])
         if dir != '':
-            pl['defaultLibraryLocation'] = dir
-            self.scansFolderDisplay.set(dir_format(pl['defaultLibraryLocation'], 50))
+            plist['defaultLibraryLocation'] = dir
+            self.scansFolderDisplay.set(dir_format(plist['defaultLibraryLocation'], 50))
     
     # Method to save settings and close window    
     def _saveSettings(self, event=None):
         
         # Ensure limits are good ints else revert to default
-        defaults = [pl['lowFreqLimit'], pl['highFreqLimit']]
+        defaults = [plist['lowFreqLimit'], plist['highFreqLimit']]
         for var, default in zip([self.lowFreqLimit, self.highFreqLimit], defaults):
             if var.get() == '':
                 var.set(0)
@@ -456,15 +456,15 @@ class SettingsWindow():
         elif int(self.highFreqLimit.get()) < int(self.lowFreqLimit.get()):
             self.highFreqLimit.set(self.lowFreqLimit.get())
 
-        pl['forename'] = self.forename.get()
-        pl['surname'] = self.surname.get()
-        pl['dirStructure'] = self.dirStructure.get().strip('/')
-        pl['fileStructure'] = self.fileStructure.get()
-        pl['defaultDateFormat'] = self.defaultDateFormat.get()
-        pl['lowFreqLimit'] = int(self.lowFreqLimit.get())
-        pl['highFreqLimit'] = int(self.highFreqLimit.get())
+        plist['forename'] = self.forename.get()
+        plist['surname'] = self.surname.get()
+        plist['dirStructure'] = self.dirStructure.get().strip('/')
+        plist['fileStructure'] = self.fileStructure.get()
+        plist['defaultDateFormat'] = self.defaultDateFormat.get()
+        plist['lowFreqLimit'] = int(self.lowFreqLimit.get())
+        plist['highFreqLimit'] = int(self.highFreqLimit.get())
         with open(plistName, 'wb') as fp:
-            plistlib.dump(pl, fp)
+            plistlib.dump(plist, fp)
         self._closeSettings()
     
     # Method to close settings window
@@ -614,7 +614,7 @@ class GUI():
         
         # Set default values
         fields = [self.venue, self.town, self.country, self.copySourceFiles, self.deleteSourceFiles]
-        vars = [pl['defaultVenue'], pl['defaultTown'], pl['defaultCountry'], pl['defaultCopy'], pl['defaultDelete']]
+        vars = [plist['defaultVenue'], plist['defaultTown'], plist['defaultCountry'], plist['defaultCopy'], plist['defaultDelete']]
         for field, var in zip(fields, vars):
             field.set(var)
         
@@ -837,8 +837,8 @@ class GUI():
                          ('%y', str(self.scanDateTimestamp.year)),
                          ('%i', self.io.get()),
                          ('%s', self.targetSubdirectory.get()),
-                         ('%f', pl['forename']),
-                         ('%n', pl['surname']),
+                         ('%f', plist['forename']),
+                         ('%n', plist['surname']),
                          ('%m', '{:02d}'.format(self.scanDateTimestamp.month)),
                          ('%M', self.scanDateTimestamp.strftime('%B')),
                          ('%d', '{:02d}'.format(self.scanDateTimestamp.day))]:
@@ -852,10 +852,10 @@ class GUI():
         if self.customMasterFilename:
             return
         
-        self.scanMasterFilename.set(self.parse_structure(pl['fileStructure'] + '.csv'))
+        self.scanMasterFilename.set(self.parse_structure(plist['fileStructure'] + '.csv'))
         if self.defaultOutputLocation.get() == 1:
-            self.libraryLocation = pl['defaultLibraryLocation'] + data.slash
-            self.targetLocation = self.parse_structure(pl['dirStructure'] + '/%s').rstrip('/')
+            self.libraryLocation = plist['defaultLibraryLocation'] + data.slash
+            self.targetLocation = self.parse_structure(plist['dirStructure'] + '/%s').rstrip('/')
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
@@ -958,13 +958,13 @@ class GUI():
     # Method to open file dialogue and allow selection of files
     def _addFiles(self, event=None, selected_files=None, suppressErrors=False):
         if selected_files == None:
-            selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=pl['defaultSourceLocation'])
+            selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=plist['defaultSourceLocation'])
         for file in selected_files:
             newFile = File(file, self.country.get())
             if newFile.valid:
                 self.ioGuess += newFile.io
                 self.files.append(newFile)
-                pl['defaultSourceLocation'] = os.path.dirname(file)
+                plist['defaultSourceLocation'] = os.path.dirname(file)
             elif not suppressErrors:
                 tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
         self._setIO()
@@ -973,9 +973,9 @@ class GUI():
     # Method to open file dialogue and allow selection of all files in a directory
     def _addDirectory(self, event=None):
         dirFiles = []
-        selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=pl['defaultSourceLocation'])
+        selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=plist['defaultSourceLocation'])
         if selectedDir != '':
-            pl['defaultSourceLocation'] = selectedDir
+            plist['defaultSourceLocation'] = selectedDir
             for file in os.listdir(selectedDir):
                 fullfilename = '{}{}{}'.format(selectedDir, data.slash, file)
                 if not file.startswith('.') and not os.path.isdir(fullfilename):
@@ -1030,7 +1030,7 @@ class GUI():
         statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}{}\n\n'.format(self.scanOutputLocation, data.slash)
         for file in self.files:
             for freq, value in file.frequencies:
-                if freq >= pl['lowFreqLimit'] and (pl['highFreqLimit'] == 0 or freq <= pl['highFreqLimit']):
+                if freq >= plist['lowFreqLimit'] and (plist['highFreqLimit'] == 0 or freq <= plist['highFreqLimit']):
                     outputFile.append([float(freq), float(value)])
         
         # Remove duplicates
@@ -1062,14 +1062,14 @@ class GUI():
                 statement += '{}\n\n{} files written to disk.\n'.format(writtenFilename, filesWritten)
              
             # Write defaults to plist
-            pl['defaultVenue'] = self.venue.get()
-            pl['defaultTown'] = self.town.get()
-            pl['defaultCountry'] = self.country.get()
-            pl['defaultCopy'] = self.copySourceFiles.get()
-            pl['defaultDelete'] = self.deleteSourceFiles.get()
+            plist['defaultVenue'] = self.venue.get()
+            plist['defaultTown'] = self.town.get()
+            plist['defaultCountry'] = self.country.get()
+            plist['defaultCopy'] = self.copySourceFiles.get()
+            plist['defaultDelete'] = self.deleteSourceFiles.get()
 
             with open(plistName, 'wb') as fp:
-                plistlib.dump(pl, fp)
+                plistlib.dump(plist, fp)
          
             if delSourceConfirmed:
                 statement += '\nThe following files were deleted:\n'
