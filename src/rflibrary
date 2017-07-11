@@ -68,9 +68,8 @@ if not plist.get('defaultLibraryLocation'):
     else:
         plist['defaultLibraryLocation'] = os.path.expanduser('/')
 
-if not settingsExists:
-    with open(plistName, 'wb') as fp:
-        plistlib.dump(plist, fp)
+with open(plistName, 'wb') as fp:
+    plistlib.dump(plist, fp)
 
 dateFormat = set_date_format()
 
@@ -680,7 +679,7 @@ class GUI():
         # Inside / Outside
         ttk.Label(self.infoFrame, text='Inside/Outside', width=12).grid(column=0, row=4, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.ioBox = ttk.Combobox(self.infoFrame, textvariable=self.io, width=20, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
-        self.ioBox['values'] = ('Inside', 'Outside')
+        self.ioBox['values'] = ['Inside', 'Outside']
         self.ioBox.grid(column=1, row=4)
         self.ioBox.current(0)
         self.ioBox.bind('<<ComboboxSelected>>', self._ioBoxEdit)
@@ -759,8 +758,7 @@ class GUI():
         self._selectFileItem(event)
         self._updateFileStatus()
         self._getScanDate()
-        if settingsExists:
-            self._getMasterFilename()
+        self._getMasterFilename()
 
     # Method to select fileListbox item
     def _selectFileItem(self, event=None):
@@ -877,13 +875,11 @@ class GUI():
             for x in [self.clearFilesButton, self.createFileButton]:
                 x.config(state=outputStatus)
             if outputStatus == 'enabled':
-                self.window.bind('<Command-BackSpace>', self._clearFiles)
                 self.window.bind_all('<Command-d>', self._useDate)
                 self.window.bind_all('<Command-Return>', self._createFile)
                 self.editMenu.entryconfig('Clear Files', state='normal')
                 self.fileMenu.entryconfig('Create File', state='normal')
             else:
-                self.window.unbind('<Command-BackSpace>')
                 self.window.unbind_all('<Command-d>')
                 self.window.unbind_all('<Command-Return>')
                 self.editMenu.entryconfig('Clear Files', state='disabled')
@@ -916,7 +912,6 @@ class GUI():
     # Method called after IObox edited
     def _ioBoxEdit(self, event=None):
         self.ioFixed = True
-        self.ioBox.selection_clear()
         if not self.customSubdirectory:
             self._updateSubdirectory()
     
@@ -999,8 +994,10 @@ class GUI():
  
     # Method to remove all files
     def _clearFiles(self, event=None, confirmRequired=True):
+        self.editMenu.entryconfig('Clear Files', state='disabled')
         if confirmRequired:
             if not tkmessagebox.askyesno('Are you sure?', 'Are you sure you want to clear the file list?'):
+                self.editMenu.entryconfig('Clear Files', state='normal')
                 return
         del self.files[:]
         self.fileListboxSelection = None
