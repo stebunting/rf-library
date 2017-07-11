@@ -213,8 +213,7 @@ class File():
     
     # Method to return creation date from file
     def getCreationDate(self):
-        self.creationDate = datetime.datetime.fromtimestamp(
-                            os.stat(self.fullfilename).st_birthtime)
+        self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_birthtime)
     
     # Method to get TV channels
     def updateTVChannels(self, tvCountry):
@@ -285,7 +284,7 @@ class SettingsWindow():
         
         self.settingsWindow.title('Settings')
         self.settingsWindow.resizable(width=False, height=False)
-        self.settingsWindow.geometry('509x544')
+        self.settingsWindow.geometry('509x426')
         
         self._createSettingsFrames()
         self._createSettingsWidgets()
@@ -294,10 +293,6 @@ class SettingsWindow():
     def _createSettingsFrames(self):
         self.settingsMasterFrame = ttk.Frame(self.settingsWindow)
         self.settingsMasterFrame.grid(padx=0, pady=0, sticky='NWSE')
-        
-        self.sourcePreferences = ttk.LabelFrame(
-            self.settingsMasterFrame, text='Source Preferences')
-        self.sourcePreferences.grid(padx=16, pady=16, sticky='NWSE')
         
         self.outputPreferences = ttk.LabelFrame(
             self.settingsMasterFrame, text='Output Preferences')
@@ -337,14 +332,6 @@ class SettingsWindow():
         for field, var in zip(fields, vars):
             field.set(var)
         
-        # Source Folder
-        ttk.Label(self.sourcePreferences, text='Default Source Folder', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.sourceFolderLabel = ttk.Label(self.sourcePreferences, textvariable=self.sourceFolderDisplay, width='36')
-        self.sourceFolderLabel.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.sourceFolderLabel, 'Default location to search for scan files')
-        self.changeSourceFolderButton = ttk.Button(self.sourcePreferences, text='Change Folder', command=self._changeSourceFolder)
-        self.changeSourceFolderButton.grid(column=1, row=1)
-        
         # Scans Folder
         ttk.Label(self.outputPreferences, text='Scans Folder', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.scansFolderLabel = ttk.Label(self.outputPreferences, textvariable=self.scansFolderDisplay, width='36')
@@ -376,13 +363,13 @@ class SettingsWindow():
         ttk.Label(self.outputPreferences, text='Low Frequency Limit', width='16').grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.lowFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.lowFreqLimit)
         self.lowFreqLimitEntry.grid(column=1, row=5)
-        CreateToolTip(self.lowFreqLimitEntry, 'Low frequency limit for the output file (leave blank for no limit)')
+        CreateToolTip(self.lowFreqLimitEntry, 'Low frequency limit for the output file (set to 0 for no limit)')
         
         # High Frequency Limit
         ttk.Label(self.outputPreferences, text='High Frequency Limit', width='16').grid(column=0, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.highFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.highFreqLimit)
         self.highFreqLimitEntry.grid(column=1, row=6)
-        CreateToolTip(self.highFreqLimitEntry, 'High frequency limit for the output file (leave blank for no limit)')
+        CreateToolTip(self.highFreqLimitEntry, 'High frequency limit for the output file (set to 0 for no limit)')
         
         # Forename Entry
         ttk.Label(self.personalData, text='Forename', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
@@ -399,15 +386,17 @@ class SettingsWindow():
         # Buttons
         self.saveSettingsButton = ttk.Button(self.settingsButtonsFrame, text='Save', command=self._saveSettings)
         self.saveSettingsButton.grid(column=0, row=0)
+        CreateToolTip(self.saveSettingsButton, 'Save changes')
         self.cancelSettingsButton = ttk.Button(self.settingsButtonsFrame, text='Cancel', command=self._closeSettings)
         self.cancelSettingsButton.grid(column=1, row=0)
+        CreateToolTip(self.cancelSettingsButton, 'Discard changes')
         
         #Bindings
         self.settingsWindow.bind_all('<Return>', self._saveSettings)
         self.settingsWindow.bind_all('<Escape>', self._closeSettings)
         
         # Add padding to all entry boxes
-        for widget in [self.changeSourceFolderButton, self.changeBaseFolderButton, self.forenameEntry, self.surnameEntry, self.lowFreqLimitEntry, self.highFreqLimitEntry, self.saveSettingsButton, self.cancelSettingsButton]:
+        for widget in [self.changeBaseFolderButton, self.forenameEntry, self.surnameEntry, self.lowFreqLimitEntry, self.highFreqLimitEntry, self.saveSettingsButton, self.cancelSettingsButton]:
             widget.grid(sticky='W', padx=data.padx_default, pady=data.pady_default)
     
     # Method to select default source folder
@@ -560,7 +549,8 @@ class GUI():
         self.fileMenu.add_command(label='Add Files', accelerator='Command-a', command=self._addFiles)
         self.fileMenu.add_command(label='Add Directory', accelerator='Command-Shift-a', command=self._addDirectory)
         self.fileMenu.add_separator()
-        self.fileMenu.add_command(label='Set Destination', accelerator='Command-d', command=self._customDestination) 
+        self.fileMenu.add_command(label='Set Date', accelerator='Command-d', command=self._useDate) 
+        self.fileMenu.add_command(label='Set Destination', accelerator='Command-Shift-d', command=self._customDestination) 
         self.fileMenu.add_command(label='Create File', accelerator='Command-Return', command=self._createFile)
         self.menuBar.add_cascade(label='File', menu=self.fileMenu)
         
@@ -579,7 +569,7 @@ class GUI():
         
         self.window.bind_all('<Command-a>', self._addFiles)
         self.window.bind_all('<Command-Shift-a>', self._addDirectory)
-        self.window.bind_all('<Command-d>', self._customDestination)
+        self.window.bind_all('<Command-Shift-d>', self._customDestination)
     
     # Create GUI widgets
     def _createWidgets(self):
@@ -621,16 +611,16 @@ class GUI():
         self.fileListEditFrame.grid(column=0, row=2, columnspan=2, sticky='W')
         self.addFilesButton = ttk.Button(self.fileListEditFrame, text='Add Files', command=self._addFiles)
         self.addFilesButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.addFilesButton, 'Add files to file list')
+        CreateToolTip(self.addFilesButton, 'Add files to file list (⌘A)')
         self.removeFileButton = ttk.Button(self.fileListEditFrame, text='Remove File', command=self._removeFile)
         self.removeFileButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=0)
-        CreateToolTip(self.removeFileButton, 'Remove selected file from file list')
+        CreateToolTip(self.removeFileButton, 'Remove selected file from file list (⌫)')
         self.clearFilesButton = ttk.Button(self.fileListEditFrame, text='Clear Files', command=self._clearFiles)
         self.clearFilesButton.grid(column=2, row=0, sticky='W', padx=data.padx_default, pady=0)
-        CreateToolTip(self.clearFilesButton, 'Remove all files from file list')
+        CreateToolTip(self.clearFilesButton, 'Remove all files from file list (⌘⌫)')
         self.useDateButton = ttk.Button(self.fileListEditFrame, text='Set Date', command=self._useDate)
         self.useDateButton.grid(column=3, row=0, sticky='W', padx=data.padx_default, pady=0)
-        CreateToolTip(self.useDateButton, 'Use currently selected files creation date for scan date')
+        CreateToolTip(self.useDateButton, 'Use currently selected files creation date for scan date (⌘D)')
      
         # File Info status
         self.fileStatus = ttk.Label(self.inputFrame, textvariable=self.numFiles)
@@ -713,10 +703,10 @@ class GUI():
         self.outputButtons.grid(column=1, row=6, sticky='W')
         self.createFileButton = ttk.Button(self.outputButtons, text='Create File', command=self._createFile)
         self.createFileButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.createFileButton, 'Create master file')
+        CreateToolTip(self.createFileButton, 'Create master file (⌘↵)')
         self.customOutputButton = ttk.Button(self.outputButtons, text='Set Destination', command=self._customDestination)
         self.customOutputButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.customOutputButton, 'Set custom destination for output files')
+        CreateToolTip(self.customOutputButton, 'Set custom destination for output files (⌘⇧D)')
      
         # Add styling to all entry boxes
         for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox]:
@@ -853,19 +843,21 @@ class GUI():
                 x.config(state=inputStatus)
             if inputStatus == 'enabled':
                 inputStatus = 'normal'
-            for (menu, item) in [(self.editMenu, 'Remove File')]:
+            for (menu, item) in [(self.editMenu, 'Remove File'), (self.fileMenu, 'Set Date')]:
                 menu.entryconfig(item, state=inputStatus)
                 
         if outputStatus != None:
             for x in [self.clearFilesButton, self.createFileButton]:
                 x.config(state=outputStatus)
             if outputStatus == 'enabled':
-                #self.window.bind('<Command-BackSpace>', self._clearFiles)
+                self.window.bind('<Command-BackSpace>', self._clearFiles)
+                self.window.bind_all('<Command-d>', self._useDate)
                 self.window.bind_all('<Command-Return>', self._createFile)
                 self.editMenu.entryconfig('Clear Files', state='normal')
                 self.fileMenu.entryconfig('Create File', state='normal')
             else:
                 self.window.unbind('<Command-BackSpace>')
+                self.window.unbind_all('<Command-d>')
                 self.window.unbind_all('<Command-Return>')
                 self.editMenu.entryconfig('Clear Files', state='disabled')
                 self.fileMenu.entryconfig('Create File', state='disabled')
@@ -945,6 +937,7 @@ class GUI():
             if newFile.valid:
                 self.ioGuess += newFile.io
                 self.files.append(newFile)
+                pl['defaultSourceLocation'] = os.path.dirname(file)
             elif not suppressErrors:
                 tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
         self._setIO()
@@ -955,6 +948,7 @@ class GUI():
         dirFiles = []
         selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=pl['defaultSourceLocation'])
         if selectedDir != '':
+            pl['defaultSourceLocation'] = selectedDir
             for file in os.listdir(selectedDir):
                 fullfilename = '{}{}{}'.format(selectedDir, data.slash, file)
                 if not file.startswith('.') and not os.path.isdir(fullfilename):
@@ -988,7 +982,7 @@ class GUI():
         self._printFiles()
          
     # Method to use date from selected file
-    def _useDate(self):
+    def _useDate(self, event=None):
         self.scanDate.set(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat))
         self._getMasterFilename()
 
@@ -1040,10 +1034,10 @@ class GUI():
                 statement += '{}\n\n{} files written to disk.\n'.format(writtenFilename, filesWritten)
              
             # Write defaults to plist
-            vars = [self.venue, self.town, self.country, self.deleteSourceFiles]
-            fields = [pl['defaultVenue'], pl['defaultTown'], pl['defaultCountry'], pl['defaultDelete']]
-            for field, var in zip(fields, vars):
-                field = vars.get()
+            pl['defaultVenue'] = self.venue.get()
+            pl['defaultTown'] = self.town.get()
+            pl['defaultCountry'] = self.country.get()
+            pl['defaultDelete'] = self.deleteSourceFiles.get()
 
             with open(plistName, 'wb') as fp:
                 plistlib.dump(pl, fp)

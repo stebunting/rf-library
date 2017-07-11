@@ -22,7 +22,7 @@ plist = {
 	'fileStructure': '%t %v-%c %y-%d-%m %i %n-%f',
 	'defaultDateFormat': 'yyyy-dd-mm',
 	'lowFreqLimit': 0,
-	'highFreqLimit': 2000,
+	'highFreqLimit': 0,
 
 	# Continuity Settings
 	'defaultVenue': 'Venue',
