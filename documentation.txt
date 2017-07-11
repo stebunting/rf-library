@@ -81,6 +81,7 @@ targetSubdirectory                   StringVar    Subdirectory Variable
 defaultOutputLocation                BooleanVar   Custom (0)/Standard (1) Output Directory
 scanMasterFilename                   StringVar    Output filename Variable
 defaultMasterFilename                BooleanVar   Custom (0)/Standard (1) Master Filename
+copySourceFiles                      BooleanVar   (1) to copy input files to library
 deleteSourceFiles                    BooleanVar   (1) to delete input files on creation
 
 

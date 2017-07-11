@@ -46,11 +46,31 @@ def dir_format(display_location, max_length):
 settingsExists = True
 if not os.path.isfile(plistName):
     settingsExists = False
-    with open(plistName, 'wb') as fp:
-        plistlib.dump(data.plist, fp)
+    fp = open(plistName, 'wb')
+    fp.close()
     os.chmod(plistName, 0o600)
-with open(plistName, 'rb') as fp:
-    pl = plistlib.load(fp)
+    pl = dict()
+else:
+    with open(plistName, 'rb') as fp:
+        pl = plistlib.load(fp)
+
+# Check for preferences and add default if not there
+vars = ['forename', 'surname', 'dirStructure', 'fileStructure', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
+defaults = ['', '', '%c/%t %v/%y', '%t %v-%c %y-%d-%m %i %n-%f', 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
+for var, default in zip(vars, defaults):
+    if not pl.get(var):
+        pl[var] = default
+if not pl.get('defaultLibraryLocation'):
+    if platform.system() == 'Darwin':
+        pl['defaultLibraryLocation'] = os.path.expanduser('~/Documents/Scans')
+    elif platform.system() == 'Windows':
+        pl['defaultLibraryLocation'] = os.path.expanduser('~/My Documents/Scans')
+    else:
+        pl['defaultLibraryLocation'] = os.path.expanduser('/')
+
+if not settingsExists:
+    with open(plistName, 'wb') as fp:
+        plistlib.dump(pl, fp)
 
 dateFormat = set_date_format()
 
@@ -198,13 +218,16 @@ class File():
     def parseWSMScan(self):
         self.model = 'Sennheiser WSM'
         wsmLowLimit = -99
-        wsmHighLimit = -80
-        wsmMultiplier = wsmLowLimit - wsmHighLimit
+        wsmHighLimit = -30
+        wsmMultiplier = wsmLowLimit - wsmHighLimit # -69
         for line in self.fp:
             splitLine = re.split('[    ,; ]', line)
             try:
                 freq = float(splitLine[0]) / 1000
-                value = wsmLowLimit - (float(splitLine[2]) * 0.025 * wsmMultiplier)
+                value = wsmLowLimit - (float(splitLine[2]) * 0.0065 * wsmMultiplier)
+                # -34.2 = -99 - (9988 * ? * -69)
+                # -64.8 / (9988 * -69) = 0,0065
+
                 if freq > 1:
                     self.frequencies.append([freq, value])
             except (ValueError, IndexError):
@@ -477,7 +500,7 @@ class GUI():
         
         # Configure main window
         self.window.resizable(width=False, height=False)
-        self.window.geometry('840x672')
+        self.window.geometry('840x698')
         self.window.title(data.title)
         self.window.config(background='lightGrey')
         self.window.iconbitmap('gui.ico')
@@ -586,11 +609,12 @@ class GUI():
         self.defaultOutputLocation = tk.BooleanVar()
         self.scanMasterFilename = tk.StringVar()
         self.defaultMasterFilename = tk.BooleanVar()
+        self.copySourceFiles = tk.BooleanVar()
         self.deleteSourceFiles = tk.BooleanVar()
         
         # Set default values
-        fields = [self.venue, self.town, self.country, self.deleteSourceFiles]
-        vars = [pl['defaultVenue'], pl['defaultTown'], pl['defaultCountry'], pl['defaultDelete']]
+        fields = [self.venue, self.town, self.country, self.copySourceFiles, self.deleteSourceFiles]
+        vars = [pl['defaultVenue'], pl['defaultTown'], pl['defaultCountry'], pl['defaultCopy'], pl['defaultDelete']]
         for field, var in zip(fields, vars):
             field.set(var)
         
@@ -620,7 +644,7 @@ class GUI():
         CreateToolTip(self.clearFilesButton, 'Remove all files from file list (⌘⌫)')
         self.useDateButton = ttk.Button(self.fileListEditFrame, text='Set Date', command=self._useDate)
         self.useDateButton.grid(column=3, row=0, sticky='W', padx=data.padx_default, pady=0)
-        CreateToolTip(self.useDateButton, 'Use currently selected files creation date for scan date (⌘D)')
+        CreateToolTip(self.useDateButton, 'Use currently selected file\'s creation date for scan date (⌘D)')
      
         # File Info status
         self.fileStatus = ttk.Label(self.inputFrame, textvariable=self.numFiles)
@@ -694,13 +718,16 @@ class GUI():
         self.defaultMasterFilenameCheck = ttk.Radiobutton(self.outputFrame, text='Standard Filename', variable=self.defaultMasterFilename, command=self._standardMasterFilename)
         self.defaultMasterFilenameCheck.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
         CreateToolTip(self.defaultMasterFilenameCheck, 'Check to use default filename')
+        self.copySourceFilesCheck = ttk.Checkbutton(self.outputFrame, text='Duplicate Source Files', variable=self.copySourceFiles)
+        self.copySourceFilesCheck.grid(column=1, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        CreateToolTip(self.copySourceFilesCheck, 'Duplicate source files in library')
         self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, text='Delete Source Files', variable=self.deleteSourceFiles)
-        self.deleteSourceFilesCheck.grid(column=1, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.deleteSourceFilesCheck.grid(column=1, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
         CreateToolTip(self.deleteSourceFilesCheck, 'Delete source files on file creation')
 
         # Output Buttons
         self.outputButtons = ttk.Frame(self.outputFrame)
-        self.outputButtons.grid(column=1, row=6, sticky='W')
+        self.outputButtons.grid(column=1, row=7, sticky='W')
         self.createFileButton = ttk.Button(self.outputButtons, text='Create File', command=self._createFile)
         self.createFileButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         CreateToolTip(self.createFileButton, 'Create master file (⌘↵)')
@@ -1017,13 +1044,14 @@ class GUI():
         
         # Write original files with new filenames
         if self._createDirectory():
-            for file in self.files:
-                writtenFilename = self._writeFile(self.scanOutputLocation, file.newFilename, file.frequencies)
-                if not writtenFilename:
-                    return False
-                else:
-                    filesWritten += 1
-                    statement += '{}\n'.format(writtenFilename)
+            if self.copySourceFiles.get():
+                for file in self.files:
+                    writtenFilename = self._writeFile(self.scanOutputLocation, file.newFilename, file.frequencies)
+                    if not writtenFilename:
+                        return False
+                    else:
+                        filesWritten += 1
+                        statement += '{}\n'.format(writtenFilename)
         
             # Write master file
             writtenFilename = self._writeFile(self.scanOutputLocation, self.scanMasterFilename.get(), outputFile)
@@ -1037,6 +1065,7 @@ class GUI():
             pl['defaultVenue'] = self.venue.get()
             pl['defaultTown'] = self.town.get()
             pl['defaultCountry'] = self.country.get()
+            pl['defaultCopy'] = self.copySourceFiles.get()
             pl['defaultDelete'] = self.deleteSourceFiles.get()
 
             with open(plistName, 'wb') as fp:
