@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Import Python Modules
 import platform
@@ -279,7 +280,7 @@ class File():
         elif 1893 <= self.startFrequency <= 1906:
             self.newFilename = 'DJAP'
         elif 1880 <= self.startFrequency <= 1900:
-            self.newFilename = 'DEUR'
+            self.newFilename = 'DEURAU'
         else:
             self.newFilename = '{:.0f}MHz'.format(self.startFrequency)
         self.newFilename = '{}.csv'.format(self.newFilename)
