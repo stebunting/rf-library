@@ -10,6 +10,7 @@ import re
 import xml.etree.ElementTree
 import plistlib
 import webbrowser
+import requests
 
 # Import Tkinter GUI functions
 import tkinter as tk
@@ -23,8 +24,9 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Import program data
+# Import program data and modules
 import data
+import ofcom
 
 # Define location of plist file
 plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
@@ -56,8 +58,8 @@ else:
         plist = plistlib.load(fp)
 
 # Check for preferences and add default if not there
-vars = ['forename', 'surname', 'dirStructure', 'fileStructure', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
-defaults = ['', '', '%c/%t %v/%y', '%t %v-%c %y-%d-%m %i %n-%f', 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
+vars = ['ofcomAccountName', 'ofcomUserName', 'ofcomPassword', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
+defaults = ['', '', '', '', '', '%c/%t %v/%y', '%t %v-%c %y-%d-%m %i %n-%f', False, 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
 for var, default in zip(vars, defaults):
     if not plist.get(var):
         plist[var] = default
@@ -307,7 +309,7 @@ class SettingsWindow():
         
         self.settingsWindow.title('Settings')
         self.settingsWindow.resizable(width=False, height=False)
-        self.settingsWindow.geometry('509x426')
+        self.settingsWindow.geometry('509x550')
         
         self._createSettingsFrames()
         self._createSettingsWidgets()
@@ -324,6 +326,10 @@ class SettingsWindow():
         self.personalData = ttk.LabelFrame(
             self.settingsMasterFrame, text='Personal Data')
         self.personalData.grid(padx=16, pady=16, sticky='NWSE')
+        
+        self.ofcomLogin = ttk.LabelFrame(
+            self.settingsMasterFrame, text='OFCOM Login Data')
+        self.ofcomLogin.grid(padx=16, pady=16, sticky='NWSE')
         
         self.settingsButtonsFrame = ttk.Frame(self.settingsMasterFrame)
         self.settingsButtonsFrame.grid(
@@ -342,16 +348,20 @@ class SettingsWindow():
         self.defaultDateFormat = tk.StringVar()
         self.forename = tk.StringVar()
         self.surname = tk.StringVar()
+        self.ofcomAccountName = tk.StringVar()
+        self.ofcomUserName = tk.StringVar()
+        self.ofcomPassword = tk.StringVar()
 
         # Set Variables
         vars = [plist['dirStructure'], plist['fileStructure'],
                 dir_format(plist['defaultSourceLocation'], 50), dir_format(plist['defaultLibraryLocation'], 50),
                 plist['lowFreqLimit'], plist['highFreqLimit'],
-                plist['defaultDateFormat'], plist['forename'],
-                plist['surname']]
+                plist['defaultDateFormat'], plist['forename'], plist['surname'],
+                plist['ofcomAccountName'], plist['ofcomUserName'], plist['ofcomPassword']]
         fields = [self.dirStructure, self.fileStructure, self.sourceFolderDisplay,
                   self.scansFolderDisplay, self.lowFreqLimit, self.highFreqLimit,
-                  self.defaultDateFormat, self.forename, self.surname]
+                  self.defaultDateFormat, self.forename, self.surname,
+                  self.ofcomAccountName, self.ofcomUserName, self.ofcomPassword]
         for field, var in zip(fields, vars):
             field.set(var)
         
@@ -406,6 +416,24 @@ class SettingsWindow():
         self.surnameEntry.grid(column=1, row=1)
         CreateToolTip(self.surnameEntry, 'Your surname')
         
+        # OFCOM Account Name Entry
+        ttk.Label(self.ofcomLogin, text='Account Name', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.ofcomAccountNameEntry = ttk.Entry(self.ofcomLogin, textvariable=self.ofcomAccountName)
+        self.ofcomAccountNameEntry.grid(column=1, row=0)
+        CreateToolTip(self.ofcomAccountNameEntry, 'Your OFCOM Account Name')
+        
+        # OFCOM User Name Entry
+        ttk.Label(self.ofcomLogin, text='User Name', width='16').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.ofcomUsernameEntry = ttk.Entry(self.ofcomLogin, textvariable=self.ofcomUserName)
+        self.ofcomUsernameEntry.grid(column=1, row=1)
+        CreateToolTip(self.ofcomUsernameEntry, 'Your OFCOM User Name')
+        
+        # OFCOM Password Entry
+        ttk.Label(self.ofcomLogin, text='Password', width='16').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.ofcomPasswordEntry = ttk.Entry(self.ofcomLogin, show="\u2022", textvariable=self.ofcomPassword)
+        self.ofcomPasswordEntry.grid(column=1, row=2)
+        CreateToolTip(self.ofcomPasswordEntry, 'Your OFCOM Password')
+        
         # Buttons
         self.saveSettingsButton = ttk.Button(self.settingsButtonsFrame, text='Save', command=self._saveSettings)
         self.saveSettingsButton.grid(column=0, row=0)
@@ -456,6 +484,9 @@ class SettingsWindow():
         elif int(self.highFreqLimit.get()) < int(self.lowFreqLimit.get()):
             self.highFreqLimit.set(self.lowFreqLimit.get())
 
+        plist['ofcomAccountName'] = self.ofcomAccountName.get()
+        plist['ofcomUserName'] = self.ofcomUserName.get()
+        plist['ofcomPassword'] = self.ofcomPassword.get()
         plist['forename'] = self.forename.get()
         plist['surname'] = self.surname.get()
         plist['dirStructure'] = self.dirStructure.get().strip('/')
@@ -494,6 +525,7 @@ class GUI():
         self.ioFixed = False
         self.customMasterFilename = False
         self.customSubdirectory = False
+        self.pmseLookupVenues = [[], []]
         
         # Create instance
         self.window = tk.Tk()
@@ -541,18 +573,27 @@ class GUI():
         self.masterFrame = ttk.Frame(self.window)
         self.masterFrame.grid(padx=0, pady=0, sticky='NWE')
      
-        self.inputFrame = ttk.LabelFrame(self.masterFrame, text='Source Data')
-        self.inputFrame.grid(column=0, row=0, padx=10, pady=10, sticky='NWE')
+        self.leftContainer = ttk.Frame(self.masterFrame)
+        self.leftContainer.grid(column=0, row=0, padx=0, pady=0, stick='NWE')
+
+        self.rightContainer = ttk.Frame(self.masterFrame)
+        self.rightContainer.grid(column=1, row=0, padx=0, pady=0, sticky='NWE')
      
-        self.previewFrame = ttk.LabelFrame(self.masterFrame, text='Source Preview')
-        self.previewFrame.grid(column=1, row=0, rowspan=2, padx=8, pady=8, sticky='NWE')
+        self.inputFrame = ttk.LabelFrame(self.leftContainer, text='Source Data')
+        self.inputFrame.grid(column=0, row=0, padx=10, pady=10, sticky='NWE')
+                          
+        self.infoFrame = ttk.LabelFrame(self.leftContainer, text='Venue Information')
+        self.infoFrame.grid(column=0, row=1, padx=8, pady=8, sticky='NWE')
+
+        self.previewFrame = ttk.LabelFrame(self.rightContainer, text='Source Preview')
+        self.previewFrame.grid(column=0, row=0, columnspan=2, padx=8, pady=8, sticky='NWE')
         CreateToolTip(self.previewFrame, 'Selected scan preview')
                           
-        self.infoFrame = ttk.LabelFrame(self.masterFrame, text='Venue Information')
-        self.infoFrame.grid(column=0, row=1, padx=8, pady=8, sticky='NWE')
+        self.ofcomFrame = ttk.LabelFrame(self.rightContainer, text='OFCOM')
+        self.ofcomFrame.grid(column=0, row=1, padx=8, pady=8, sticky='NWE')
      
         self.outputFrame = ttk.LabelFrame(self.masterFrame, text='Output Data')
-        self.outputFrame.grid(column=0, row=2, columnspan=3, padx=8, pady=8, sticky='NWE')
+        self.outputFrame.grid(column=0, row=1, columnspan=3, padx=8, pady=8, sticky='NWE')
         
         # Initialise graph window
         self.fig = matplotlib.figure.Figure(figsize=(3.2, 2.65), dpi=100, facecolor='white')
@@ -604,6 +645,9 @@ class GUI():
         self.country = tk.StringVar()
         self.scanDate = tk.StringVar()
         self.io = tk.StringVar()
+        self.ofcomSearch = tk.StringVar()
+        self.ofcomVenue = tk.StringVar()
+        self.includeOfcomData = tk.BooleanVar()
         self.scanOutputLocationDisplay = tk.StringVar()
         self.targetSubdirectory = tk.StringVar()
         self.defaultOutputLocation = tk.BooleanVar()
@@ -613,10 +657,11 @@ class GUI():
         self.deleteSourceFiles = tk.BooleanVar()
         
         # Set default values
-        fields = [self.venue, self.town, self.country, self.copySourceFiles, self.deleteSourceFiles]
-        vars = [plist['defaultVenue'], plist['defaultTown'], plist['defaultCountry'], plist['defaultCopy'], plist['defaultDelete']]
+        fields = [self.venue, self.town, self.country, self.copySourceFiles, self.deleteSourceFiles, self.includeOfcomData]
+        vars = [plist['defaultVenue'], plist['defaultTown'], plist['defaultCountry'], plist['defaultCopy'], plist['defaultDelete'], plist['defaultOfcomInclude']]
         for field, var in zip(fields, vars):
             field.set(var)
+        self.ofcomVenueList = ['No venues found...']
         
         # File List
         ttk.Label(self.inputFrame, text='File List').grid(column=0, row=0, sticky='W')
@@ -685,7 +730,32 @@ class GUI():
         self.ioBox.current(0)
         self.ioBox.bind('<<ComboboxSelected>>', self._ioBoxEdit)
         CreateToolTip(self.ioBox, 'Was the scan taken inside or outside?')
-     
+        
+        # OFCOM Search Bar
+        ttk.Label(self.rightContainer, text='OFCOM Search', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.ofcomSearchEntry = ttk.Entry(self.rightContainer, textvariable=self.ofcomSearch, width=20, font='TkDefaultFont {}'.format(self.fontSize))
+        self.ofcomSearchEntry.grid(column=1, row=1, sticky='NW')
+        CreateToolTip(self.ofcomSearchEntry, 'OFCOM Database Search')
+
+        # OFCOM Search Buton
+        self.ofcomSearchButton = ttk.Button(self.rightContainer, text='OFCOM Search', command=self._ofcomSearch)
+        self.ofcomSearchButton.grid(column=1, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        CreateToolTip(self.ofcomSearchButton, 'Search OFCOM database (⌘S)')
+        
+        # OFCOM Venue List
+        ttk.Label(self.rightContainer, text='Venue Check', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        self.ofcomBox = ttk.Combobox(self.rightContainer, textvariable=self.ofcomVenue, width=20, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
+        self.ofcomBox['values'] = self.ofcomVenueList
+        self.ofcomBox.grid(column=1, row=3, sticky='NW')
+        self.ofcomBox.current(0)
+        self.ofcomBox.config(state='disabled')
+        CreateToolTip(self.ofcomBox, 'Select the correct venue from the list')
+
+        # OFCOM Include Button
+        self.includeOfcomDataCheck = ttk.Checkbutton(self.rightContainer, text='Include Exclusion Files', variable=self.includeOfcomData)
+        self.includeOfcomDataCheck.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        CreateToolTip(self.includeOfcomDataCheck, 'Include OFCOM Exclusion Data')
+        
         # Output Location
         self.targetSubdirectory.set(self.io.get())
         ttk.Label(self.outputFrame, text='Destination', width=12).grid(column=0, row=0, columnspan = 2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
@@ -740,7 +810,9 @@ class GUI():
             x.grid(sticky='NW', padx=data.padx_default, pady=data.pady_default)
             x.bind('<KeyRelease>', self._getMasterFilename)
         
-         # Key Bindings
+        # Key Bindings
+        self.window.bind_all('<Command-Return>', self._createFile)
+        self.window.bind_all('<Command-s>', self._ofcomSearch)
         self.fileListbox.bind('<Escape>', self._deselectFileListbox)
         self.fileListbox.bind('<BackSpace>', self._removeFile)
          
@@ -804,7 +876,7 @@ class GUI():
 
     # Method to decide if buttons should be disabled or not
     def _buttonDisable(self):
-        if len(self.files) == 0:
+        if len(self.files) == 0 :
             self._buttonStatus('disabled', 'disabled')
         elif self.fileListboxSelection == None:
             self._buttonStatus('disabled', 'enabled')
@@ -861,6 +933,9 @@ class GUI():
                 self.targetLocation = data.slash + self.targetLocation
         self.scanOutputLocation = self.libraryLocation + self.targetLocation
         self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))
+
+        # Set OFCOM Search box when venue edited
+        self.ofcomSearch.set('{} {}'.format(self.town.get(), self.venue.get()))
         
     # Method to disable/enable buttons/menu items based on selected files
     def _buttonStatus(self, inputStatus=None, outputStatus=None):
@@ -873,16 +948,14 @@ class GUI():
                 menu.entryconfig(item, state=inputStatus)
                 
         if outputStatus != None:
-            for x in [self.clearFilesButton, self.createFileButton]:
-                x.config(state=outputStatus)
+            self.clearFilesButton.config(state=outputStatus)
             if outputStatus == 'enabled':
                 self.window.bind_all('<Command-d>', self._useDate)
-                self.window.bind_all('<Command-Return>', self._createFile)
                 self.editMenu.entryconfig('Clear Files', state='normal')
                 self.fileMenu.entryconfig('Create File', state='normal')
             else:
                 self.window.unbind_all('<Command-d>')
-                self.window.unbind_all('<Command-Return>')
+                #self.window.unbind_all('<Command-Return>')
                 self.editMenu.entryconfig('Clear Files', state='disabled')
                 self.fileMenu.entryconfig('Create File', state='disabled')
      
@@ -1013,7 +1086,8 @@ class GUI():
 
     # Method to create master file
     def _createFile(self, event=None):
-        if len(self.files) == 0:
+        if len(self.files) == 0 and not self.includeOfcomData.get():
+            tkmessagebox.showinfo('No Files To Create', 'No files to create.')
             return
         
         # Check if user really wants to delete source files
@@ -1052,19 +1126,32 @@ class GUI():
                         statement += '{}\n'.format(writtenFilename)
         
             # Write master file
-            writtenFilename = self._writeFile(self.scanOutputLocation, self.scanMasterFilename.get(), outputFile)
-            if not writtenFilename:
-                return False
-            else:
-                filesWritten += 1
-                statement += '{}\n\n{} files written to disk.\n'.format(writtenFilename, filesWritten)
-             
+            if len(outputFile) > 0:
+                writtenFilename = self._writeFile(self.scanOutputLocation, self.scanMasterFilename.get(), outputFile)
+                if not writtenFilename:
+                    return False
+                else:
+                    filesWritten += 1
+                    statement += '{}\n'.format(writtenFilename)
+            
+            # Write OFCOM exclusions files
+            if (self.includeOfcomData.get()):
+                filename = self._findUnusedFile(self.scanOutputLocation, '{}.cxl'.format(os.path.splitext(self.scanMasterFilename.get())[0]))
+                target = self.scanOutputLocation + data.slash + filename
+                writtenFilename = self._ofcomGenerate(None, self.io.get(), target)
+                if writtenFilename:
+                    filesWritten += 1
+                    statement += '{}\n'.format(filename)
+            
+            statement += '\n{} files written to disk.\n'.format(filesWritten)
+
             # Write defaults to plist
             plist['defaultVenue'] = self.venue.get()
             plist['defaultTown'] = self.town.get()
             plist['defaultCountry'] = self.country.get()
             plist['defaultCopy'] = self.copySourceFiles.get()
             plist['defaultDelete'] = self.deleteSourceFiles.get()
+            plist['defaultOfcomInclude'] = self.includeOfcomData.get()
 
             with open(plistName, 'wb') as fp:
                 plistlib.dump(plist, fp)
@@ -1080,15 +1167,20 @@ class GUI():
                 if tkmessagebox.askyesno('Success!', '{}\nWould you like to clear the file list?'.format(statement)):
                     self._clearFiles(None, False)
 
-    # Method to write file to disk
-    def _writeFile(self, dir, filename, array):
-        target = dir + data.slash + filename
+    def _findUnusedFile(self, directory, filename):
+        target = directory + data.slash + filename
         file, ext = os.path.splitext(filename)
         duplicateCounter = 0
         while os.path.isfile(target):
             duplicateCounter += 1
             filename = '{}-{}{}'.format(file, duplicateCounter, ext)
-            target = dir + data.slash + filename
+            target = directory + data.slash + filename
+        return filename
+
+    # Method to write file to disk
+    def _writeFile(self, directory, filename, array):
+        filename = self._findUnusedFile(directory, filename)
+        target = directory + data.slash + filename
         try:
             with open(target, 'w') as fp:
                 for freq, value in array:
@@ -1191,6 +1283,10 @@ class GUI():
 
     # Method to quit application
     def _quit(self, event=None):
+        try:
+            self.pmseLookup.logout()
+        except AttributeError:
+            pass
         self.window.quit()
         self.window.destroy()
         sys.exit()
@@ -1202,7 +1298,7 @@ class GUI():
     # Method to open docs in web browser
     def _openHTTP(self):
         browser=webbrowser.get('Safari')
-        browser.open('https://rflibrary.stevebunting.com/documentation.php')
+        browser.open('http://rflibrary.stevebunting.com/documentation.php')
 
     # Method to display settings box
     def _settings(self, event=None):
@@ -1216,6 +1312,50 @@ class GUI():
             self.settings.settingsWindow.mainloop()
             self.settingsWindowOpen = False
             self._refresh()
+
+    # Method to search OFCOM database and return a list of possible venues
+    def _ofcomSearch(self, event=None):
+        try:
+            hasattr(self.pmseLookup, 'account_name')
+        except AttributeError:
+            self.pmseLookup = ofcom.PMSELookup(plist['ofcomAccountName'], plist['ofcomUserName'], plist['ofcomPassword'])
+        
+            # Login to OFCOM site
+            try:
+                self.pmseLookup.login()
+            except requests.exceptions.ConnectionError:
+                tkmessagebox.showwarning('Connection Error', 'There was an error connecting to this service, please check your connection.')
+                return
+            except ofcom.LoginError:
+                if (tkmessagebox.askyesno('Login Fail', 'Could not login to pmse.ofcom.org.uk.\n\nWould you like to check your login details?')):
+                    self._settings()
+                return
+
+        # Look up venues
+        self.pmseLookupVenues = self.pmseLookup.getList(self.ofcomSearch.get())
+
+        # Venues found
+        if len(self.pmseLookupVenues[0]) > 0:
+            self.ofcomBox['values'] = self.pmseLookupVenues[0]
+            self.ofcomBox.config(state='enabled')
+
+        # No venues found
+        else:
+            tkmessagebox.showwarning('No venues found', 'No venues found.\n\nTry editing your search term.')
+            self.ofcomBox['values'] = self.ofcomVenueList
+            self.ofcomBox.config(state='disabled')
+        self.ofcomBox.current(0)
+
+    # Method to retrieve data from OFCOM and generate exclusion file
+    def _ofcomGenerate(self, event=None, io='Outside', filename=''):
+        if len(self.pmseLookupVenues[0]) == 0:
+            return False
+        else:
+            venueID = self.pmseLookupVenues[1][self.ofcomBox.current()]
+            data = self.pmseLookup.getData(venueID)
+            self.pmseLookup.xmlGenerate(data, io, filename)
+            return filename
+
 
 ################################################################################
 ##########                         START GUI                          ##########
