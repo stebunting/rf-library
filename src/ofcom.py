@@ -23,10 +23,12 @@ class PMSELookup(object):
 
     # Initialise class
     def __init__(self, account_name, username, password):
+        self.timeout = 5
         self.account_name = account_name
         self.username = username
         self.password = password
         self.request_session = None
+        self.loggedin = False
         self.viewstate = '/wEPDwULLTE3NDg5MjE3MTUPZBYCZg9kFgICAQ9kFgICBQ9kFgICAg8PFgIeB1Zpc2libGVoZGQYAQUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgEFGGN0bDAwJG1jcGgkbXlMb2dvbiRjdGwwMSG/qFz0Dd2NuKGYWg6Ip1M9J0yi'
         self.viewstategenerator = '0E9A1EEB'
 
@@ -78,14 +80,12 @@ class PMSELookup(object):
         }
 
         # Log-in to PMSE site
-        try:
-            result = self.request_session.post(
-                url, 
-                data=payload,
-                headers=headers
-            )
-        except ConnectionError as e:
-            return e
+        result = self.request_session.post(
+            url, 
+            data=payload,
+            headers=headers,
+            timeout=self.timeout
+        )
 
         # Check page
         tree = html.fromstring(result.text)
@@ -96,8 +96,10 @@ class PMSELookup(object):
 
         # Return true if login successful else false
         if 200 <= result.status_code < 300:
+            self.loggedin = True
             return True
         else:
+            self.loggedin = False
             return False
 
     # Method to logout
@@ -110,8 +112,8 @@ class PMSELookup(object):
         }
 
         # Start session
-        result = self.request_session.get(url)
-
+        result = self.request_session.get(url, timeout=self.timeout)
+        
         # Return false if logout page get unsuccessful
         if not 200 <= result.status_code < 300:
             return False
@@ -131,7 +133,8 @@ class PMSELookup(object):
         result = self.request_session.post(
             url, 
             data=payload,
-            headers=headers
+            headers=headers,
+            timeout=self.timeout
         )
 
         # Check page
@@ -143,6 +146,7 @@ class PMSELookup(object):
         if not 200 <= result.status_code < 300 or title != "PMSE Login":
             return False
         else:
+            self.loggedin = False
             return True
 
     # Method to return data from PMSE database
@@ -173,8 +177,8 @@ class PMSELookup(object):
             'ctl00$mcph$Where$btnSearch': 'Find >'
         }
 
-        result = self.request_session.get(url)
-
+        result = self.request_session.get(url, timeout=self.timeout)
+        
         # Return false if login page get unsuccessful
         if not 200 <= result.status_code < 300:
             return False
@@ -194,9 +198,10 @@ class PMSELookup(object):
 
         # Get result
         result = self.request_session.post(
-            url, 
-            data=payload,
-            headers=headers
+        url, 
+        data=payload,
+        headers=headers,
+        timeout=self.timeout
         )
 
         # Check page
@@ -206,13 +211,10 @@ class PMSELookup(object):
         locations.pop(0)
         locationIDs.pop(0)
 
-        print([locations, locationIDs])
         return [locations, locationIDs]
 
     # Method to return data from PMSE database
     def getData(self, id):
-        #return {60: {'IndoorQuality': 4, 'OutdoorExclude': False}, 59: {'IndoorQuality': 4, 'OutdoorExclude': False}, 58: {'IndoorQuality': 4, 'OutdoorExclude': False}, 57: {'IndoorQuality': 4, 'OutdoorExclude': False}, 56: {'IndoorQuality': 4, 'OutdoorExclude': False}, 55: {'IndoorQuality': 4, 'OutdoorExclude': False}, 54: {'IndoorQuality': 4, 'OutdoorExclude': False}, 53: {'IndoorQuality': 4, 'OutdoorExclude': False}, 52: {'IndoorQuality': 4, 'OutdoorExclude': False}, 51: {'IndoorQuality': 4, 'OutdoorExclude': False}, 50: {'IndoorQuality': 4, 'OutdoorExclude': False}, 49: {'IndoorQuality': 4, 'OutdoorExclude': False}, 48: {'IndoorQuality': 4, 'OutdoorExclude': False}, 47: {'IndoorQuality': 1, 'OutdoorExclude': True}, 46: {'IndoorQuality': 4, 'OutdoorExclude': False}, 45: {'IndoorQuality': 4, 'OutdoorExclude': False}, 44: {'IndoorQuality': 1, 'OutdoorExclude': True}, 43: {'IndoorQuality': 4, 'OutdoorExclude': False}, 42: {'IndoorQuality': 4, 'OutdoorExclude': False}, 41: {'IndoorQuality': 1, 'OutdoorExclude': True}, 40: {'IndoorQuality': 4, 'OutdoorExclude': False}, 39: {'IndoorQuality': 4, 'OutdoorExclude': False}, 37: {'IndoorQuality': 1, 'OutdoorExclude': True}, 36: {'IndoorQuality': 4, 'OutdoorExclude': False}, 35: {'IndoorQuality': 4, 'OutdoorExclude': False}, 34: {'IndoorQuality': 4, 'OutdoorExclude': False}, 33: {'IndoorQuality': 4, 'OutdoorExclude': False}, 32: {'IndoorQuality': 4, 'OutdoorExclude': False}, 31: {'IndoorQuality': 1, 'OutdoorExclude': True}, 30: {'IndoorQuality': 4, 'OutdoorExclude': False}, 29: {'IndoorQuality': 1, 'OutdoorExclude': True}, 28: {'IndoorQuality': 3, 'OutdoorExclude': True}, 27: {'IndoorQuality': 3, 'OutdoorExclude': True}, 26: {'IndoorQuality': 4, 'OutdoorExclude': False}, 25: {'IndoorQuality': 3, 'OutdoorExclude': True}, 24: {'IndoorQuality': 2, 'OutdoorExclude': True}, 23: {'IndoorQuality': 1, 'OutdoorExclude': True}, 22: {'IndoorQuality': 2, 'OutdoorExclude': True}, 21: {'IndoorQuality': 2, 'OutdoorExclude': True}, 61: {'IndoorQuality': 1, 'OutdoorExclude': True}, 62: {'IndoorQuality': 1, 'OutdoorExclude': True}, 63: {'IndoorQuality': 1, 'OutdoorExclude': True}, 64: {'IndoorQuality': 1, 'OutdoorExclude': True}, 65: {'IndoorQuality': 1, 'OutdoorExclude': True}, 66: {'IndoorQuality': 1, 'OutdoorExclude': True}, 67: {'IndoorQuality': 1, 'OutdoorExclude': True}, 68: {'IndoorQuality': 1, 'OutdoorExclude': True}, 69: {'IndoorQuality': 1, 'OutdoorExclude': True}, 38: {'IndoorQuality': 4, 'OutdoorExclude': False}}
-
         url = 'https://pmse.ofcom.org.uk/pmse/wireless/private/microphonedate.aspx'
 
         payload = {
@@ -254,7 +256,8 @@ class PMSELookup(object):
         result = self.request_session.post(
             url, 
             data=payload,
-            headers=headers
+            headers=headers,
+            timeout=self.timeout
         )
 
         # Scrape information

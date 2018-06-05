@@ -11,6 +11,7 @@ import xml.etree.ElementTree
 import plistlib
 import webbrowser
 import requests
+import keyring
 
 # Import Tkinter GUI functions
 import tkinter as tk
@@ -58,8 +59,8 @@ else:
         plist = plistlib.load(fp)
 
 # Check for preferences and add default if not there
-vars = ['ofcomAccountName', 'ofcomUserName', 'ofcomPassword', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
-defaults = ['', '', '', '', '', '%c/%t %v/%y', '%t %v-%c %y-%d-%m %i %n-%f', False, 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
+vars = ['ofcomAccountName', 'ofcomUserName', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
+defaults = ['', '', '', '', '%c/%t %v/%y', '%t %v-%c %y-%d-%m %i %n-%f', False, 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
 for var, default in zip(vars, defaults):
     if not plist.get(var):
         plist[var] = default
@@ -357,7 +358,7 @@ class SettingsWindow():
                 dir_format(plist['defaultSourceLocation'], 50), dir_format(plist['defaultLibraryLocation'], 50),
                 plist['lowFreqLimit'], plist['highFreqLimit'],
                 plist['defaultDateFormat'], plist['forename'], plist['surname'],
-                plist['ofcomAccountName'], plist['ofcomUserName'], plist['ofcomPassword']]
+                plist['ofcomAccountName'], plist['ofcomUserName'], keyring.get_password('RF Library', plist['ofcomAccountName'])]
         fields = [self.dirStructure, self.fileStructure, self.sourceFolderDisplay,
                   self.scansFolderDisplay, self.lowFreqLimit, self.highFreqLimit,
                   self.defaultDateFormat, self.forename, self.surname,
@@ -486,7 +487,6 @@ class SettingsWindow():
 
         plist['ofcomAccountName'] = self.ofcomAccountName.get()
         plist['ofcomUserName'] = self.ofcomUserName.get()
-        plist['ofcomPassword'] = self.ofcomPassword.get()
         plist['forename'] = self.forename.get()
         plist['surname'] = self.surname.get()
         plist['dirStructure'] = self.dirStructure.get().strip('/')
@@ -496,6 +496,7 @@ class SettingsWindow():
         plist['highFreqLimit'] = int(self.highFreqLimit.get())
         with open(plistName, 'wb') as fp:
             plistlib.dump(plist, fp)
+        keyring.set_password('RF Library', self.ofcomAccountName.get(), self.ofcomPassword.get())
         self._closeSettings()
     
     # Method to close settings window
@@ -535,7 +536,7 @@ class GUI():
         self.window.geometry('840x698')
         self.window.title(data.title)
         self.window.config(background='lightGrey')
-        self.window.iconbitmap('gui.ico')
+        self.window.iconbitmap('logo.ico')
         
         # Configure OS X Application menu
         if platform.system() == 'Darwin':
@@ -600,7 +601,7 @@ class GUI():
         self.ax = self.fig.add_subplot(111)
         self.ax.set_position([0.15, 0.1, 0.81, 0.81])
         self.canvas = FigureCanvasTkAgg(self.fig, self.previewFrame)
-        self.canvas.show()
+        self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self._clearPreview()
     
@@ -1095,8 +1096,8 @@ class GUI():
             delSourceConfirmed = True
         else:
             delSourceConfirmed = False
-         
-         # Add all files into outputFile list if within limits
+
+        # Add all files into outputFile list if within limits
         outputFile = []
         filesWritten = 0
         statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}{}\n\n'.format(self.scanOutputLocation, data.slash)
@@ -1113,7 +1114,7 @@ class GUI():
                 outputFile.remove(outputFile[i - 1])
             else:
                 i += 1
-        
+
         # Write original files with new filenames
         if self._createDirectory():
             if self.copySourceFiles.get():
@@ -1138,12 +1139,19 @@ class GUI():
             if (self.includeOfcomData.get()):
                 filename = self._findUnusedFile(self.scanOutputLocation, '{}.cxl'.format(os.path.splitext(self.scanMasterFilename.get())[0]))
                 target = self.scanOutputLocation + data.slash + filename
+                
                 writtenFilename = self._ofcomGenerate(None, self.io.get(), target)
                 if writtenFilename:
                     filesWritten += 1
                     statement += '{}\n'.format(filename)
-            
+                else:
+                    tkmessagebox.showwarning('Timeout', 'Could not connect to the JFMG service, please check your connection.')
+                
             statement += '\n{} files written to disk.\n'.format(filesWritten)
+
+            if filesWritten == 0:
+                tkmessagebox.showinfo('No Files To Create', 'No files to create.')
+                return
 
             # Write defaults to plist
             plist['defaultVenue'] = self.venue.get()
@@ -1313,22 +1321,27 @@ class GUI():
             self.settingsWindowOpen = False
             self._refresh()
 
+    def _ofcomLogin(self):
+        self.pmseLookup = ofcom.PMSELookup(plist['ofcomAccountName'], plist['ofcomUserName'], keyring.get_password('RF Library', plist['ofcomAccountName']))
+        
+        # Login to OFCOM site
+        try:
+            self.pmseLookup.login()
+        except requests.exceptions.ConnectionError:
+            tkmessagebox.showwarning('Connection Error', 'There was an error connecting to this service, please check your connection.')
+            return False
+        except ofcom.LoginError:
+            if (tkmessagebox.askyesno('Login Fail', 'Could not login to pmse.ofcom.org.uk.\n\nWould you like to check your login details?')):
+                self._settings()
+            return False
+        return True
+
     # Method to search OFCOM database and return a list of possible venues
     def _ofcomSearch(self, event=None):
         try:
             hasattr(self.pmseLookup, 'account_name')
         except AttributeError:
-            self.pmseLookup = ofcom.PMSELookup(plist['ofcomAccountName'], plist['ofcomUserName'], plist['ofcomPassword'])
-        
-            # Login to OFCOM site
-            try:
-                self.pmseLookup.login()
-            except requests.exceptions.ConnectionError:
-                tkmessagebox.showwarning('Connection Error', 'There was an error connecting to this service, please check your connection.')
-                return
-            except ofcom.LoginError:
-                if (tkmessagebox.askyesno('Login Fail', 'Could not login to pmse.ofcom.org.uk.\n\nWould you like to check your login details?')):
-                    self._settings()
+            if not self._ofcomLogin():
                 return
 
         # Look up venues
@@ -1352,7 +1365,12 @@ class GUI():
             return False
         else:
             venueID = self.pmseLookupVenues[1][self.ofcomBox.current()]
-            data = self.pmseLookup.getData(venueID)
+            
+            try:
+                data = self.pmseLookup.getData(venueID)
+            except requests.exceptions.Timeout:
+                return False
+
             self.pmseLookup.xmlGenerate(data, io, filename)
             return filename
 
