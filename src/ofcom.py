@@ -55,23 +55,9 @@ class PMSELookup(object):
             'ctl00$mcph$myLogon': 'ctl00$mcph$myLogon',
             'ctl00$mcph$btnContinueLogon': 'Continue'
         }
-        # POST data for main Login button
-        # payload['ctl00$mcph$myLogon$ctl00' = 'Login'
 
         # Start session
         self.request_session = requests.session()
-        #result = self.request_session.get(url)
-
-        # Return false if login page get unsuccessful
-        #if not 200 <= result.status_code < 300:
-        #    return False
-
-        # Get data from login page form
-        #tree = html.fromstring(result.text)
-        #self.viewstate = tree.xpath("//*[@id=\"__VIEWSTATE\"]/@value")[0]
-        #self.viewstategenerator = tree.xpath("//*[@id=\"__VIEWSTATEGENERATOR\"]/@value")[0]
-        #payload['__VIEWSTATE'] = self.viewstate
-        #payload['__VIEWSTATEGENERATOR'] = self.viewstategenerator
         
         # Define headers
         headers = {
