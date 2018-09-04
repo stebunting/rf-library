@@ -631,13 +631,13 @@ class GUI():
                 'type': 'Menu Item',
                 'label': 'Add Files',
                 'mac_accelerator': 'Command-a',
-                'win_accelerator': 'Ctrl-a',
+                'win_accelerator': 'Control-a',
                 'command': self._addFiles
             }, {
                 'type': 'Menu Item',
                 'label': 'Add Directory',
                 'mac_accelerator': 'Command-Shift-a',
-                'win_accelerator': 'Ctrl-Shift-a',
+                'win_accelerator': 'Control-Shift-a',
                 'command': self._addDirectory
             }, {
                 'type': 'Separator'
@@ -645,19 +645,19 @@ class GUI():
                 'type': 'Menu Item',
                 'label': 'Set Date',
                 'mac_accelerator': 'Command-d',
-                'win_accelerator': 'Ctrl-d',
+                'win_accelerator': 'Control-d',
                 'command': self._useDate
             }, {
                 'type': 'Menu Item',
                 'label': 'Set Destination',
                 'mac_accelerator': 'Command-Shift-d',
-                'win_accelerator': 'Ctrl-Shift-d',
+                'win_accelerator': 'Control-Shift-d',
                 'command': self._customDestination
             }, {
                 'type': 'Menu Item',
                 'label': 'Create File',
                 'mac_accelerator': 'Command-Return',
-                'win_accelerator': 'Ctrl-Return',
+                'win_accelerator': 'Control-Return',
                 'command': self._createFile
             }
         ]
@@ -687,7 +687,7 @@ class GUI():
                 'type': 'Menu Item',
                 'label': 'Clear Files',
                 'mac_accelerator': 'Command-BackSpace',
-                'win_accelerator': 'Ctrl-BackSpace',
+                'win_accelerator': 'Control-BackSpace',
                 'command': self._clearFiles
             }
         ]
@@ -707,7 +707,7 @@ class GUI():
         # Tools Menu
         if platform.system() == 'Windows':
             self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
-            self.toolsMenu.add_command(label='Preferences', accelerator='Ctrl-u', command=self._settings)
+            self.toolsMenu.add_command(label='Preferences', accelerator='Control-u', command=self._settings)
             self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
 
         # Help Menu
@@ -722,9 +722,9 @@ class GUI():
             self.window.bind_all('<Command-Shift-a>', self._addDirectory)
             self.window.bind_all('<Command-Shift-d>', self._customDestination)
         else:
-            self.window.bind_all('<Ctrl-a>', self._addFiles)
-            self.window.bind_all('<Ctrl-Shift-a>', self._addDirectory)
-            self.window.bind_all('<Ctrl-Shift-d>', self._customDestination)
+            self.window.bind_all('<Control-a>', self._addFiles)
+            self.window.bind_all('<Control-Shift-a>', self._addDirectory)
+            self.window.bind_all('<Control-Shift-d>', self._customDestination)
 
     
     # Create GUI widgets
