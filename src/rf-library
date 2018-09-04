@@ -33,7 +33,7 @@ import ofcom
 if platform.system() == 'Darwin':
 	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
 else:
-	plistName = '{}\My Documents\com.stevebunting.rflibrary.plist'.format(os.path.expanduser('~'))
+	plistName = '{}\My Documents\rflibrary.plist'.format(os.path.expanduser('~'))
 
 # Helper function to set dateFormat
 def set_date_format():
