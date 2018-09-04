@@ -31,9 +31,9 @@ import ofcom
 
 # Define location of plist file
 if platform.system() == 'Darwin':
-	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
+    plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
 else:
-	plistName = '{}\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
+    plistName = '{}\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
 
 # Helper function to set dateFormat
 def set_date_format():
@@ -623,22 +623,92 @@ class GUI():
     # Create GUI menu
     def _createMenu(self):
         self.menuBar = tk.Menu(self.window)
-        
+
         # File Menu
         self.fileMenu = tk.Menu(self.menuBar, tearoff=False)
-        self.fileMenu.add_command(label='Add Files', accelerator='Command-a', command=self._addFiles)
-        self.fileMenu.add_command(label='Add Directory', accelerator='Command-Shift-a', command=self._addDirectory)
-        self.fileMenu.add_separator()
-        self.fileMenu.add_command(label='Set Date', accelerator='Command-d', command=self._useDate) 
-        self.fileMenu.add_command(label='Set Destination', accelerator='Command-Shift-d', command=self._customDestination) 
-        self.fileMenu.add_command(label='Create File', accelerator='Command-Return', command=self._createFile)
+
+        m = [ {
+                'type': 'Menu Item',
+                'label': 'Add Files',
+                'mac_accelerator': 'Command-a',
+                'win_accelerator': 'Ctrl-a',
+                'command': self._addFiles
+            }, {
+                'type': 'Menu Item',
+                'label': 'Add Directory',
+                'mac_accelerator': 'Command-Shift-a',
+                'win_accelerator': 'Ctrl-Shift-a',
+                'command': self._addDirectory
+            }, {
+                'type': 'Separator'
+            }, {
+                'type': 'Menu Item',
+                'label': 'Set Date',
+                'mac_accelerator': 'Command-d',
+                'win_accelerator': 'Ctrl-d',
+                'command': self._useDate
+            }, {
+                'type': 'Menu Item',
+                'label': 'Set Destination',
+                'mac_accelerator': 'Command-Shift-d',
+                'win_accelerator': 'Ctrl-Shift-d',
+                'command': self._customDestination
+            }, {
+                'type': 'Menu Item',
+                'label': 'Create File',
+                'mac_accelerator': 'Command-Return',
+                'win_accelerator': 'Ctrl-Return',
+                'command': self._createFile
+            }
+        ]
+        
+        for item in m:
+            if item['type'] == 'Separator':
+                self.fileMenu.add_separator()
+            elif item['type'] == 'Menu Item':
+                if platform.system() == "Darwin":
+                    accelerator = item['mac_accelerator']
+                else:
+                    accelerator = item['win_accelerator']
+                self.fileMenu.add_command(label=item['label'], accelerator=accelerator, command=item['command'])
+
         self.menuBar.add_cascade(label='File', menu=self.fileMenu)
         
         # Edit Menu
         self.editMenu = tk.Menu(self.menuBar, tearoff=False)
-        self.editMenu.add_command(label='Remove File', accelerator='BackSpace', command=self._removeFile)
-        self.editMenu.add_command(label='Clear Files', accelerator='Command-BackSpace', command=self._clearFiles)
+        
+        m = [ {
+                'type': 'Menu Item',
+                'label': 'Remove File',
+                'mac_accelerator': 'BackSpace',
+                'win_accelerator': 'BackSpace',
+                'command': self._removeFile
+            }, {
+                'type': 'Menu Item',
+                'label': 'Clear Files',
+                'mac_accelerator': 'Command-BackSpace',
+                'win_accelerator': 'Ctrl-BackSpace',
+                'command': self._clearFiles
+            }
+        ]
+        
+        for item in m:
+            if item['type'] == 'Separator':
+                self.fileMenu.add_separator()
+            elif item['type'] == 'Menu Item':
+                if platform.system() == 'Darwin':
+                    accelerator = item['mac_accelerator']
+                else:
+                    accelerator = item['win_accelerator']
+                self.editMenu.add_command(label=item['label'], accelerator=accelerator, command=item['command'])
+
         self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
+
+        # Tools Menu
+        if platform.system() == 'Windows':
+            self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
+            self.toolsMenu.add_command(label='Preferences', accelerator='Ctrl-u', command=self._settings)
+            self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
 
         # Help Menu
         self.helpMenu = tk.Menu(self.menuBar, tearoff=False)
@@ -647,9 +717,15 @@ class GUI():
      
         self.window.config(menu=self.menuBar)
         
-        self.window.bind_all('<Command-a>', self._addFiles)
-        self.window.bind_all('<Command-Shift-a>', self._addDirectory)
-        self.window.bind_all('<Command-Shift-d>', self._customDestination)
+        if platform.system() == 'Darwin':
+            self.window.bind_all('<Command-a>', self._addFiles)
+            self.window.bind_all('<Command-Shift-a>', self._addDirectory)
+            self.window.bind_all('<Command-Shift-d>', self._customDestination)
+        else:
+            self.window.bind_all('<Ctrl-a>', self._addFiles)
+            self.window.bind_all('<Ctrl-Shift-a>', self._addDirectory)
+            self.window.bind_all('<Ctrl-Shift-d>', self._customDestination)
+
     
     # Create GUI widgets
     def _createWidgets(self):
