@@ -30,7 +30,10 @@ import data
 import ofcom
 
 # Define location of plist file
-plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
+if platform.system() == 'Darwin':
+	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
+else:
+	plistName = '{}\My Documents\com.stevebunting.rflibrary.plist'.format(os.path.expanduser('~'))
 
 # Helper function to set dateFormat
 def set_date_format():
@@ -60,7 +63,7 @@ else:
 
 # Check for preferences and add default if not there
 vars = ['ofcomAccountName', 'ofcomUserName', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
-defaults = ['', '', '', '', '%c/%t %v/%y', '%t %v-%c %y-%d-%m %i %n-%f', False, 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
+defaults = ['', '', '', '', '%c{}%t %v{}%y'.format(data.slash, data.slash), '%t %v-%c %y-%d-%m %i %n-%f', False, 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
 for var, default in zip(vars, defaults):
     if not plist.get(var):
         plist[var] = default
@@ -68,7 +71,7 @@ if not plist.get('defaultLibraryLocation'):
     if platform.system() == 'Darwin':
         plist['defaultLibraryLocation'] = os.path.expanduser('~/Documents/Scans')
     elif platform.system() == 'Windows':
-        plist['defaultLibraryLocation'] = os.path.expanduser('~/My Documents/Scans')
+        plist['defaultLibraryLocation'] = os.path.expanduser('~\My Documents\Scans')
     else:
         plist['defaultLibraryLocation'] = os.path.expanduser('/')
 
@@ -939,7 +942,7 @@ class GUI():
         self.scanMasterFilename.set(self.parse_structure(plist['fileStructure'] + '.csv'))
         if self.defaultOutputLocation.get() == 1:
             self.libraryLocation = plist['defaultLibraryLocation'] + data.slash
-            self.targetLocation = self.parse_structure(plist['dirStructure'] + '/%s').rstrip('/')
+            self.targetLocation = self.parse_structure(plist['dirStructure'] + data.slash + '%s').rstrip('/')
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
