@@ -1163,6 +1163,15 @@ class GUI():
                 else:
                     filesWritten += 1
                     statement += '{}\n'.format(writtenFilename)
+
+            # Write WSM file
+            if len(outputFile) > 0:
+                writtenFilename = self._writeWSMFile(self.scanOutputLocation, 'WSM' + self.scanMasterFilename.get(), outputFile)
+                if not writtenFilename:
+                    return False
+                else:
+                    filesWritten += 1
+                    statement += '{}\n'.format(writtenFilename)
             
             # Write OFCOM exclusions files
             if (self.includeOfcomData.get()):
@@ -1222,6 +1231,22 @@ class GUI():
             with open(target, 'w') as fp:
                 for freq, value in array:
                     fp.write('{:09.4f},{:09.4f}\n'.format(freq, value))
+            return filename
+        except IOError:
+            tkmessagebox.showwarning('Fail!', '{} could not be written.'.format(target))
+            return False
+
+    # Method to write WSM file to disk
+    def _writeWSMFile(self, directory, filename, array):
+        filename = self._findUnusedFile(directory, filename)  
+        target = directory + data.slash + filename
+        try:
+            with open(target, 'w') as fp:
+                fp.write('Receiver;\nDate/Time;\nRFUnit;dBm\nOwner;\nScanCity;\nScanComment;\nScanCountry;\nScanDescription;\nScanInteriorExterior;\nScanLatitude;\nScanLongitude;\nScanName;Converted\nScanPostalCode;\n\n')
+                fp.write('Frequency Range [kHz];{:06d};{:06d};\n'.format(plist['lowFreqLimit'] * 1000, plist['highFreqLimit'] * 1000))
+                fp.write('Frequency;RF level (%);RF level\n')
+                for freq, value in reversed(array):
+                    fp.write('{:06d};;{:04.1f}\n'.format(int(freq * 1000), value))
             return filename
         except IOError:
             tkmessagebox.showwarning('Fail!', '{} could not be written.'.format(target))
@@ -1418,4 +1443,3 @@ class GUI():
 if __name__ == '__main__':
     gui = GUI()
     gui.window.mainloop()
-
