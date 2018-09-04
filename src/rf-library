@@ -242,8 +242,11 @@ class File():
     
     # Method to return creation date from file
     def getCreationDate(self):
-        self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_birthtime)
-    
+        if platform.system() == 'Darwin':
+            self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_birthtime)
+        elif platform.system() == 'Windows':
+            self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_ctime)
+
     # Method to get TV channels
     def updateTVChannels(self, tvCountry):
         if tvCountry == 'United States of America':
@@ -551,7 +554,7 @@ class GUI():
         self.window.geometry('840x698')
         self.window.title(data.title)
         self.window.config(background='lightGrey')
-        self.window.iconbitmap('logo.ico')
+        #self.window.iconbitmap('logo.ico')
         
         # Configure OS X Application menu
         if platform.system() == 'Darwin':
@@ -631,13 +634,13 @@ class GUI():
                 'type': 'Menu Item',
                 'label': 'Add Files',
                 'mac_accelerator': 'Command-a',
-                'win_accelerator': 'Control-a',
+                'win_accelerator': 'Ctrl+A',
                 'command': self._addFiles
             }, {
                 'type': 'Menu Item',
                 'label': 'Add Directory',
                 'mac_accelerator': 'Command-Shift-a',
-                'win_accelerator': 'Control-Shift-a',
+                'win_accelerator': 'Ctrl+Shift+A',
                 'command': self._addDirectory
             }, {
                 'type': 'Separator'
@@ -645,20 +648,27 @@ class GUI():
                 'type': 'Menu Item',
                 'label': 'Set Date',
                 'mac_accelerator': 'Command-d',
-                'win_accelerator': 'Control-d',
+                'win_accelerator': 'Ctrl+D',
                 'command': self._useDate
             }, {
                 'type': 'Menu Item',
                 'label': 'Set Destination',
                 'mac_accelerator': 'Command-Shift-d',
-                'win_accelerator': 'Control-Shift-d',
+                'win_accelerator': 'Ctrl+Shift+D',
                 'command': self._customDestination
             }, {
                 'type': 'Menu Item',
                 'label': 'Create File',
                 'mac_accelerator': 'Command-Return',
-                'win_accelerator': 'Control-Return',
+                'win_accelerator': 'Ctrl+Return',
                 'command': self._createFile
+            }, {
+                'type': 'Separator'
+            }, {
+                'type': 'Menu Item',
+                'label': 'Exit',
+                'win_accelerator': 'Ctrl+Q',
+                'command': self._quit
             }
         ]
         
@@ -687,7 +697,7 @@ class GUI():
                 'type': 'Menu Item',
                 'label': 'Clear Files',
                 'mac_accelerator': 'Command-BackSpace',
-                'win_accelerator': 'Control-BackSpace',
+                'win_accelerator': 'Ctrl+BackSpace',
                 'command': self._clearFiles
             }
         ]
@@ -707,7 +717,7 @@ class GUI():
         # Tools Menu
         if platform.system() == 'Windows':
             self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
-            self.toolsMenu.add_command(label='Preferences', accelerator='Control-u', command=self._settings)
+            self.toolsMenu.add_command(label='Preferences...', command=self._settings)
             self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
 
         # Help Menu
@@ -723,8 +733,13 @@ class GUI():
             self.window.bind_all('<Command-Shift-d>', self._customDestination)
         else:
             self.window.bind_all('<Control-a>', self._addFiles)
+            self.window.bind_all('<Control-Shift-A>', self._addDirectory)
             self.window.bind_all('<Control-Shift-a>', self._addDirectory)
+            self.window.bind_all('<Control-Shift-D>', self._customDestination)
             self.window.bind_all('<Control-Shift-d>', self._customDestination)
+            self.window.bind_all('<Control-D>', self._useDate)
+            self.window.bind_all('<Control-d>', self._useDate)
+            self.window.bind_all('<Control-q>', self._quit)
 
     
     # Create GUI widgets
