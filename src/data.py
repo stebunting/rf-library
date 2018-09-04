@@ -1,8 +1,21 @@
 import platform
 import os
 
-# Check for windows compatibility
-slash = '\\' if platform.system() == 'Windows' else '/'
+# Check system and set necessary variables
+if platform.system() == 'Windows':
+	system = 'Windows'
+	slash = '\\'
+	command = 'Ctrl+'
+	modifier = 'Shift+'
+	plistName = '{}\\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
+	defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
+elif platform.system() == 'Darwin':
+	system = 'Mac'
+	slash = '/'
+	command = 'Command-'
+	modifier = 'Shift-'
+	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
+	defaultLibraryLocation = os.path.expanduser('~/Documents/Scans')
 
 # Software Details
 title = "RF Library"

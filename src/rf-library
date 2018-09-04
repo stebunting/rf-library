@@ -29,12 +29,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import data
 import ofcom
 
-# Define location of plist file
-if platform.system() == 'Darwin':
-    plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
-else:
-    plistName = '{}\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
-
 # Helper function to set dateFormat
 def set_date_format():
     if data.dateFormats.get(plist['defaultDateFormat']):
@@ -51,14 +45,14 @@ def dir_format(display_location, max_length):
 
 # Load settings plist if it exists yet
 settingsExists = True
-if not os.path.isfile(plistName):
+if not os.path.isfile(data.plistName):
     settingsExists = False
-    fp = open(plistName, 'wb')
+    fp = open(data.plistName, 'wb')
     fp.close()
-    os.chmod(plistName, 0o600)
+    os.chmod(data.plistName, 0o600)
     plist = dict()
 else:
-    with open(plistName, 'rb') as fp:
+    with open(data.plistName, 'rb') as fp:
         plist = plistlib.load(fp)
 
 # Check for preferences and add default if not there
@@ -68,14 +62,9 @@ for var, default in zip(vars, defaults):
     if not plist.get(var):
         plist[var] = default
 if not plist.get('defaultLibraryLocation'):
-    if platform.system() == 'Darwin':
-        plist['defaultLibraryLocation'] = os.path.expanduser('~/Documents/Scans')
-    elif platform.system() == 'Windows':
-        plist['defaultLibraryLocation'] = os.path.expanduser('~\My Documents\Scans')
-    else:
-        plist['defaultLibraryLocation'] = os.path.expanduser('/')
+    plist['defaultLibraryLocation'] = defaultLibraryLocation
 
-with open(plistName, 'wb') as fp:
+with open(data.plistName, 'wb') as fp:
     plistlib.dump(plist, fp)
 
 dateFormat = set_date_format()
@@ -242,9 +231,9 @@ class File():
     
     # Method to return creation date from file
     def getCreationDate(self):
-        if platform.system() == 'Darwin':
+        if data.system == 'Mac':
             self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_birthtime)
-        elif platform.system() == 'Windows':
+        elif data.system == 'Windows':
             self.creationDate = datetime.datetime.fromtimestamp(os.stat(self.fullfilename).st_ctime)
 
     # Method to get TV channels
@@ -511,7 +500,7 @@ class SettingsWindow():
         plist['defaultDateFormat'] = self.defaultDateFormat.get()
         plist['lowFreqLimit'] = int(self.lowFreqLimit.get())
         plist['highFreqLimit'] = int(self.highFreqLimit.get())
-        with open(plistName, 'wb') as fp:
+        with open(data.plistName, 'wb') as fp:
             plistlib.dump(plist, fp)
         if self.passwordChanged:
             keyring.set_password(data.title, self.ofcomAccountName.get(), self.ofcomPassword.get())
@@ -557,7 +546,7 @@ class GUI():
         #self.window.iconbitmap('logo.ico')
         
         # Configure OS X Application menu
-        if platform.system() == 'Darwin':
+        if data.system == 'Mac':
             self.window.createcommand('tkAboutDialog', self._about)
             self.window.createcommand('::tk::mac::ShowPreferences', self._settings)
         
@@ -629,93 +618,28 @@ class GUI():
 
         # File Menu
         self.fileMenu = tk.Menu(self.menuBar, tearoff=False)
-
-        m = [ {
-                'type': 'Menu Item',
-                'label': 'Add Files',
-                'mac_accelerator': 'Command-a',
-                'win_accelerator': 'Ctrl+A',
-                'command': self._addFiles
-            }, {
-                'type': 'Menu Item',
-                'label': 'Add Directory',
-                'mac_accelerator': 'Command-Shift-a',
-                'win_accelerator': 'Ctrl+Shift+A',
-                'command': self._addDirectory
-            }, {
-                'type': 'Separator'
-            }, {
-                'type': 'Menu Item',
-                'label': 'Set Date',
-                'mac_accelerator': 'Command-d',
-                'win_accelerator': 'Ctrl+D',
-                'command': self._useDate
-            }, {
-                'type': 'Menu Item',
-                'label': 'Set Destination',
-                'mac_accelerator': 'Command-Shift-d',
-                'win_accelerator': 'Ctrl+Shift+D',
-                'command': self._customDestination
-            }, {
-                'type': 'Menu Item',
-                'label': 'Create File',
-                'mac_accelerator': 'Command-Return',
-                'win_accelerator': 'Ctrl+Return',
-                'command': self._createFile
-            }, {
-                'type': 'Separator'
-            }, {
-                'type': 'Menu Item',
-                'label': 'Exit',
-                'win_accelerator': 'Ctrl+Q',
-                'command': self._quit
-            }
-        ]
+        self.fileMenu.add_command(label='Add Files', accelerator='{}A'.format(data.command), command=self._addFiles)
+        self.fileMenu.add_command(label='Add Directory', accelerator='{}{}A'.format(data.command, data.modifier), command=self._addDirectory)
+        self.fileMenu.add_separator()
+        self.fileMenu.add_command(label='Set Date', accelerator='{}D'.format(data.command), command=self._useDate)
+        self.fileMenu.add_command(label='Set Destination', accelerator='{}{}D'.format(data.command, data.modifier), command=self._customDestination)
+        self.fileMenu.add_command(label='Create File', accelerator='{}Return'.format(data.command), command=self._createFile)
         
-        for item in m:
-            if item['type'] == 'Separator':
-                self.fileMenu.add_separator()
-            elif item['type'] == 'Menu Item':
-                if platform.system() == "Darwin":
-                    accelerator = item['mac_accelerator']
-                else:
-                    accelerator = item['win_accelerator']
-                self.fileMenu.add_command(label=item['label'], accelerator=accelerator, command=item['command'])
+        # Add exit option to Windows menu only
+        if data.system == 'Windows':
+            self.fileMenu.add_separator()
+            self.fileMenu.add_command(label='Exit', accelerator='{}Q'.format(data.command), command=self._quit)
 
         self.menuBar.add_cascade(label='File', menu=self.fileMenu)
         
         # Edit Menu
         self.editMenu = tk.Menu(self.menuBar, tearoff=False)
-        
-        m = [ {
-                'type': 'Menu Item',
-                'label': 'Remove File',
-                'mac_accelerator': 'BackSpace',
-                'win_accelerator': 'BackSpace',
-                'command': self._removeFile
-            }, {
-                'type': 'Menu Item',
-                'label': 'Clear Files',
-                'mac_accelerator': 'Command-BackSpace',
-                'win_accelerator': 'Ctrl+BackSpace',
-                'command': self._clearFiles
-            }
-        ]
-        
-        for item in m:
-            if item['type'] == 'Separator':
-                self.fileMenu.add_separator()
-            elif item['type'] == 'Menu Item':
-                if platform.system() == 'Darwin':
-                    accelerator = item['mac_accelerator']
-                else:
-                    accelerator = item['win_accelerator']
-                self.editMenu.add_command(label=item['label'], accelerator=accelerator, command=item['command'])
-
+        self.editMenu.add_command(label='Remove File', accelerator='BackSpace', command=self._removeFile)
+        self.editMenu.add_command(label='Clear Files', accelerator='{}BackSpace'.format(data.command), command=self._clearFiles)
         self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
 
-        # Tools Menu
-        if platform.system() == 'Windows':
+        # Tools Menu (Windows only)
+        if data.system == 'Windows':
             self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
             self.toolsMenu.add_command(label='Preferences...', command=self._settings)
             self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
@@ -727,19 +651,18 @@ class GUI():
      
         self.window.config(menu=self.menuBar)
         
-        if platform.system() == 'Darwin':
-            self.window.bind_all('<Command-a>', self._addFiles)
-            self.window.bind_all('<Command-Shift-a>', self._addDirectory)
-            self.window.bind_all('<Command-Shift-d>', self._customDestination)
-        else:
-            self.window.bind_all('<Control-a>', self._addFiles)
-            self.window.bind_all('<Control-Shift-A>', self._addDirectory)
-            self.window.bind_all('<Control-Shift-a>', self._addDirectory)
-            self.window.bind_all('<Control-Shift-D>', self._customDestination)
-            self.window.bind_all('<Control-Shift-d>', self._customDestination)
-            self.window.bind_all('<Control-D>', self._useDate)
-            self.window.bind_all('<Control-d>', self._useDate)
-            self.window.bind_all('<Control-q>', self._quit)
+        # Bindings for Mac/Windows
+        self.window.bind_all('<{}a>'.format(data.command), self._addFiles)
+        self.window.bind_all('<{}{}d>'.format(data.command, data.modifier), self._customDestination)
+
+        # Bindings for Windows only
+        if data.system == 'Windows':
+            self.window.bind_all('<{}{}a>'.format(data.command, data.modifier), self._addDirectory)
+            self.window.bind_all('<{}d>'.format(data.command), self._useDate)
+            self.window.bind_all('<{}Return>'.format(data.command), self._createFile)
+            self.window.bind_all('<{}q>'.format(data.command), self._quit)
+            self.window.bind_all('<BackSpace>', self._removeFile)
+            self.window.bind_all('<{}BackSpace>'.format(data.command), self._clearFiles)
 
     
     # Create GUI widgets
@@ -1267,7 +1190,7 @@ class GUI():
             plist['defaultDelete'] = self.deleteSourceFiles.get()
             plist['defaultOfcomInclude'] = self.includeOfcomData.get()
 
-            with open(plistName, 'wb') as fp:
+            with open(data.plistName, 'wb') as fp:
                 plistlib.dump(plist, fp)
          
             if delSourceConfirmed:
