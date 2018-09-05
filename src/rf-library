@@ -543,7 +543,7 @@ class GUI():
         self.window.geometry('840x698')
         self.window.title(data.title)
         self.window.config(background='lightGrey')
-        #self.window.iconbitmap('logo.ico')
+        self.window.iconbitmap('logo.ico')
         
         # Build window
         self._createStyles()
