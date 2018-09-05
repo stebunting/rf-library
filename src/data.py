@@ -5,7 +5,8 @@ import os
 if platform.system() == 'Windows':
 	system = 'Windows'
 	slash = '\\'
-	command = 'Ctrl+'
+	command = 'Control+'
+	command_abbr = 'Ctrl+'
 	command_symbol = '^'
 	modifier = 'Shift+'
 	modifier_symbol = '⇧'
@@ -15,6 +16,7 @@ elif platform.system() == 'Darwin':
 	system = 'Mac'
 	slash = '/'
 	command = 'Command-'
+	command_abbr = 'Command-'
 	command_symbol = '⌘'
 	modifier = 'Shift-'
 	modifier_symbol = '⇧'
