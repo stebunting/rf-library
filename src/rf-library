@@ -545,11 +545,6 @@ class GUI():
         self.window.config(background='lightGrey')
         #self.window.iconbitmap('logo.ico')
         
-        # Configure OS X Application menu
-        if data.system == 'Mac':
-            self.window.createcommand('tkAboutDialog', self._about)
-            self.window.createcommand('::tk::mac::ShowPreferences', self._settings)
-        
         # Build window
         self._createStyles()
         self._createFrames()
@@ -642,12 +637,17 @@ class GUI():
         self.helpMenu = tk.Menu(self.menuBar, tearoff=False)
         self.helpMenu.add_command(label='Documentation', command=self._openHTTP)
 
-        # Tools Menu (Windows only)
+        # Extra menus for Windows only
         if data.system == 'Windows':
             self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
             self.toolsMenu.add_command(label='Preferences...', command=self._settings)
             self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
             self.helpMenu.add_command(label='About', command=self._about)
+
+        # Configure OS X Application menu
+        if data.system == 'Mac':
+            self.window.createcommand('tkAboutDialog', self._about)
+            self.window.createcommand('::tk::mac::ShowPreferences', self._settings)
 
         self.menuBar.add_cascade(label='Help', menu=self.helpMenu)
      
