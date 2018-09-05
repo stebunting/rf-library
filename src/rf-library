@@ -278,7 +278,7 @@ class File():
         elif 1893 <= self.startFrequency <= 1906:
             self.newFilename = 'DJAP'
         elif 1880 <= self.startFrequency <= 1900:
-            self.newFilename = 'DEURAU'
+            self.newFilename = 'DEUR'
         else:
             self.newFilename = '{:.0f}MHz'.format(self.startFrequency)
         self.newFilename = '{}.csv'.format(self.newFilename)
@@ -540,7 +540,7 @@ class GUI():
         
         # Configure main window
         self.window.resizable(width=False, height=False)
-        self.window.geometry('840x698')
+        #self.window.geometry('840x698')
         self.window.title(data.title)
         self.window.config(background='lightGrey')
         self.window.iconbitmap('logo.ico')
@@ -1114,7 +1114,8 @@ class GUI():
          
     # Method to use date from selected file
     def _useDate(self, event=None):
-        self.scanDate.set(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat))
+        self.scanDateTimestamp = self.files[self.fileListboxSelection].creationDate
+        self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
         self._getMasterFilename()
 
     # Method to create master file
@@ -1248,7 +1249,8 @@ class GUI():
         target = directory + data.slash + filename
         try:
             with open(target, 'w') as fp:
-                fp.write('Receiver;\nDate/Time;\nRFUnit;dBm\n\n\nFrequency Range [kHz];{:06d};{:06d};\n'.format(plist['lowFreqLimit'] * 1000, plist['highFreqLimit'] * 1000))
+                wsm_date = self.scanDateTimestamp.strftime('%Y-%m-%d 00:00:00')
+                fp.write('Receiver;{}\nDate/Time;{}\nRFUnit;dBm\n\n\nFrequency Range [kHz];{:06d};{:06d};\n'.format(data.title, wsm_date, plist['lowFreqLimit'] * 1000, plist['highFreqLimit'] * 1000))
                 fp.write('Frequency;RF level (%);RF level\n')
                 for freq, value in reversed(array):
                     fp.write('{:06d};;{:04.1f}\n'.format(int(freq * 1000), value))
