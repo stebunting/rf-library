@@ -11,6 +11,9 @@ if platform.system() == 'Windows':
 	modifier = 'Shift-'
 	modifier_abbr = 'Shift+'
 	modifier_symbol = '⇧'
+	alt = 'Alt-'
+	alt_abbr = 'Alt+'
+	alt_symbol = '⎇'
 	plistName = '{}\\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
 	defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
 elif platform.system() == 'Darwin':
@@ -22,6 +25,9 @@ elif platform.system() == 'Darwin':
 	modifier = 'Shift-'
 	modifier_abbr = 'Shift-'
 	modifier_symbol = '⇧'
+	alt = 'Alt-'
+	alt_abbr = 'Alt-'
+	alt_symbol = '⎇'
 	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
 	defaultLibraryLocation = os.path.expanduser('~/Documents/Scans')
 

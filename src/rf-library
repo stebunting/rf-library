@@ -613,8 +613,8 @@ class GUI():
 
         # File Menu
         self.fileMenu = tk.Menu(self.menuBar, tearoff=False)
-        self.fileMenu.add_command(label='Add Files', accelerator='{}A'.format(data.command_abbr), command=self._addFiles)
-        self.fileMenu.add_command(label='Add Directory', accelerator='{}{}A'.format(data.command_abbr, data.modifier_abbr), command=self._addDirectory)
+        self.fileMenu.add_command(label='Add Files', accelerator='{}{}A'.format(data.command_abbr, data.modifier_abbr), command=self._addFiles)
+        self.fileMenu.add_command(label='Add Directory', accelerator='{}{}A'.format(data.command_abbr, data.alt_abbr), command=self._addDirectory)
         self.fileMenu.add_separator()
         self.fileMenu.add_command(label='Set Date', accelerator='{}D'.format(data.command_abbr), command=self._useDate)
         self.fileMenu.add_command(label='Set Destination', accelerator='{}{}D'.format(data.command_abbr, data.modifier_abbr), command=self._customDestination)
@@ -654,8 +654,8 @@ class GUI():
         self.window.config(menu=self.menuBar)
         
         # Bindings for Mac/Windows
-        self.window.bind_all('<{}a>'.format(data.command), self._addFiles)
-        self.window.bind_all('<{}{}d>'.format(data.command, data.modifier), self._customDestination)
+        #self.window.bind_all('<{}{}a>'.format(data.command, data.modifier), self._addFiles)
+        #self.window.bind_all('<{}{}d>'.format(data.command, data.alt), self._customDestination)
 
         # Bindings for Windows only
         if data.system == 'Windows':
