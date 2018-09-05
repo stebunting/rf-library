@@ -661,14 +661,10 @@ class GUI():
             self.window.bind_all('<{}{}A>'.format(data.command, data.modifier), self._addFiles)
             self.window.bind_all('<{}{}a>'.format(data.command, data.alt), self._addDirectory)
             self.window.bind_all('<{}{}A>'.format(data.command, data.alt), self._addDirectory)
-            self.window.bind_all('<{}d>'.format(data.command), self._useDate)
-            self.window.bind_all('<{}D>'.format(data.command), self._useDate)
             self.window.bind_all('<{}{}d>'.format(data.command, data.modifier), self._customDestination)
             self.window.bind_all('<{}{}D>'.format(data.command, data.modifier), self._customDestination)
-            self.window.bind_all('<{}Return>'.format(data.command), self._createFile)
             self.window.bind_all('<{}q>'.format(data.command), self._quit)
             self.window.bind_all('<{}Q>'.format(data.command), self._quit)
-            self.window.bind_all('<BackSpace>', self._removeFile)
             self.window.bind_all('<{}BackSpace>'.format(data.command), self._clearFiles)
     
     # Create GUI widgets
@@ -987,10 +983,12 @@ class GUI():
             self.clearFilesButton.config(state=outputStatus)
             if outputStatus == 'enabled':
                 self.window.bind_all('<{}d>'.format(data.command), self._useDate)
+                self.window.bind_all('<{}D>'.format(data.command), self._useDate)
                 self.editMenu.entryconfig('Clear Files', state='normal')
                 self.fileMenu.entryconfig('Create File', state='normal')
             else:
                 self.window.unbind_all('<{}d>'.format(data.command))
+                self.window.unbind_all('<{}D>'.format(data.command))
                 #self.window.unbind_all('<{}Return>'.format(data.command))
                 self.editMenu.entryconfig('Clear Files', state='disabled')
                 self.fileMenu.entryconfig('Create File', state='disabled')
