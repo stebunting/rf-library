@@ -557,7 +557,12 @@ class GUI():
     
     # Create styles for GUI
     def _createStyles(self):
-        self.fontSize = 13
+        if data.system == 'Mac':
+            self.fontSize = 13
+            self.left_indent = 12
+        else:
+            self.fontSize = 10
+            self.left_indent = 14
         default_font = tkfont.nametofont('TkDefaultFont')
         default_font.configure(size=self.fontSize)
         self.sdFocusColor = 'red'
@@ -728,19 +733,19 @@ class GUI():
         self.fileStatus.grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
      
         # Source Venue Data
-        ttk.Label(self.infoFrame, text='Venue', width=12).grid(column=0, row=0, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.infoFrame, text='Venue', width=self.left_indent).grid(column=0, row=0, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.venueEntry = ttk.Entry(self.infoFrame, textvariable=self.venue, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.venueEntry.grid(column=1, row=0)
         CreateToolTip(self.venueEntry, 'Scan location name')
 
         # Source Town Data
-        ttk.Label(self.infoFrame, text='Town', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.infoFrame, text='Town', width=self.left_indent).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.townEntry = ttk.Entry(self.infoFrame, textvariable=self.town, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.townEntry.grid(column=1, row=1)
         CreateToolTip(self.townEntry, 'Scan location town/city')
 
         # Source Country Data
-        ttk.Label(self.infoFrame, text='Country', width=12).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.infoFrame, text='Country', width=self.left_indent).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.countryBox = ttk.Combobox(self.infoFrame, textvariable=self.country, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.countryBox['values'] = data.countries
         self.countryBox.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
@@ -748,14 +753,14 @@ class GUI():
         CreateToolTip(self.countryBox, 'Scan location country')
      
         # Source Scan Date
-        ttk.Label(self.infoFrame, text='Scan Date', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.infoFrame, text='Scan Date', width=self.left_indent).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.dateEntry = ttk.Entry(self.infoFrame, textvariable=self.scanDate, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.dateEntry.grid(column=1, row=3)
         self.dateEntry.config(state='readonly')
         CreateToolTip(self.dateEntry, 'Date scan was taken')
      
         # Inside / Outside
-        ttk.Label(self.infoFrame, text='Inside/Outside', width=12).grid(column=0, row=4, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.infoFrame, text='Inside/Outside', width=self.left_indent).grid(column=0, row=4, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.ioBox = ttk.Combobox(self.infoFrame, textvariable=self.io, width=20, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
         self.ioBox['values'] = ['Inside', 'Outside']
         self.ioBox.grid(column=1, row=4)
@@ -764,7 +769,7 @@ class GUI():
         CreateToolTip(self.ioBox, 'Was the scan taken inside or outside?')
         
         # OFCOM Search Bar
-        ttk.Label(self.rightContainer, text='OFCOM Search', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.rightContainer, text='OFCOM Search', width=self.left_indent).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.ofcomSearchEntry = ttk.Entry(self.rightContainer, textvariable=self.ofcomSearch, width=20, font='TkDefaultFont {}'.format(self.fontSize))
         self.ofcomSearchEntry.grid(column=1, row=1, sticky='NW')
         CreateToolTip(self.ofcomSearchEntry, 'OFCOM Database Search')
@@ -775,7 +780,7 @@ class GUI():
         CreateToolTip(self.ofcomSearchButton, 'Search OFCOM database ({}S)'.format(data.command_symbol))
         
         # OFCOM Venue List
-        ttk.Label(self.rightContainer, text='Venue Check', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.rightContainer, text='Venue Check', width=self.left_indent).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.ofcomBox = ttk.Combobox(self.rightContainer, textvariable=self.ofcomVenue, width=20, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
         self.ofcomBox['values'] = self.ofcomVenueList
         self.ofcomBox.grid(column=1, row=3, sticky='NW')
@@ -790,20 +795,20 @@ class GUI():
         
         # Output Location
         self.targetSubdirectory.set(self.io.get())
-        ttk.Label(self.outputFrame, text='Destination', width=12).grid(column=0, row=0, columnspan = 2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Destination', width=self.left_indent).grid(column=0, row=0, columnspan = 2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.targetDirectory = ttk.Label(self.outputFrame, textvariable=self.scanOutputLocationDisplay, width=77)
         self.targetDirectory.grid(column=1, row=0, sticky='W')
         CreateToolTip(self.targetDirectory, 'Output scan folder')
         
         # Subdirectory
-        ttk.Label(self.outputFrame, text='Subdirectory', width=12).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Subdirectory', width=self.left_indent).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.targetSubdirectoryEntry = ttk.Entry(self.outputFrame, textvariable=self.targetSubdirectory, width=20, font='TkDefaultFont {}'.format(self.fontSize), style='Subdirectory.TEntry')
         self.targetSubdirectoryEntry.grid(column=1, row=1, sticky='W', padx=0, pady=data.pady_default)
         self.targetSubdirectoryEntry.bind('<KeyRelease>', self._customSubDirectory)
         CreateToolTip(self.targetSubdirectoryEntry, 'Optional subdirectory')
      
         # Output Master Filename
-        ttk.Label(self.outputFrame, text='Master Filename', width=12).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Master Filename', width=self.left_indent).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.scanMasterFilenameEntry = ttk.Entry(self.outputFrame, textvariable=self.scanMasterFilename, font='TkDefaultFont {}'.format(self.fontSize))
         self.scanMasterFilenameEntry.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.scanMasterFilenameEntry.config(width=60)
@@ -811,7 +816,7 @@ class GUI():
         CreateToolTip(self.scanMasterFilenameEntry, 'Master output filename')
         
         # Options
-        ttk.Label(self.outputFrame, text='Options', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Options', width=self.left_indent).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
         self.defaultOutputLocation.set(1)
         self.defaultOutputCheck = ttk.Radiobutton(self.outputFrame, text='Standard Destination', variable=self.defaultOutputLocation, command=self._updateSubdirectory)
         self.defaultOutputCheck.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
