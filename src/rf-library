@@ -989,7 +989,6 @@ class GUI():
             else:
                 self.window.unbind_all('<{}d>'.format(data.command))
                 self.window.unbind_all('<{}D>'.format(data.command))
-                #self.window.unbind_all('<{}Return>'.format(data.command))
                 self.editMenu.entryconfig('Clear Files', state='disabled')
                 self.fileMenu.entryconfig('Create File', state='disabled')
      
