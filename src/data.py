@@ -6,14 +6,18 @@ if platform.system() == 'Windows':
 	system = 'Windows'
 	slash = '\\'
 	command = 'Ctrl+'
+	command_symbol = '^'
 	modifier = 'Shift+'
+	modifier_symbol = '⇧'
 	plistName = '{}\\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
 	defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
 elif platform.system() == 'Darwin':
 	system = 'Mac'
 	slash = '/'
 	command = 'Command-'
+	command_symbol = '⌘'
 	modifier = 'Shift-'
+	modifier_symbol = '⇧'
 	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
 	defaultLibraryLocation = os.path.expanduser('~/Documents/Scans')
 

@@ -709,16 +709,16 @@ class GUI():
         self.fileListEditFrame.grid(column=0, row=2, columnspan=2, sticky='W')
         self.addFilesButton = ttk.Button(self.fileListEditFrame, text='Add Files', command=self._addFiles)
         self.addFilesButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.addFilesButton, 'Add files to file list (⌘A)')
+        CreateToolTip(self.addFilesButton, 'Add files to file list ({}A)'.format(data.command_symbol))
         self.removeFileButton = ttk.Button(self.fileListEditFrame, text='Remove File', command=self._removeFile)
         self.removeFileButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=0)
         CreateToolTip(self.removeFileButton, 'Remove selected file from file list (⌫)')
         self.clearFilesButton = ttk.Button(self.fileListEditFrame, text='Clear Files', command=self._clearFiles)
         self.clearFilesButton.grid(column=2, row=0, sticky='W', padx=data.padx_default, pady=0)
-        CreateToolTip(self.clearFilesButton, 'Remove all files from file list (⌘⌫)')
+        CreateToolTip(self.clearFilesButton, 'Remove all files from file list ({}⌫)'.format(data.command_symbol))
         self.useDateButton = ttk.Button(self.fileListEditFrame, text='Set Date', command=self._useDate)
         self.useDateButton.grid(column=3, row=0, sticky='W', padx=data.padx_default, pady=0)
-        CreateToolTip(self.useDateButton, 'Use currently selected file\'s creation date for scan date (⌘D)')
+        CreateToolTip(self.useDateButton, 'Use currently selected file\'s creation date for scan date ({}D)'.format(data.command_symbol))
      
         # File Info status
         self.fileStatus = ttk.Label(self.inputFrame, textvariable=self.numFiles)
@@ -769,7 +769,7 @@ class GUI():
         # OFCOM Search Buton
         self.ofcomSearchButton = ttk.Button(self.rightContainer, text='OFCOM Search', command=self._ofcomSearch)
         self.ofcomSearchButton.grid(column=1, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.ofcomSearchButton, 'Search OFCOM database (⌘S)')
+        CreateToolTip(self.ofcomSearchButton, 'Search OFCOM database ({}S)'.format(data.command_symbol))
         
         # OFCOM Venue List
         ttk.Label(self.rightContainer, text='Venue Check', width=12).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
@@ -829,10 +829,10 @@ class GUI():
         self.outputButtons.grid(column=1, row=7, sticky='W')
         self.createFileButton = ttk.Button(self.outputButtons, text='Create File', command=self._createFile)
         self.createFileButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.createFileButton, 'Create master file (⌘↵)')
+        CreateToolTip(self.createFileButton, 'Create master file ({}↵)'.format(data.command_symbol))
         self.customOutputButton = ttk.Button(self.outputButtons, text='Set Destination', command=self._customDestination)
         self.customOutputButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.customOutputButton, 'Set custom destination for output files (⌘⇧D)')
+        CreateToolTip(self.customOutputButton, 'Set custom destination for output files ({}{}D)'.format(data.command_symbol, data.modifier_symbol))
      
         # Add styling to all entry boxes
         for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox]:
@@ -840,8 +840,8 @@ class GUI():
             x.bind('<KeyRelease>', self._getMasterFilename)
         
         # Key Bindings
-        self.window.bind_all('<Command-Return>', self._createFile)
-        self.window.bind_all('<Command-s>', self._ofcomSearch)
+        self.window.bind_all('<{}Return>'.format(data.command), self._createFile)
+        self.window.bind_all('<{}s>'.format(data.command), self._ofcomSearch)
         self.fileListbox.bind('<Escape>', self._deselectFileListbox)
         self.fileListbox.bind('<BackSpace>', self._removeFile)
          
@@ -979,12 +979,12 @@ class GUI():
         if outputStatus != None:
             self.clearFilesButton.config(state=outputStatus)
             if outputStatus == 'enabled':
-                self.window.bind_all('<Command-d>', self._useDate)
+                self.window.bind_all('<{}d>'.format(data.command), self._useDate)
                 self.editMenu.entryconfig('Clear Files', state='normal')
                 self.fileMenu.entryconfig('Create File', state='normal')
             else:
-                self.window.unbind_all('<Command-d>')
-                #self.window.unbind_all('<Command-Return>')
+                self.window.unbind_all('<{}d>'.format(data.command))
+                #self.window.unbind_all('<{}Return>'.format(data.command))
                 self.editMenu.entryconfig('Clear Files', state='disabled')
                 self.fileMenu.entryconfig('Create File', state='disabled')
      
@@ -1239,7 +1239,7 @@ class GUI():
     def _writeWSMFile(self, directory, filename, array):
         file, ext = os.path.splitext(filename)
         filename = '{}-WSM.{}'.format(file, ext)
-        
+
         filename = self._findUnusedFile(directory, filename)  
         target = directory + data.slash + filename
         try:
