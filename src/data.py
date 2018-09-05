@@ -5,10 +5,11 @@ import os
 if platform.system() == 'Windows':
 	system = 'Windows'
 	slash = '\\'
-	command = 'Control+'
+	command = 'Control-'
 	command_abbr = 'Ctrl+'
 	command_symbol = '^'
-	modifier = 'Shift+'
+	modifier = 'Shift-'
+	modifier_abbr = 'Shift+'
 	modifier_symbol = '⇧'
 	plistName = '{}\\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
 	defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
@@ -19,6 +20,7 @@ elif platform.system() == 'Darwin':
 	command_abbr = 'Command-'
 	command_symbol = '⌘'
 	modifier = 'Shift-'
+	modifier_abbr = 'Shift-'
 	modifier_symbol = '⇧'
 	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
 	defaultLibraryLocation = os.path.expanduser('~/Documents/Scans')
