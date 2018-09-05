@@ -663,7 +663,6 @@ class GUI():
             self.window.bind_all('<{}q>'.format(data.command), self._quit)
             self.window.bind_all('<BackSpace>', self._removeFile)
             self.window.bind_all('<{}BackSpace>'.format(data.command), self._clearFiles)
-
     
     # Create GUI widgets
     def _createWidgets(self):
@@ -1166,7 +1165,7 @@ class GUI():
 
             # Write WSM file
             if len(outputFile) > 0:
-                writtenFilename = self._writeWSMFile(self.scanOutputLocation, 'WSM' + self.scanMasterFilename.get(), outputFile)
+                writtenFilename = self._writeWSMFile(self.scanOutputLocation, self.scanMasterFilename.get(), outputFile)
                 if not writtenFilename:
                     return False
                 else:
@@ -1238,12 +1237,14 @@ class GUI():
 
     # Method to write WSM file to disk
     def _writeWSMFile(self, directory, filename, array):
+        file, ext = os.path.splitext(filename)
+        filename = '{}-WSM.{}'.format(file, ext)
+        
         filename = self._findUnusedFile(directory, filename)  
         target = directory + data.slash + filename
         try:
             with open(target, 'w') as fp:
-                fp.write('Receiver;\nDate/Time;\nRFUnit;dBm\nOwner;\nScanCity;\nScanComment;\nScanCountry;\nScanDescription;\nScanInteriorExterior;\nScanLatitude;\nScanLongitude;\nScanName;Converted\nScanPostalCode;\n\n')
-                fp.write('Frequency Range [kHz];{:06d};{:06d};\n'.format(plist['lowFreqLimit'] * 1000, plist['highFreqLimit'] * 1000))
+                fp.write('Receiver;\nDate/Time;\nRFUnit;dBm\n\n\nFrequency Range [kHz];{:06d};{:06d};\n'.format(plist['lowFreqLimit'] * 1000, plist['highFreqLimit'] * 1000))
                 fp.write('Frequency;RF level (%);RF level\n')
                 for freq, value in reversed(array):
                     fp.write('{:06d};;{:04.1f}\n'.format(int(freq * 1000), value))
