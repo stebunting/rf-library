@@ -559,9 +559,11 @@ class GUI():
     def _createStyles(self):
         if data.system == 'Mac':
             self.fontSize = 13
+            self.header_size = 18
             self.left_indent = 12
         else:
             self.fontSize = 10
+            self.header_size = 14
             self.left_indent = 14
         default_font = tkfont.nametofont('TkDefaultFont')
         default_font.configure(size=self.fontSize)
@@ -572,7 +574,7 @@ class GUI():
         self.guiStyle = ttk.Style()
         self.guiStyle.theme_use('clam')
         self.guiStyle.map('TCombobox', fieldbackground=[('readonly', 'white')])
-        self.guiStyle.configure('TLabelframe.Label', font='Arial 16')
+        self.guiStyle.configure('TLabelframe.Label', font='Arial {}'.format(self.header_size))
         self.guiStyle.map('TRadiobutton', background=[('hover', self.baseBackground)])
         self.guiStyle.map('TCheckbutton', background=[('hover', self.baseBackground)])
         
