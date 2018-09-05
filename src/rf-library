@@ -638,15 +638,17 @@ class GUI():
         self.editMenu.add_command(label='Clear Files', accelerator='{}BackSpace'.format(data.command_abbr), command=self._clearFiles)
         self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
 
+        # Help Menu
+        self.helpMenu = tk.Menu(self.menuBar, tearoff=False)
+        self.helpMenu.add_command(label='Documentation', command=self._openHTTP)
+
         # Tools Menu (Windows only)
         if data.system == 'Windows':
             self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
             self.toolsMenu.add_command(label='Preferences...', command=self._settings)
             self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
+            self.helpMenu.add_command(label='About', command=self._about)
 
-        # Help Menu
-        self.helpMenu = tk.Menu(self.menuBar, tearoff=False)
-        self.helpMenu.add_command(label='Documentation', command=self._openHTTP)
         self.menuBar.add_cascade(label='Help', menu=self.helpMenu)
      
         self.window.config(menu=self.menuBar)
