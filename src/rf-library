@@ -719,17 +719,35 @@ class GUI():
         # File List Edit Buttons
         self.fileListEditFrame = ttk.Frame(self.inputFrame)
         self.fileListEditFrame.grid(column=0, row=2, columnspan=2, sticky='W')
-        self.addFilesButton = ttk.Button(self.fileListEditFrame, text='Add Files', command=self._addFiles)
+
+        plus_image = ImageTk.PhotoImage(Image.open('plus.png'))
+        self.addFilesButton = ttk.Button(self.fileListEditFrame, image=plus_image, command=self._addFiles)
         self.addFilesButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.addFilesButton.image = plus_image
         CreateToolTip(self.addFilesButton, 'Add files to file list ({}{}A)'.format(data.command_symbol, data.modifier_symbol))
-        self.removeFileButton = ttk.Button(self.fileListEditFrame, text='Remove File', command=self._removeFile)
-        self.removeFileButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=0)
+        
+        folder_image = ImageTk.PhotoImage(Image.open('folder.png'))
+        self.addDirectoryButton = ttk.Button(self.fileListEditFrame, image=folder_image, command=self._addDirectory)
+        self.addDirectoryButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.addDirectoryButton.image = folder_image
+        CreateToolTip(self.addDirectoryButton, 'Add directory to file list ({}{}A)'.format(data.command_symbol, data.alt_symbol))
+
+        minus_image = ImageTk.PhotoImage(Image.open('minus.png'))
+        self.removeFileButton = ttk.Button(self.fileListEditFrame, image=minus_image, command=self._removeFile)
+        self.removeFileButton.grid(column=2, row=0, sticky='W', padx=data.padx_default, pady=0)
+        self.removeFileButton.image = minus_image
         CreateToolTip(self.removeFileButton, 'Remove selected file from file list (⌫)')
-        self.clearFilesButton = ttk.Button(self.fileListEditFrame, text='Clear Files', command=self._clearFiles)
-        self.clearFilesButton.grid(column=2, row=0, sticky='W', padx=data.padx_default, pady=0)
+        
+        bin_image = ImageTk.PhotoImage(Image.open('bin.png'))
+        self.clearFilesButton = ttk.Button(self.fileListEditFrame, image=bin_image, command=self._clearFiles)
+        self.clearFilesButton.grid(column=3, row=0, sticky='W', padx=data.padx_default, pady=0)
+        self.clearFilesButton.image = bin_image
         CreateToolTip(self.clearFilesButton, 'Remove all files from file list ({}⌫)'.format(data.command_symbol))
-        self.useDateButton = ttk.Button(self.fileListEditFrame, text='Set Date', command=self._useDate)
-        self.useDateButton.grid(column=3, row=0, sticky='W', padx=data.padx_default, pady=0)
+        
+        calendar_image = ImageTk.PhotoImage(Image.open('calendar.png'))
+        self.useDateButton = ttk.Button(self.fileListEditFrame, image=calendar_image, command=self._useDate)
+        self.useDateButton.grid(column=4, row=0, sticky='W', padx=data.padx_default, pady=0)
+        self.useDateButton.image = calendar_image
         CreateToolTip(self.useDateButton, 'Use currently selected file\'s creation date for scan date ({}D)'.format(data.command_symbol))
      
         # File Info status
