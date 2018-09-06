@@ -577,7 +577,6 @@ class GUI():
         self.guiStyle.theme_use('clam')
         # self.guiStyle.map('TCombobox', fieldbackground=[('readonly', 'white'), ('pressed', 'red')], foreground=[('readonly', 'black')])
         self.guiStyle.configure('TLabelframe.Label', font='Arial {}'.format(self.header_size))
-        self.guiStyle.map('TRadiobutton', background=[('hover', self.baseBackground)])
         self.guiStyle.map('TCheckbutton', background=[('hover', self.baseBackground)])
         
     # Create GUI frames
@@ -638,6 +637,11 @@ class GUI():
         
         # Edit Menu
         self.editMenu = tk.Menu(self.menuBar, tearoff=False)
+        self.editMenu.add_command(label='Copy', accelerator='{}C'.format(data.command_abbr), command=lambda: self.window.focus_get().event_generate("<<Copy>>"))
+        self.editMenu.add_command(label='Cut', accelerator='{}X'.format(data.command_abbr), command=lambda: self.window.focus_get().event_generate("<<Cut>>"))
+        self.editMenu.add_command(label='Paste', accelerator='{}V'.format(data.command_abbr), command=lambda: self.window.focus_get().event_generate("<<Paste>>"))
+        self.editMenu.add_command(label='Select All', accelerator='{}A'.format(data.command_abbr), command=lambda: self.window.focus_get().event_generate("<<SelectAll>>"))
+        self.editMenu.add_separator()
         self.editMenu.add_command(label='Remove File', accelerator='BackSpace', command=self._removeFile)
         self.editMenu.add_command(label='Clear Files', accelerator='{}BackSpace'.format(data.command_abbr), command=self._clearFiles)
         self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
@@ -816,52 +820,51 @@ class GUI():
         CreateToolTip(self.includeOfcomDataCheck, 'Include OFCOM Exclusion Data')
         
         # Output Location
+        reset_image = ImageTk.PhotoImage(Image.open('reset.png'))
         self.targetSubdirectory.set(self.io.get())
-        ttk.Label(self.outputFrame, text='Destination', width=self.left_indent).grid(column=0, row=0, columnspan = 2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Destination', width=self.left_indent).grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.defaultOutputLocation.set(1)
+        self.defaultOutputCheck = ttk.Button(self.outputFrame, image=reset_image, command=self._resetOutputLocation)
+        self.defaultOutputCheck.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.defaultOutputCheck.image = reset_image
+        CreateToolTip(self.defaultOutputCheck, 'Check to use default library destination folder')
         self.targetDirectory = ttk.Label(self.outputFrame, textvariable=self.scanOutputLocationDisplay, width=77)
-        self.targetDirectory.grid(column=1, row=0, sticky='W')
+        self.targetDirectory.grid(column=2, row=0, sticky='W')
         CreateToolTip(self.targetDirectory, 'Output scan folder')
         
         # Subdirectory
-        ttk.Label(self.outputFrame, text='Subdirectory', width=self.left_indent).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Subdirectory', width=self.left_indent).grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.targetSubdirectoryEntry = ttk.Entry(self.outputFrame, textvariable=self.targetSubdirectory, width=20, font='TkDefaultFont {}'.format(self.fontSize), style='Subdirectory.TEntry')
-        self.targetSubdirectoryEntry.grid(column=1, row=1, sticky='W', padx=0, pady=data.pady_default)
+        self.targetSubdirectoryEntry.grid(column=2, row=1, sticky='W', padx=0, pady=data.pady_default)
         self.targetSubdirectoryEntry.bind('<KeyRelease>', self._customSubDirectory)
         CreateToolTip(self.targetSubdirectoryEntry, 'Optional subdirectory')
      
         # Output Master Filename
-        ttk.Label(self.outputFrame, text='Master Filename', width=self.left_indent).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-        self.scanMasterFilenameEntryFrame = ttk.Frame(self.outputFrame)
-        self.scanMasterFilenameEntryFrame.grid(column=1, row=2, sticky='W')
-        self.scanMasterFilenameEntry = ttk.Entry(self.scanMasterFilenameEntryFrame, textvariable=self.scanMasterFilename, font='TkDefaultFont {}'.format(self.fontSize))
-        self.scanMasterFilenameEntry.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Master Filename', width=self.left_indent).grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.defaultMasterFilename.set(1)
+        self.defaultMasterFilenameReset = ttk.Button(self.outputFrame, image=reset_image, command=self._standardMasterFilename)
+        self.defaultMasterFilenameReset.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.defaultMasterFilenameReset.image = reset_image
+        CreateToolTip(self.defaultMasterFilenameReset, 'Check to use default filename')
+        self.scanMasterFilenameEntry = ttk.Entry(self.outputFrame, textvariable=self.scanMasterFilename, font='TkDefaultFont {}'.format(self.fontSize))
+        self.scanMasterFilenameEntry.grid(column=2, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.scanMasterFilenameEntry.config(width=60)
         self.scanMasterFilenameEntry.bind('<KeyRelease>', self._customMasterFilename)
         CreateToolTip(self.scanMasterFilenameEntry, 'Master output filename')
-        self.defaultMasterFilename.set(1)
-        reset_image = ImageTk.PhotoImage(Image.open('reset.png'))
-        self.defaultMasterFilenameReset = ttk.Button(self.scanMasterFilenameEntryFrame, image=reset_image, command=self._standardMasterFilename)
-        self.defaultMasterFilenameReset.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.defaultMasterFilenameReset.image = reset_image
-        CreateToolTip(self.defaultMasterFilenameReset, 'Check to use default filename')
-
-        # Options
-        ttk.Label(self.outputFrame, text='Options', width=self.left_indent).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-        self.defaultOutputLocation.set(1)
-        self.defaultOutputCheck = ttk.Radiobutton(self.outputFrame, text='Standard Destination', variable=self.defaultOutputLocation, command=self._updateSubdirectory)
-        self.defaultOutputCheck.grid(column=1, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.defaultOutputCheck, 'Check to use default library destination folder')
         
-        self.copySourceFilesCheck = ttk.Checkbutton(self.outputFrame, text='Duplicate Source Files', variable=self.copySourceFiles)
-        self.copySourceFilesCheck.grid(column=1, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        # Options
+        self.copySourceFilesCheck = ttk.Checkbutton(self.outputFrame, variable=self.copySourceFiles)
+        self.copySourceFilesCheck.grid(column=1, row=3, sticky='E', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Duplicate Source Files').grid(column=2, row=3, sticky='W')
         CreateToolTip(self.copySourceFilesCheck, 'Duplicate source files in library')
-        self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, text='Delete Source Files', variable=self.deleteSourceFiles)
-        self.deleteSourceFilesCheck.grid(column=1, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        self.deleteSourceFilesCheck = ttk.Checkbutton(self.outputFrame, variable=self.deleteSourceFiles)
+        self.deleteSourceFilesCheck.grid(column=1, row=4, sticky='E', padx=data.padx_default, pady=data.pady_default)
+        ttk.Label(self.outputFrame, text='Delete Source Files').grid(column=2, row=4, sticky='W')
         CreateToolTip(self.deleteSourceFilesCheck, 'Delete source files on file creation')
 
         # Output Buttons
         self.outputButtons = ttk.Frame(self.outputFrame)
-        self.outputButtons.grid(column=1, row=7, sticky='W')
+        self.outputButtons.grid(column=2, row=5, sticky='W')
         self.createFileButton = ttk.Button(self.outputButtons, text='Create File', command=self._createFile)
         self.createFileButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         CreateToolTip(self.createFileButton, 'Create master file ({}↵)'.format(data.command_symbol))
@@ -1070,6 +1073,11 @@ class GUI():
         self.defaultMasterFilename.set(1)
         self._getMasterFilename()
             
+    # Method to update output location to standard location
+    def _resetOutputLocation(self):
+        self.defaultOutputLocation.set(1)
+        self._updateSubdirectory()
+
     # Method to update subdirectory name when standard destination called
     def _updateSubdirectory(self, event=None):
         if self.defaultOutputLocation.get() == 1:
