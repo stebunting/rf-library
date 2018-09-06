@@ -542,10 +542,9 @@ class GUI():
         
         # Configure main window
         self.window.resizable(width=False, height=False)
-        #self.window.geometry('840x698')
         self.window.title(data.title)
         self.window.config(background='lightGrey')
-        self.window.iconbitmap('{}logo.ico'.format(data.icon_location))
+        self.window.tk.call('wm', 'iconphoto', self.window._w, ImageTk.PhotoImage(Image.open('logo.ico'.format(data.icon_location))))
         
         # Build window
         self._createStyles()
