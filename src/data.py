@@ -34,6 +34,7 @@ elif platform.system() == 'Darwin':
 # Software Details
 title = "RF Library"
 version = "v0.42"
+icon_location = "icons{}".format(slash)
 
 # GUI Constants
 padx_default = 2

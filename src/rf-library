@@ -545,7 +545,7 @@ class GUI():
         #self.window.geometry('840x698')
         self.window.title(data.title)
         self.window.config(background='lightGrey')
-        self.window.iconbitmap('logo.ico')
+        self.window.iconbitmap('{}logo.ico'.format(data.icon_location))
         
         # Build window
         self._createStyles()
@@ -724,31 +724,31 @@ class GUI():
         self.fileListEditFrame = ttk.Frame(self.inputFrame)
         self.fileListEditFrame.grid(column=0, row=2, columnspan=2, sticky='E')
         
-        calendar_image = ImageTk.PhotoImage(Image.open('calendar_disabled.png'))
+        calendar_image = ImageTk.PhotoImage(Image.open('{}calendar_disabled.png'.format(data.icon_location)))
         self.useDateButton = ttk.Button(self.fileListEditFrame, image=calendar_image, state='disabled', command=self._useDate)
         self.useDateButton.grid(column=4, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.useDateButton.image = calendar_image
         CreateToolTip(self.useDateButton, 'Use currently selected file\'s creation date for scan date ({}D)'.format(data.command_symbol))
         
-        bin_image = ImageTk.PhotoImage(Image.open('bin_disabled.png'))
+        bin_image = ImageTk.PhotoImage(Image.open('{}bin_disabled.png'.format(data.icon_location)))
         self.clearFilesButton = ttk.Button(self.fileListEditFrame, image=bin_image, state='disabled', command=self._clearFiles)
         self.clearFilesButton.grid(column=3, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.clearFilesButton.image = bin_image
         CreateToolTip(self.clearFilesButton, 'Remove all files from file list ({}⌫)'.format(data.command_symbol))
         
-        minus_image = ImageTk.PhotoImage(Image.open('minus_disabled.png'))
+        minus_image = ImageTk.PhotoImage(Image.open('{}minus_disabled.png'.format(data.icon_location)))
         self.removeFileButton = ttk.Button(self.fileListEditFrame, image=minus_image, state='disabled', command=self._removeFile)
         self.removeFileButton.grid(column=2, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.removeFileButton.image = minus_image
         CreateToolTip(self.removeFileButton, 'Remove selected file from file list (⌫)')
         
-        folder_image = ImageTk.PhotoImage(Image.open('folder.png'))
+        folder_image = ImageTk.PhotoImage(Image.open('{}folder.png'.format(data.icon_location)))
         self.addDirectoryButton = ttk.Button(self.fileListEditFrame, image=folder_image, command=self._addDirectory)
         self.addDirectoryButton.grid(column=1, row=0, sticky='E', padx=data.padx_default, pady=data.pady_default)
         self.addDirectoryButton.image = folder_image
         CreateToolTip(self.addDirectoryButton, 'Add directory to file list ({}{}A)'.format(data.command_symbol, data.alt_symbol))
 
-        plus_image = ImageTk.PhotoImage(Image.open('plus.png'))
+        plus_image = ImageTk.PhotoImage(Image.open('{}plus.png'.format(data.icon_location)))
         self.addFilesButton = ttk.Button(self.fileListEditFrame, image=plus_image, command=self._addFiles)
         self.addFilesButton.grid(column=0, row=0, sticky='E', padx=data.padx_default, pady=data.pady_default)
         self.addFilesButton.image = plus_image
@@ -820,7 +820,7 @@ class GUI():
         CreateToolTip(self.includeOfcomDataCheck, 'Include OFCOM Exclusion Data')
         
         # Output Location
-        reset_image = ImageTk.PhotoImage(Image.open('reset.png'))
+        reset_image = ImageTk.PhotoImage(Image.open('{}reset.png'.format(data.icon_location)))
         self.targetSubdirectory.set(self.io.get())
         ttk.Label(self.outputFrame, text='Destination', width=self.left_indent).grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.defaultOutputLocation.set(1)
@@ -1008,7 +1008,7 @@ class GUI():
     def _buttonStatus(self, inputStatus=None, outputStatus=None):
         if inputStatus != None:
             for x in [(self.removeFileButton, 'minus'), (self.useDateButton, 'calendar')]:
-                im = ImageTk.PhotoImage(Image.open('{}_{}.png'.format(x[1], inputStatus)))
+                im = ImageTk.PhotoImage(Image.open('{}{}_{}.png'.format(data.icon_location, x[1], inputStatus)))
                 x[0].config(state=inputStatus, image=im)
                 x[0].image = im
             if inputStatus == 'enabled':
@@ -1017,7 +1017,7 @@ class GUI():
                 menu.entryconfig(item, state=inputStatus)
                 
         if outputStatus != None:
-            im = ImageTk.PhotoImage(Image.open('bin_{}.png'.format(outputStatus)))
+            im = ImageTk.PhotoImage(Image.open('{}bin_{}.png'.format(data.icon_location, outputStatus)))
             self.clearFilesButton.config(state=outputStatus, image=im)
             self.clearFilesButton.image = im
             if outputStatus == 'enabled':
