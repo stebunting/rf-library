@@ -1,5 +1,6 @@
 import platform
 import os
+import sys
 
 # Check system and set necessary variables
 if platform.system() == 'Windows':
@@ -38,7 +39,8 @@ elif platform.system() == 'Darwin':
 # Software Details
 title = "RF Library"
 version = "v0.42"
-icon_location = "icons{}".format(slash)
+script_directory = os.path.dirname(os.path.realpath(sys.argv[0]))
+icon_location = "{}{}icons{}".format(script_directory, slash, slash)
 
 # GUI Constants
 padx_default = 2
