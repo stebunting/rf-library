@@ -64,7 +64,7 @@ for var, default in zip(vars, defaults):
     if not plist.get(var):
         plist[var] = default
 if not plist.get('defaultLibraryLocation'):
-    plist['defaultLibraryLocation'] = defaultLibraryLocation
+    plist['defaultLibraryLocation'] = data.defaultLibraryLocation
 
 with open(data.plistName, 'wb') as fp:
     plistlib.dump(plist, fp)
