@@ -461,7 +461,6 @@ class SettingsWindow():
 
     # Method to select default source folder
     def _changeSourceFolder(self):
-        print(plist['defaultSourceLocation'])
         dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=plist['defaultSourceLocation'])
         if dir != '':
             plist['defaultSourceLocation'] = dir
@@ -469,6 +468,7 @@ class SettingsWindow():
             
     # Method to select scans base folder
     def _changeBaseFolder(self):
+        print(plist['defaultLibraryLocation'])
         dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=plist['defaultLibraryLocation'])
         if dir != '':
             plist['defaultLibraryLocation'] = dir
