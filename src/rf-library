@@ -461,6 +461,7 @@ class SettingsWindow():
 
     # Method to select default source folder
     def _changeSourceFolder(self):
+        print(plist['defaultSourceLocation'])
         dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=plist['defaultSourceLocation'])
         if dir != '':
             plist['defaultSourceLocation'] = dir
