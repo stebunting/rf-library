@@ -59,7 +59,7 @@ else:
 
 # Check for preferences and add default if not there
 vars = ['ofcomAccountName', 'ofcomUserName', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
-defaults = ['', '', '', '', '%c{}%t %v{}%y'.format(data.slash, data.slash), '%t %v-%c %y-%d-%m %i %n-%f', False, 'yyyy-dd-mm', 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
+defaults = ['', '', '', '', data.defaultDirectoryFormat, data.defaultFilenameStructure, False, data.defaultDateFormat, 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
 for var, default in zip(vars, defaults):
     if not plist.get(var):
         plist[var] = default
@@ -311,7 +311,7 @@ class SettingsWindow():
         
         self.settingsWindow.title('Settings')
         self.settingsWindow.resizable(width=False, height=False)
-        self.settingsWindow.geometry('509x556')
+        #self.settingsWindow.geometry('509x556')
         
         self._createSettingsFrames()
         self._createSettingsWidgets()
