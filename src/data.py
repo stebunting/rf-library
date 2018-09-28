@@ -16,10 +16,10 @@ if platform.system() == 'Windows':
 	alt_abbr = 'Alt+'
 	alt_symbol = '⎇'
 	if platform.release() == '10':
-		plistName = '{}\\Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
+		plistName = '{}{}Documents{}rflibrary.plist'.format(os.path.expanduser('~'), slash, slash)
 		defaultLibraryLocation = os.path.expanduser('~\\Documents\\Scans')
 	else:
-		plistName = '{}\\My Documents\\rflibrary.plist'.format(os.path.expanduser('~'))
+		plistName = '{}{}My Documents{}rflibrary.plist'.format(os.path.expanduser('~'), slash, slash)
 		defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
 elif platform.system() == 'Darwin':
 	system = 'Mac'
@@ -33,8 +33,8 @@ elif platform.system() == 'Darwin':
 	alt = 'Alt-'
 	alt_abbr = 'Alt-'
 	alt_symbol = '⎇'
-	plistName = os.path.expanduser('~/Library/Preferences/com.stevebunting.rflibrary.plist')
-	defaultLibraryLocation = os.path.expanduser('~/Documents/Scans')
+	plistName = os.path.expanduser('~{}Library{}Preferences{}com.stevebunting.rflibrary.plist'.format(slash, slash, slash))
+	defaultLibraryLocation = os.path.expanduser('~{}Documents{}Scans'.format(slash, slash))
 
 # Software Details
 title = "RF Library"
