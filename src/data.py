@@ -5,7 +5,7 @@ import sys
 # Check system and set necessary variables
 if platform.system() == 'Windows':
 	system = 'Windows'
-	slash = '\\'
+	slash = '/'
 	command = 'Control-'
 	command_abbr = 'Ctrl+'
 	command_symbol = '^'
