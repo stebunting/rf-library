@@ -17,10 +17,10 @@ if platform.system() == 'Windows':
 	alt_symbol = '⎇'
 	if platform.release() == '10':
 		plistName = '{}{}Documents{}rflibrary.plist'.format(os.path.expanduser('~'), slash, slash)
-		defaultLibraryLocation = os.path.expanduser('~\\Documents\\Scans')
+		defaultLibraryLocation = os.path.expanduser('~{}Documents{}Scans'.format(slash, slash))
 	else:
 		plistName = '{}{}My Documents{}rflibrary.plist'.format(os.path.expanduser('~'), slash, slash)
-		defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
+		defaultLibraryLocation = os.path.expanduser('~{}My Documents{}Scans'.format(slash, slash))
 elif platform.system() == 'Darwin':
 	system = 'Mac'
 	slash = '/'
