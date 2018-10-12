@@ -901,20 +901,28 @@ class GUI():
         self._getMasterFilename()
 
     # Method to select fileListbox item
-    def _selectFileItem(self, event=None):
+    """def _selectFileItem(self, event=None):
         if event:
             try:
                 self.fileListboxSelection = int(event.widget.curselection()[0])
             except (AttributeError, IndexError):
                 pass
-        self.fileListbox.selection_clear(0, tk.END)
-        if self.fileListboxSelection != None:
-            self.fileListbox.select_set(self.fileListboxSelection)
-            self.fileListbox.activate(self.fileListboxSelection)
-        if self.fileListboxSelection:
-            self.fileListbox.see(self.fileListboxSelection)
-        self._printFileData()
+        #self.fileListbox.selection_clear(0, tk.END)
+        #if self.fileListboxSelection != None:
+        #    self.fileListbox.select_set(self.fileListboxSelection)
+        #    self.fileListbox.activate(self.fileListboxSelection)
+        #if self.fileListboxSelection:
+        #    self.fileListbox.see(self.fileListboxSelection)
+        self._printFileData()"""
 
+    def _selectFileItem(self, event=None):
+    	if event:
+    		try:
+    			self.fileListboxSelection = int(event.widget.curselection()[0])
+    		except (AttributeError, IndexError):
+    			pass
+    	self._printFileData()
+        
     # Method to print file data to dataListbox
     def _printFileData(self):
         self.dataListbox.delete(0, tk.END)
