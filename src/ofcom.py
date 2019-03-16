@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # Import Python Modules
 import requests
@@ -258,6 +257,7 @@ class PMSELookup(object):
             ch = int(ch)
             data[ch] = dict()
             data[ch]['IndoorQuality'] = int(os.path.basename(inside)[12:13])
+            print("hello")
             if outside == "Not available":
                 data[ch]['OutdoorExclude'] = True
             else:

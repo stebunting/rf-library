@@ -1,6 +1,18 @@
+#!/usr/bin/env python
+
 import platform
 import os
 import sys
+
+# Get absolute path to resource, works for dev and for PyInstaller
+def resource_path(relative_path):
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath('.')
+
+    return os.path.join(base_path, relative_path)
 
 # Check system and set necessary variables
 if platform.system() == 'Windows':
@@ -35,12 +47,12 @@ elif platform.system() == 'Darwin':
 	alt_symbol = '⎇'
 	plistName = os.path.expanduser('~{}Library{}Preferences{}com.stevebunting.rflibrary.plist'.format(slash, slash, slash))
 	defaultLibraryLocation = os.path.expanduser('~{}Documents{}Scans'.format(slash, slash))
+defaultLogFolder = defaultLibraryLocation
 
 # Software Details
 title = "RF Library"
 version = "v0.42"
-script_directory = os.path.dirname(os.path.realpath(sys.argv[0]))
-icon_location = "{}{}icons{}".format(script_directory, slash, slash)
+icon_location = resource_path('icons{}'.format(slash))
 
 # GUI Constants
 padx_default = 2
@@ -50,6 +62,10 @@ pady_default = 2
 defaultDateFormat = 'yyyy-mm-dd'
 defaultDirectoryStructure = '%c{}%t %v{}%y'.format(slash, slash)
 defaultFilenameStructure = '%t %v-%c %y-%m-%d %i %n-%f'
+logFileName = 'rflibrary-log.csv'
+
+# Maintenence
+showOfcom = False
 
 # Variables
 TVChannels = {

@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 # Import Python Modules
 import platform
@@ -12,6 +11,7 @@ import plistlib
 import webbrowser
 import requests
 import keyring
+import csv
 
 # Import Tkinter GUI functions
 import tkinter as tk
@@ -38,7 +38,7 @@ def set_date_format():
     else:
         return data.dateFormats.get(defaultDateFormat)
         
-# Helper function to format directory
+# Helper function to format directory nicely
 def dir_format(display_location, max_length):
     display_location = display_location.replace(os.path.expanduser('~'), '~', 1)
     while len(display_location) > max_length:
@@ -58,13 +58,11 @@ else:
         plist = plistlib.load(fp)
 
 # Check for preferences and add default if not there
-vars = ['ofcomAccountName', 'ofcomUserName', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation']
-defaults = ['', '', '', '', data.defaultDirectoryStructure, data.defaultFilenameStructure, False, data.defaultDateFormat, 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~')]
+vars = ['ofcomAccountName', 'ofcomUserName', 'createLog', 'logFolder', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation', 'defaultLibraryLocation']
+defaults = ['', '', True, data.defaultLogFolder, '', '', data.defaultDirectoryStructure, data.defaultFilenameStructure, False, data.defaultDateFormat, 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~'), data.defaultLibraryLocation]
 for var, default in zip(vars, defaults):
-    if not plist.get(var):
+    if var not in plist:
         plist[var] = default
-if not plist.get('defaultLibraryLocation'):
-    plist['defaultLibraryLocation'] = data.defaultLibraryLocation
 
 with open(data.plistName, 'wb') as fp:
     plistlib.dump(plist, fp)
@@ -80,8 +78,8 @@ dateFormat = set_date_format()
 class CreateToolTip(object):
     
     def __init__(self, widget, text='widget info'):
-        self.waittime = 500     #miliseconds
-        self.wraplength = 250   #pixels
+        self.waittime = 500     # miliseconds
+        self.wraplength = 250   # pixels
         self.widget = widget
         self.text = text
         self.widget.bind('<Enter>', self.enter)
@@ -324,14 +322,19 @@ class SettingsWindow():
         self.outputPreferences = ttk.LabelFrame(
             self.settingsMasterFrame, text='Output Preferences')
         self.outputPreferences.grid(padx=16, pady=16, sticky='NWSE')
+
+        self.loggingPreferences = ttk.LabelFrame(
+            self.settingsMasterFrame, text='Logging')
+        self.loggingPreferences.grid(padx=16, pady=16, sticky='NWSE')
         
         self.personalData = ttk.LabelFrame(
             self.settingsMasterFrame, text='Personal Data')
         self.personalData.grid(padx=16, pady=16, sticky='NWSE')
         
-        self.ofcomLogin = ttk.LabelFrame(
-            self.settingsMasterFrame, text='OFCOM Login Data')
-        self.ofcomLogin.grid(padx=16, pady=16, sticky='NWSE')
+        if data.showOfcom:
+            self.ofcomLogin = ttk.LabelFrame(
+                self.settingsMasterFrame, text='OFCOM Login Data')
+            self.ofcomLogin.grid(padx=16, pady=16, sticky='NWSE')
         
         self.settingsButtonsFrame = ttk.Frame(self.settingsMasterFrame)
         self.settingsButtonsFrame.grid(
@@ -341,13 +344,14 @@ class SettingsWindow():
     def _createSettingsWidgets(self):
     
         # Initialise Tk variables
-        self.sourceFolderDisplay = tk.StringVar()
         self.scansFolderDisplay = tk.StringVar()
         self.dirStructure = tk.StringVar()
         self.fileStructure = tk.StringVar()
         self.lowFreqLimit = tk.StringVar()
         self.highFreqLimit = tk.StringVar()
         self.defaultDateFormat = tk.StringVar()
+        self.createLog = tk.BooleanVar()
+        self.logFolderDisplay = tk.StringVar()
         self.forename = tk.StringVar()
         self.surname = tk.StringVar()
         self.ofcomAccountName = tk.StringVar()
@@ -356,16 +360,20 @@ class SettingsWindow():
 
         # Set Variables
         vars = [plist['dirStructure'], plist['fileStructure'],
-                dir_format(plist['defaultSourceLocation'], 50), dir_format(plist['defaultLibraryLocation'], 50),
+                dir_format(plist['defaultLibraryLocation'], 50),
                 plist['lowFreqLimit'], plist['highFreqLimit'],
+                plist['createLog'], dir_format(plist['logFolder'], 50),
                 plist['defaultDateFormat'], plist['forename'], plist['surname'],
                 plist['ofcomAccountName'], plist['ofcomUserName'], ' ' * 8]
-        fields = [self.dirStructure, self.fileStructure, self.sourceFolderDisplay,
+        fields = [self.dirStructure, self.fileStructure,
                   self.scansFolderDisplay, self.lowFreqLimit, self.highFreqLimit,
+                  self.createLog, self.logFolderDisplay,
                   self.defaultDateFormat, self.forename, self.surname,
                   self.ofcomAccountName, self.ofcomUserName, self.ofcomPassword]
         for field, var in zip(fields, vars):
             field.set(var)
+        self.defaultLibraryLocation = plist['defaultLibraryLocation']
+        self.logFolder = plist['logFolder']
         
         # Scans Folder
         ttk.Label(self.outputPreferences, text='Scans Folder', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
@@ -405,6 +413,20 @@ class SettingsWindow():
         self.highFreqLimitEntry = ttk.Entry(self.outputPreferences, textvariable=self.highFreqLimit)
         self.highFreqLimitEntry.grid(column=1, row=6)
         CreateToolTip(self.highFreqLimitEntry, 'High frequency limit for the output file (set to 0 for no limit)')
+
+        # Create Log
+        ttk.Label(self.loggingPreferences, text='Write To Log File', width='16').grid(column=0, row=0, sticky='w', padx=data.padx_default, pady=data.pady_default)
+        self.createLogCheck = ttk.Checkbutton(self.loggingPreferences, variable=self.createLog)
+        self.createLogCheck.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        CreateToolTip(self.createLogCheck, 'Turn log file writing on/off')
+
+        # Log Location
+        ttk.Label(self.loggingPreferences, text='Log Location', width='16').grid(column=0, row=1, sticky='w', padx=data.padx_default, pady=data.pady_default)
+        self.logLocationEntry = ttk.Label(self.loggingPreferences, textvariable=self.logFolderDisplay, width='36')
+        self.logLocationEntry.grid(column=1, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        CreateToolTip(self.logLocationEntry, 'Log file location')
+        self.changeLogLocation = ttk.Button(self.loggingPreferences, text='Change Folder', command=self._changeLogFolder)
+        self.changeLogLocation.grid(column=1, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
         
         # Forename Entry
         ttk.Label(self.personalData, text='Forename', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
@@ -418,23 +440,27 @@ class SettingsWindow():
         self.surnameEntry.grid(column=1, row=1)
         CreateToolTip(self.surnameEntry, 'Your surname')
         
-        # OFCOM Account Name Entry
-        ttk.Label(self.ofcomLogin, text='Account Name', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.ofcomAccountNameEntry = ttk.Entry(self.ofcomLogin, textvariable=self.ofcomAccountName)
-        self.ofcomAccountNameEntry.grid(column=1, row=0)
-        CreateToolTip(self.ofcomAccountNameEntry, 'Your OFCOM Account Name')
-        
-        # OFCOM User Name Entry
-        ttk.Label(self.ofcomLogin, text='User Name', width='16').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.ofcomUsernameEntry = ttk.Entry(self.ofcomLogin, textvariable=self.ofcomUserName)
-        self.ofcomUsernameEntry.grid(column=1, row=1)
-        CreateToolTip(self.ofcomUsernameEntry, 'Your OFCOM User Name')
-        
-        # OFCOM Password Entry
-        ttk.Label(self.ofcomLogin, text='Password', width='16').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        self.ofcomPasswordEntry = ttk.Entry(self.ofcomLogin, show="\u2022", textvariable=self.ofcomPassword)
-        self.ofcomPasswordEntry.grid(column=1, row=2)
-        CreateToolTip(self.ofcomPasswordEntry, 'Your OFCOM Password')
+        if data.showOfcom:
+
+            # OFCOM Account Name Entry
+            ttk.Label(self.ofcomLogin, text='Account Name', width='16').grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+            self.ofcomAccountNameEntry = ttk.Entry(self.ofcomLogin, textvariable=self.ofcomAccountName)
+            self.ofcomAccountNameEntry.grid(column=1, row=0)
+            CreateToolTip(self.ofcomAccountNameEntry, 'Your OFCOM Account Name')
+            
+            # OFCOM User Name Entry
+            ttk.Label(self.ofcomLogin, text='User Name', width='16').grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
+            self.ofcomUsernameEntry = ttk.Entry(self.ofcomLogin, textvariable=self.ofcomUserName)
+            self.ofcomUsernameEntry.grid(column=1, row=1)
+            CreateToolTip(self.ofcomUsernameEntry, 'Your OFCOM User Name')
+            
+            # OFCOM Password Entry
+            ttk.Label(self.ofcomLogin, text='Password', width='16').grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+            self.ofcomPasswordEntry = ttk.Entry(self.ofcomLogin, show="\u2022", textvariable=self.ofcomPassword)
+            self.ofcomPasswordEntry.grid(column=1, row=2)
+            CreateToolTip(self.ofcomPasswordEntry, 'Your OFCOM Password')
+
+            self.ofcomPasswordEntry.bind('<KeyRelease>', self._passwordEntry)
         
         # Buttons
         self.saveSettingsButton = ttk.Button(self.settingsButtonsFrame, text='Save', command=self._saveSettings)
@@ -444,35 +470,39 @@ class SettingsWindow():
         self.cancelSettingsButton.grid(column=1, row=0)
         CreateToolTip(self.cancelSettingsButton, 'Discard changes')
         
-        #Bindings
+        # Bindings
         self.settingsWindow.bind_all('<Return>', self._saveSettings)
         self.settingsWindow.bind_all('<Escape>', self._closeSettings)
-        self.ofcomPasswordEntry.bind('<KeyRelease>', self._passwordEntry)
         
         # Add padding to all entry boxes
         for widget in [self.changeBaseFolderButton, self.forenameEntry, self.surnameEntry, self.lowFreqLimitEntry, self.highFreqLimitEntry, self.saveSettingsButton, self.cancelSettingsButton]:
             widget.grid(sticky='W', padx=data.padx_default, pady=data.pady_default)
     
-    # Method to detect if password is amended
+    # Method to detect if password is amended
     def _passwordEntry(self, event=None):
         if not self.passwordChanged:
             self.passwordChanged = True
             self.ofcomPassword.set(self.ofcomPassword.get().lstrip())
-
-    # Method to select default source folder
-    def _changeSourceFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=plist['defaultSourceLocation'])
-        if dir != '':
-            plist['defaultSourceLocation'] = dir
-            self.sourceFolderDisplay.set(dir_format(plist['defaultSourceLocation'], 50))
             
     # Method to select scans base folder
     def _changeBaseFolder(self):
-        print(plist['defaultLibraryLocation'])
         dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=plist['defaultLibraryLocation'])
         if dir != '':
-            plist['defaultLibraryLocation'] = dir
-            self.scansFolderDisplay.set(dir_format(plist['defaultLibraryLocation'], 50))
+            self.defaultLibraryLocation = dir
+            self.scansFolderDisplay.set(dir_format(self.defaultLibraryLocation, 50))
+
+    # Method to select default log folder
+    def _changeLogFolder(self):
+        if os.path.exists('{}{}{}'.format(plist['logFolder'], data.slash, data.logFileName)):
+            self.moveOldLog = True
+            self.oldLogLocation = plist['logFolder']
+        else:
+            self.moveOldLog = False
+
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=plist['logFolder'])
+        if dir != '':
+            self.logFolder = dir
+            self.logFolderDisplay.set(dir_format(self.logFolder, 50))
     
     # Method to save settings and close window    
     def _saveSettings(self, event=None):
@@ -496,6 +526,7 @@ class SettingsWindow():
 
         plist['ofcomAccountName'] = self.ofcomAccountName.get()
         plist['ofcomUserName'] = self.ofcomUserName.get()
+        plist['defaultLibraryLocation'] = self.defaultLibraryLocation
         plist['forename'] = self.forename.get()
         plist['surname'] = self.surname.get()
         plist['dirStructure'] = self.dirStructure.get().strip('/')
@@ -503,10 +534,19 @@ class SettingsWindow():
         plist['defaultDateFormat'] = self.defaultDateFormat.get()
         plist['lowFreqLimit'] = int(self.lowFreqLimit.get())
         plist['highFreqLimit'] = int(self.highFreqLimit.get())
+        plist['createLog'] = self.createLog.get()
+        plist['logFolder'] = self.logFolder
+
         with open(data.plistName, 'wb') as fp:
             plistlib.dump(plist, fp)
         if self.passwordChanged:
             keyring.set_password(data.title, self.ofcomAccountName.get(), self.ofcomPassword.get())
+
+        # Move old log to new log location
+        if self.moveOldLog:
+            os.rename('{}{}{}'.format(self.oldLogLocation, data.slash, data.logFileName),
+                      '{}{}{}'.format(plist['logFolder'], data.slash, data.logFileName))
+
         self._closeSettings()
     
     # Method to close settings window
@@ -599,9 +639,10 @@ class GUI():
         self.previewFrame = ttk.LabelFrame(self.rightContainer, text='Source Preview')
         self.previewFrame.grid(column=0, row=0, columnspan=2, padx=8, pady=8, sticky='NWE')
         CreateToolTip(self.previewFrame, 'Selected scan preview')
-                          
-        self.ofcomFrame = ttk.LabelFrame(self.rightContainer, text='OFCOM')
-        self.ofcomFrame.grid(column=0, row=1, padx=8, pady=8, sticky='NWE')
+        
+        if data.showOfcom:
+            self.ofcomFrame = ttk.LabelFrame(self.rightContainer, text='OFCOM')
+            self.ofcomFrame.grid(column=0, row=1, padx=8, pady=8, sticky='NWE')
      
         self.outputFrame = ttk.LabelFrame(self.masterFrame, text='Output Data')
         self.outputFrame.grid(column=0, row=1, columnspan=3, padx=8, pady=8, sticky='NWE')
@@ -734,13 +775,13 @@ class GUI():
         self.clearFilesButton = ttk.Button(self.fileListEditFrame, image=bin_image, state='disabled', command=self._clearFiles)
         self.clearFilesButton.grid(column=3, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.clearFilesButton.image = bin_image
-        CreateToolTip(self.clearFilesButton, 'Remove all files from file list ({}⌫)'.format(data.command_symbol))
+        CreateToolTip(self.clearFilesButton, 'Remove all files from file list ({}\u232b)'.format(data.command_symbol))
         
         minus_image = ImageTk.PhotoImage(Image.open('{}minus_disabled.png'.format(data.icon_location)))
         self.removeFileButton = ttk.Button(self.fileListEditFrame, image=minus_image, state='disabled', command=self._removeFile)
         self.removeFileButton.grid(column=2, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.removeFileButton.image = minus_image
-        CreateToolTip(self.removeFileButton, 'Remove selected file from file list (⌫)')
+        CreateToolTip(self.removeFileButton, 'Remove selected file from file list (\u232b)')
         
         folder_image = ImageTk.PhotoImage(Image.open('{}folder.png'.format(data.icon_location)))
         self.addDirectoryButton = ttk.Button(self.fileListEditFrame, image=folder_image, command=self._addDirectory)
@@ -794,31 +835,6 @@ class GUI():
         self.ioBox.bind('<<ComboboxSelected>>', self._ioBoxEdit)
         CreateToolTip(self.ioBox, 'Was the scan taken inside or outside?')
         
-        # OFCOM Search Bar
-        ttk.Label(self.rightContainer, text='OFCOM Search', width=self.left_indent).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-        self.ofcomSearchEntry = ttk.Entry(self.rightContainer, textvariable=self.ofcomSearch, width=20, font='TkDefaultFont {}'.format(self.fontSize))
-        self.ofcomSearchEntry.grid(column=1, row=1, sticky='NW')
-        CreateToolTip(self.ofcomSearchEntry, 'OFCOM Database Search')
-
-        # OFCOM Search Buton
-        self.ofcomSearchButton = ttk.Button(self.rightContainer, text='OFCOM Search', command=self._ofcomSearch)
-        self.ofcomSearchButton.grid(column=1, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.ofcomSearchButton, 'Search OFCOM database ({}S)'.format(data.command_symbol))
-        
-        # OFCOM Venue List
-        ttk.Label(self.rightContainer, text='Venue Check', width=self.left_indent).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-        self.ofcomBox = ttk.Combobox(self.rightContainer, textvariable=self.ofcomVenue, width=20, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
-        self.ofcomBox['values'] = self.ofcomVenueList
-        self.ofcomBox.grid(column=1, row=3, sticky='NW')
-        self.ofcomBox.current(0)
-        self.ofcomBox.config(state='disabled')
-        CreateToolTip(self.ofcomBox, 'Select the correct venue from the list')
-
-        # OFCOM Include Button
-        self.includeOfcomDataCheck = ttk.Checkbutton(self.rightContainer, text='Include Exclusion Files', variable=self.includeOfcomData)
-        self.includeOfcomDataCheck.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.includeOfcomDataCheck, 'Include OFCOM Exclusion Data')
-        
         # Output Location
         reset_image = ImageTk.PhotoImage(Image.open('{}reset.png'.format(data.icon_location)))
         self.targetSubdirectory.set(self.io.get())
@@ -867,10 +883,39 @@ class GUI():
         self.outputButtons.grid(column=2, row=5, sticky='W')
         self.createFileButton = ttk.Button(self.outputButtons, text='Create File', command=self._createFile)
         self.createFileButton.grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-        CreateToolTip(self.createFileButton, 'Create master file ({}↵)'.format(data.command_symbol))
+        CreateToolTip(self.createFileButton, 'Create master file ({}\u23ce)'.format(data.command_symbol))
         self.customOutputButton = ttk.Button(self.outputButtons, text='Set Destination', command=self._customDestination)
         self.customOutputButton.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         CreateToolTip(self.customOutputButton, 'Set custom destination for output files ({}{}D)'.format(data.command_symbol, data.modifier_symbol))
+        
+        if data.showOfcom:
+
+            # OFCOM Search Bar
+            ttk.Label(self.rightContainer, text='OFCOM Search', width=self.left_indent).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+            self.ofcomSearchEntry = ttk.Entry(self.rightContainer, textvariable=self.ofcomSearch, width=20, font='TkDefaultFont {}'.format(self.fontSize))
+            self.ofcomSearchEntry.grid(column=1, row=1, sticky='NW')
+            CreateToolTip(self.ofcomSearchEntry, 'OFCOM Database Search')
+
+            # OFCOM Search Buton
+            self.ofcomSearchButton = ttk.Button(self.rightContainer, text='OFCOM Search', command=self._ofcomSearch)
+            self.ofcomSearchButton.grid(column=1, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+            CreateToolTip(self.ofcomSearchButton, 'Search OFCOM database ({}S)'.format(data.command_symbol))
+            
+            # OFCOM Venue List
+            ttk.Label(self.rightContainer, text='Venue Check', width=self.left_indent).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+            self.ofcomBox = ttk.Combobox(self.rightContainer, textvariable=self.ofcomVenue, width=20, state='readonly', font='TkDefaultFont {}'.format(self.fontSize))
+            self.ofcomBox['values'] = self.ofcomVenueList
+            self.ofcomBox.grid(column=1, row=3, sticky='NW')
+            self.ofcomBox.current(0)
+            self.ofcomBox.config(state='disabled')
+            CreateToolTip(self.ofcomBox, 'Select the correct venue from the list')
+
+            # OFCOM Include Button
+            self.includeOfcomDataCheck = ttk.Checkbutton(self.rightContainer, text='Include Exclusion Files', variable=self.includeOfcomData)
+            self.includeOfcomDataCheck.grid(column=1, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
+            CreateToolTip(self.includeOfcomDataCheck, 'Include OFCOM Exclusion Data')
+
+            self.window.bind_all('<{}s>'.format(data.command), self._ofcomSearch)
      
         # Add styling to all entry boxes
         for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox]:
@@ -879,7 +924,6 @@ class GUI():
         
         # Key Bindings
         self.window.bind_all('<{}Return>'.format(data.command), self._createFile)
-        self.window.bind_all('<{}s>'.format(data.command), self._ofcomSearch)
         self.fileListbox.bind('<Escape>', self._deselectFileListbox)
         self.fileListbox.bind('<BackSpace>', self._removeFile)
          
@@ -916,12 +960,12 @@ class GUI():
         self._printFileData()"""
 
     def _selectFileItem(self, event=None):
-    	if event:
-    		try:
-    			self.fileListboxSelection = int(event.widget.curselection()[0])
-    		except (AttributeError, IndexError):
-    			pass
-    	self._printFileData()
+        if event:
+            try:
+                self.fileListboxSelection = int(event.widget.curselection()[0])
+            except (AttributeError, IndexError):
+                pass
+        self._printFileData()
         
     # Method to print file data to dataListbox
     def _printFileData(self):
@@ -1228,9 +1272,9 @@ class GUI():
                 else:
                     filesWritten += 1
                     statement += '{}\n'.format(writtenFilename)
-            
-            # Write OFCOM exclusions files
-            if (self.includeOfcomData.get()):
+
+            # Write OFCOM Exclusion Files
+            if (data.showOfcom and self.includeOfcomData.get()):
                 filename = self._findUnusedFile(self.scanOutputLocation, '{}.cxl'.format(os.path.splitext(self.scanMasterFilename.get())[0]))
                 target = self.scanOutputLocation + data.slash + filename
                 
@@ -1257,6 +1301,12 @@ class GUI():
 
             with open(data.plistName, 'wb') as fp:
                 plistlib.dump(plist, fp)
+            
+            if plist['createLog']:
+                if self._writeToLog():
+                    statement += 'Log file updated.\n'
+                else:
+                    statement += 'WARNING: Log could not be updated at {}\n'.format(plist['logFolder'])
          
             if delSourceConfirmed:
                 statement += '\nThe following files were deleted:\n'
@@ -1268,6 +1318,23 @@ class GUI():
             else:
                 if tkmessagebox.askyesno('Success!', '{}\nWould you like to clear the file list?'.format(statement)):
                     self._clearFiles(None, False)
+
+    # Method to write to log file
+    def _writeToLog(self):
+        logFile = '{}{}{}'.format(plist['logFolder'], data.slash, data.logFileName)
+
+        if not os.path.exists(logFile):
+            newFile = True
+        else:
+            newFile = False
+
+        with open(logFile, 'a', newline='') as csvfile:
+            logWriter = csv.writer(csvfile, delimiter=',', quotechar="\"", quoting=csv.QUOTE_MINIMAL)
+            if newFile:
+                logWriter.writerow(['Date', 'Country', 'City', 'Venue'])
+            logWriter.writerow([self.scanDate.get(), self.country.get(), self.town.get(), self.venue.get()])
+
+        return True
 
     def _findUnusedFile(self, directory, filename):
         target = directory + data.slash + filename
@@ -1434,7 +1501,7 @@ class GUI():
             self.settingsWindowOpen = False
             self._refresh()
 
-    # Method to login to OFCOM site
+    # Method to login to OFCOM Site
     def _ofcomLogin(self):
         lookup = ofcom.PMSELookup(plist['ofcomAccountName'], plist['ofcomUserName'], keyring.get_password(data.title, plist['ofcomAccountName']))
         

@@ -1,14 +1,21 @@
 # -*- mode: python -*-
 
-block_cipher = None
+# Tkinter location fix using hooks
+# https://github.com/pyinstaller/pyinstaller/issues/3753
 
+# work-around for https://github.com/pyinstaller/pyinstaller/issues/4064
+import distutils
+if distutils.distutils_path.endswith('__init__.py'):
+    distutils.distutils_path = os.path.dirname(distutils.distutils_path)
+
+block_cipher = None
 
 a = Analysis(['rf-library'],
              pathex=['/Users/stebunting/Dev/rf-library/src'],
              binaries=[],
-             datas=[],
+             datas=[('icons/*', 'icons')],
              hiddenimports=[],
-             hookspath=[],
+             hookspath=[],	
              runtime_hooks=[],
              excludes=[],
              win_no_prefer_redirects=False,
@@ -18,16 +25,17 @@ pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
-          exclude_binaries=True,
+          a.binaries,
+          a.zipfiles,
+          a.datas,
           name='rf-library',
           debug=False,
           strip=False,
           upx=True,
+          runtime_tmpdir=None,
           console=True )
-coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=False,
-               upx=True,
-               name='rf-library')
+app = BUNDLE(exe,
+          name='RF Library.app',
+          icon='icons/logo.icns',
+          version='0.42',
+          bundle_identifier='com.stevebunting.rf-library')
