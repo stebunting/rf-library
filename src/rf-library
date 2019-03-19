@@ -1331,8 +1331,8 @@ class GUI():
         with open(logFile, 'a', newline='') as csvfile:
             logWriter = csv.writer(csvfile, delimiter=',', quotechar="\"", quoting=csv.QUOTE_MINIMAL)
             if newFile:
-                logWriter.writerow(['Date', 'Country', 'City', 'Venue'])
-            logWriter.writerow([self.scanDate.get(), self.country.get(), self.town.get(), self.venue.get()])
+                logWriter.writerow(['Date', 'Country', 'City', 'Venue', 'Inside/Outside'])
+            logWriter.writerow([self.scanDate.get(), self.country.get(), self.town.get(), self.venue.get(), self.io.get()])
 
         return True
 
