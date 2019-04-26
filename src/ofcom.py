@@ -28,8 +28,8 @@ class PMSELookup(object):
         self.password = password
         self.request_session = None
         self.loggedin = False
-        self.viewstate = '/wEPDwULLTE3NDg5MjE3MTUPZBYCZg9kFgICAQ9kFgICBQ9kFgICAg8PFgIeB1Zpc2libGVoZGQYAQUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgEFGGN0bDAwJG1jcGgkbXlMb2dvbiRjdGwwMSG/qFz0Dd2NuKGYWg6Ip1M9J0yi'
-        self.viewstategenerator = '0E9A1EEB'
+        self.viewstate = '' #'/wEPDwUJODAyNjY0ODMzD2QWAmYPZBYCAgEPZBYCAgIPZBYCAgIPDxYCHgdWaXNpYmxlaGRkGAEFHl9fQ29udHJvbHNSZXF1aXJlUG9zdEJhY2tLZXlfXxYBBRhjdGwwMCRtY3BoJG15TG9nb24kY3RsMDHbfbY27V7c15t4v9YlQVfqM15ecw=='
+        self.viewstategenerator = '' #'0E9A1EEB'
 
         self.date = datetime.datetime.utcnow()
         self.datenum = self.date.day
@@ -40,8 +40,16 @@ class PMSELookup(object):
 
     # Login to PMSE site
     def login(self):
-        #return True
         url = 'https://pmse.ofcom.org.uk/Pmse/Ecom/loginpage.aspx'
+
+        # Start session
+        self.request_session = requests.session()
+        
+        # Get viewstate/generator
+        result = self.request_session.post(url=url)
+        tree = html.fromstring(result.text)
+        self.viewstate = tree.xpath("//*[@id=\"__VIEWSTATE\"]/@value")[0]
+        self.viewstategenerator = tree.xpath("//*[@id=\"__VIEWSTATEGENERATOR\"]/@value")[0]
 
         # Define data payload
         payload = {
@@ -54,9 +62,6 @@ class PMSELookup(object):
             'ctl00$mcph$myLogon': 'ctl00$mcph$myLogon',
             'ctl00$mcph$btnContinueLogon': 'Continue'
         }
-
-        # Start session
-        self.request_session = requests.session()
         
         # Define headers
         headers = {
