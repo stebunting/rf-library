@@ -303,6 +303,7 @@ class SettingsWindow():
 
         # Variables
         self.passwordChanged = False
+        self.moveOldLog = False
 
         self.settingsWindow = tk.Toplevel(takefocus=True)
         self.bringtofront()
@@ -496,8 +497,6 @@ class SettingsWindow():
         if os.path.exists('{}{}{}'.format(plist['logFolder'], data.slash, data.logFileName)):
             self.moveOldLog = True
             self.oldLogLocation = plist['logFolder']
-        else:
-            self.moveOldLog = False
 
         dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=plist['logFolder'])
         if dir != '':

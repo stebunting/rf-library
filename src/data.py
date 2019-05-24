@@ -61,7 +61,7 @@ pady_default = 2
 # Defaults
 defaultDateFormat = 'yyyy-mm-dd'
 defaultDirectoryStructure = '%c{}%t %v{}%y'.format(slash, slash)
-defaultFilenameStructure = '%t %v-%c %y-%m-%d %i %n-%f'
+defaultFilenameStructure = '%t %c-%v-%y%m%d-%i %f %n'
 logFileName = 'rflibrary-log.csv'
 
 # Maintenence
