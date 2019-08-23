@@ -1480,7 +1480,7 @@ class GUI():
 
     # Method to display about information
     def _about(self):
-        tkmessagebox.showinfo('About', '{} {}\n\n{} Stephen Bunting 2017\nhttp://www.stevebunting.com/'.format(data.title, data.version, chr(169)))
+        tkmessagebox.showinfo('About', '{} v{}\n\n{} Stephen Bunting 2017\nhttp://www.stevebunting.com/'.format(data.title, data.version, chr(169)))
 
     # Method to open docs in web browser
     def _openHTTP(self):

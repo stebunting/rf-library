@@ -51,7 +51,7 @@ defaultLogFolder = defaultLibraryLocation
 
 # Software Details
 title = "RF Library"
-version = "v0.42"
+version = 0.42
 icon_location = resource_path('icons{}'.format(slash))
 
 # GUI Constants

@@ -44,4 +44,7 @@ coll = COLLECT(exe,
 app = BUNDLE(coll,
              name='RF Library.app',
              icon='icons/logo.icns',
-             bundle_identifier=None)
+             bundle_identifier=None,
+             info_plist={'CFBundleShortVersionString': '0.4.2',
+                         'NSPrincipalClass': 'NSApplication',
+                         'NSAppleScriptEnabled': False})
