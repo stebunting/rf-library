@@ -12,7 +12,6 @@ matplotlib==3.1.1
 numpy==1.17.0
 Pillow==6.1.0
 PyInstaller==3.5
-PyInstaller-Hooks==20190822
 pyparsing==2.4.2
 python-dateutil==2.8.0
 requests==2.22.0
