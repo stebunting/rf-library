@@ -7,3 +7,4 @@ src/dist
 src/backup
 rflibrary.dmg
 src/icons/.DS_Store
+src/pyinstaller-hooks

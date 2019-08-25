@@ -1,3 +1,8 @@
 rm -r build
 rm -r dist
+
 pyinstaller -w rf-library.spec
+
+mkdir -pv "dist/RF Library.app/Contents/lib/tcl8/8.5"
+
+cp /Library/Frameworks/Python.framework/Versions/3.7/lib/tcl8/8.5/msgcat-1.6.1.tm "dist/RF Library.app/Contents/lib/tcl8/8.5/msgcat-1.6.1.tm"
