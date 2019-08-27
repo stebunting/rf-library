@@ -49,7 +49,7 @@ settingsExists = True
 if not os.path.isfile(data.plistName):
     settingsExists = False
     try:
-    	os.mkdirs(data.plistPath)
+    	os.makedirs(data.plistPath)
     except FileExistsError:
     	pass
     fp = open(data.plistName, 'wb')
