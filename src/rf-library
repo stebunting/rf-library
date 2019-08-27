@@ -41,7 +41,7 @@ def set_date_format():
 def dir_format(display_location, max_length):
     display_location = display_location.replace(os.path.expanduser('~'), '~', 1)
     while len(display_location) > max_length:
-        display_location = '...{}{}'.format(data.slash, display_location.split(data.slash, 2)[2])
+        display_location = os.path.join('...', os.path.normpath(display_location.split(os.sep, 2)[2]))
     return display_location
 
 # Load settings plist if it exists yet
@@ -587,7 +587,7 @@ class GUI():
         self.window.resizable(width=False, height=False)
         self.window.title(data.title)
         self.window.config(background='lightGrey')
-        self.window.tk.call('wm', 'iconphoto', self.window._w, ImageTk.PhotoImage(Image.open('{}logo.ico'.format(data.icon_location))))
+        self.window.tk.call('wm', 'iconphoto', self.window._w, ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'logo.ico'))))
         
         # Build window
         self._createStyles()
@@ -767,31 +767,31 @@ class GUI():
         self.fileListEditFrame = ttk.Frame(self.inputFrame)
         self.fileListEditFrame.grid(column=0, row=2, columnspan=2, sticky='E')
         
-        calendar_image = ImageTk.PhotoImage(Image.open('{}calendar_disabled.png'.format(data.icon_location)))
+        calendar_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'calendar_disabled.png')))
         self.useDateButton = ttk.Button(self.fileListEditFrame, image=calendar_image, state='disabled', command=self._useDate)
         self.useDateButton.grid(column=4, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.useDateButton.image = calendar_image
         CreateToolTip(self.useDateButton, 'Use currently selected file\'s creation date for scan date ({}D)'.format(data.command_symbol))
         
-        bin_image = ImageTk.PhotoImage(Image.open('{}bin_disabled.png'.format(data.icon_location)))
+        bin_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'bin_disabled.png')))
         self.clearFilesButton = ttk.Button(self.fileListEditFrame, image=bin_image, state='disabled', command=self._clearFiles)
         self.clearFilesButton.grid(column=3, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.clearFilesButton.image = bin_image
         CreateToolTip(self.clearFilesButton, 'Remove all files from file list ({}\u232b)'.format(data.command_symbol))
         
-        minus_image = ImageTk.PhotoImage(Image.open('{}minus_disabled.png'.format(data.icon_location)))
+        minus_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'minus_disabled.png')))
         self.removeFileButton = ttk.Button(self.fileListEditFrame, image=minus_image, state='disabled', command=self._removeFile)
         self.removeFileButton.grid(column=2, row=0, sticky='E', padx=data.padx_default, pady=0)
         self.removeFileButton.image = minus_image
         CreateToolTip(self.removeFileButton, 'Remove selected file from file list (\u232b)')
         
-        folder_image = ImageTk.PhotoImage(Image.open('{}folder.png'.format(data.icon_location)))
+        folder_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'folder.png')))
         self.addDirectoryButton = ttk.Button(self.fileListEditFrame, image=folder_image, command=self._addDirectory)
         self.addDirectoryButton.grid(column=1, row=0, sticky='E', padx=data.padx_default, pady=data.pady_default)
         self.addDirectoryButton.image = folder_image
         CreateToolTip(self.addDirectoryButton, 'Add directory to file list ({}{}A)'.format(data.command_symbol, data.alt_symbol))
 
-        plus_image = ImageTk.PhotoImage(Image.open('{}plus.png'.format(data.icon_location)))
+        plus_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'plus.png')))
         self.addFilesButton = ttk.Button(self.fileListEditFrame, image=plus_image, command=self._addFiles)
         self.addFilesButton.grid(column=0, row=0, sticky='E', padx=data.padx_default, pady=data.pady_default)
         self.addFilesButton.image = plus_image
@@ -838,7 +838,7 @@ class GUI():
         CreateToolTip(self.ioBox, 'Was the scan taken inside or outside?')
         
         # Output Location
-        reset_image = ImageTk.PhotoImage(Image.open('{}reset.png'.format(data.icon_location)))
+        reset_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'reset.png')))
         self.targetSubdirectory.set(self.io.get())
         ttk.Label(self.outputFrame, text='Destination', width=self.left_indent).grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
         self.defaultOutputLocation.set(1)
@@ -1046,13 +1046,14 @@ class GUI():
         
         self.scanMasterFilename.set(self.parse_structure(plist['fileStructure'] + '.csv'))
         if self.defaultOutputLocation.get() == 1:
-            self.libraryLocation = plist['defaultLibraryLocation'] + data.slash
-            self.targetLocation = self.parse_structure(os.path.join(plist['dirStructure'], '%s')).rstrip('/')
+            self.libraryLocation = plist['defaultLibraryLocation']
+            self.targetLocation = self.parse_structure(os.path.join(plist['dirStructure'], '%s'))
+            print(self.targetLocation)
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
-                self.targetLocation = data.slash + self.targetLocation
-        self.scanOutputLocation = self.libraryLocation + self.targetLocation
+                self.targetLocation = self.targetLocation
+        self.scanOutputLocation = os.path.join(self.libraryLocation, self.targetLocation)
         self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))
 
         # Set OFCOM Search box when venue edited
@@ -1062,7 +1063,7 @@ class GUI():
     def _buttonStatus(self, inputStatus=None, outputStatus=None):
         if inputStatus != None:
             for x in [(self.removeFileButton, 'minus'), (self.useDateButton, 'calendar')]:
-                im = ImageTk.PhotoImage(Image.open('{}{}_{}.png'.format(data.icon_location, x[1], inputStatus)))
+                im = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, '{}_{}.png'.format(x[1], inputStatus))))
                 x[0].config(state=inputStatus, image=im)
                 x[0].image = im
             if inputStatus == 'enabled':
@@ -1071,7 +1072,7 @@ class GUI():
                 menu.entryconfig(item, state=inputStatus)
                 
         if outputStatus != None:
-            im = ImageTk.PhotoImage(Image.open('{}bin_{}.png'.format(data.icon_location, outputStatus)))
+            im = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'bin_{}.png'.format(outputStatus))))
             self.clearFilesButton.config(state=outputStatus, image=im)
             self.clearFilesButton.image = im
             if outputStatus == 'enabled':
@@ -1231,7 +1232,7 @@ class GUI():
         # Add all files into outputFile list if within limits
         outputFile = []
         filesWritten = 0
-        statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}{}\n\n'.format(self.scanOutputLocation, data.slash)
+        statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}\n\n'.format(self.scanOutputLocation)
         for file in self.files:
             for freq, value in file.frequencies:
                 if freq >= plist['lowFreqLimit'] and (plist['highFreqLimit'] == 0 or freq <= plist['highFreqLimit']):
@@ -1383,10 +1384,10 @@ class GUI():
     # Method to create directory structure
     def _createDirectory(self):
         try:
-            os.makedirs('{}{}'.format(self.scanOutputLocation, data.slash))
+            os.makedirs('{}'.format(self.scanOutputLocation))
             return True
         except OSError:
-            return tkmessagebox.askyesno('Directory already exists', '{}{} already exists. Are you sure?.'.format(self.scanOutputLocation, data.slash))
+            return tkmessagebox.askyesno('Directory already exists', '{} already exists. Are you sure?.'.format(self.scanOutputLocation))
             
     # Method to remove current preview
     def _clearPreview(self):

@@ -2,6 +2,7 @@
 
 ## [0.5.2]
 - Moved Windows preferences file to AppData folder
+- Replaced data.slash variable with os.path.join()
 
 ## [0.5.1] - 2019-08-26
 - First Windows package

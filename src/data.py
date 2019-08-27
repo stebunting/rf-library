@@ -14,10 +14,14 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+# Software Details
+title = "RF Library"
+version = "0.5.2"
+icon_location = resource_path('icons')
+
 # Check system and set necessary variables
 if platform.system() == 'Windows':
 	system = 'Windows'
-	slash = '/'
 	command = 'Control-'
 	command_abbr = 'Ctrl+'
 	command_symbol = '^'
@@ -35,7 +39,6 @@ if platform.system() == 'Windows':
 		defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
 elif platform.system() == 'Darwin':
 	system = 'Mac'
-	slash = '/'
 	command = 'Command-'
 	command_abbr = 'Command-'
 	command_symbol = '⌘'
@@ -50,11 +53,6 @@ elif platform.system() == 'Darwin':
 	defaultLibraryLocation = os.path.expanduser('~/Documents/Scans')
 defaultLogFolder = defaultLibraryLocation
 plistName = os.path.join(plistPath, plistFile)
-
-# Software Details
-title = "RF Library"
-version = "0.5.1"
-icon_location = resource_path('icons{}'.format(slash))
 
 # GUI Constants
 padx_default = 2
