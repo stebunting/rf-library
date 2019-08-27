@@ -19,8 +19,7 @@ import tkinter.ttk as ttk
 import tkinter.font as tkfont
 import tkinter.messagebox as tkmessagebox
 import tkinter.filedialog as tkfiledialog
-from PIL import Image
-from PIL import ImageTk
+from PIL import Image, ImageTk
 
 # Import Matplotlib graph plotting functions
 import matplotlib
@@ -49,6 +48,10 @@ def dir_format(display_location, max_length):
 settingsExists = True
 if not os.path.isfile(data.plistName):
     settingsExists = False
+    try:
+    	os.mkdirs(data.plistPath)
+    except FileExistsError:
+    	pass
     fp = open(data.plistName, 'wb')
     fp.close()
     os.chmod(data.plistName, 0o600)
@@ -494,7 +497,7 @@ class SettingsWindow():
 
     # Method to select default log folder
     def _changeLogFolder(self):
-        if os.path.exists('{}{}{}'.format(plist['logFolder'], data.slash, data.logFileName)):
+        if os.path.exists(os.path.join(plist['logFolder'], data.logFileName)):
             self.moveOldLog = True
             self.oldLogLocation = plist['logFolder']
 
@@ -543,8 +546,8 @@ class SettingsWindow():
 
         # Move old log to new log location
         if self.moveOldLog:
-            os.rename('{}{}{}'.format(self.oldLogLocation, data.slash, data.logFileName),
-                      '{}{}{}'.format(plist['logFolder'], data.slash, data.logFileName))
+            os.rename(os.path.join(self.oldLogLocation, data.logFileName),
+                      os.path.join(plist['logFolder'], data.logFileName))
 
         self._closeSettings()
     
@@ -1044,7 +1047,7 @@ class GUI():
         self.scanMasterFilename.set(self.parse_structure(plist['fileStructure'] + '.csv'))
         if self.defaultOutputLocation.get() == 1:
             self.libraryLocation = plist['defaultLibraryLocation'] + data.slash
-            self.targetLocation = self.parse_structure(plist['dirStructure'] + data.slash + '%s').rstrip('/')
+            self.targetLocation = self.parse_structure(os.path.join(plist['dirStructure'], '%s')).rstrip('/')
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
@@ -1174,7 +1177,7 @@ class GUI():
         if selectedDir != '':
             plist['defaultSourceLocation'] = selectedDir
             for file in os.listdir(selectedDir):
-                fullfilename = '{}{}{}'.format(selectedDir, data.slash, file)
+                fullfilename = os.path.join(selectedDir, file)
                 if not file.startswith('.') and not os.path.isdir(fullfilename):
                     dirFiles.append(fullfilename)
         if len(dirFiles) != 0:
@@ -1275,7 +1278,7 @@ class GUI():
             # Write OFCOM Exclusion Files
             if (data.showOfcom and self.includeOfcomData.get()):
                 filename = self._findUnusedFile(self.scanOutputLocation, '{}.cxl'.format(os.path.splitext(self.scanMasterFilename.get())[0]))
-                target = self.scanOutputLocation + data.slash + filename
+                target = os.path.join(self.scanOutputLocation, filename)
                 
                 writtenFilename = self._ofcomGenerate(None, self.io.get(), target)
                 if writtenFilename:
@@ -1320,7 +1323,7 @@ class GUI():
 
     # Method to write to log file
     def _writeToLog(self):
-        logFile = '{}{}{}'.format(plist['logFolder'], data.slash, data.logFileName)
+        logFile = os.path.join(plist['logFolder'], data.logFileName)
 
         if not os.path.exists(logFile):
             newFile = True
@@ -1336,19 +1339,19 @@ class GUI():
         return True
 
     def _findUnusedFile(self, directory, filename):
-        target = directory + data.slash + filename
+        target = os.path.join(directory, filename)
         file, ext = os.path.splitext(filename)
         duplicateCounter = 0
         while os.path.isfile(target):
             duplicateCounter += 1
             filename = '{}-{}{}'.format(file, duplicateCounter, ext)
-            target = directory + data.slash + filename
+            target = os.path.join(directory, filename)
         return filename
 
     # Method to write file to disk
     def _writeFile(self, directory, filename, array):
         filename = self._findUnusedFile(directory, filename)
-        target = directory + data.slash + filename
+        target = os.path.join(directory, filename)
         try:
             with open(target, 'w') as fp:
                 for freq, value in array:
@@ -1364,7 +1367,7 @@ class GUI():
         filename = '{}-WSM.{}'.format(file, ext)
 
         filename = self._findUnusedFile(directory, filename)  
-        target = directory + data.slash + filename
+        target = os.path.join(directory, filename)
         try:
             with open(target, 'w') as fp:
                 wsm_date = self.scanDateTimestamp.strftime('%Y-%m-%d 00:00:00')

@@ -1,5 +1,8 @@
 # RF Library Changelog
 
+## [0.5.2]
+- Moved Windows preferences file to AppData folder
+
 ## [0.5.1] - 2019-08-26
 - First Windows package
 - Added option in data.py to prevent WSM output file, option turned on

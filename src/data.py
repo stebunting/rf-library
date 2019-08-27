@@ -27,11 +27,12 @@ if platform.system() == 'Windows':
 	alt = 'Alt-'
 	alt_abbr = 'Alt+'
 	alt_symbol = '⎇'
-	plistName = os.path.join(os.environ['APPDATA'], 'RF Library', 'rflibrary.plist')
+	plistPath = os.path.join(os.environ['APPDATA'], 'RF Library')
+	plistFile = 'rflibrary.plist'
 	if platform.release() == '10':
-		defaultLibraryLocation = os.path.expanduser('~{}Documents{}Scans'.format(slash, slash))
+		defaultLibraryLocation = os.path.expanduser('~\\Documents\\Scans')
 	else:
-		defaultLibraryLocation = os.path.expanduser('~{}My Documents{}Scans'.format(slash, slash))
+		defaultLibraryLocation = os.path.expanduser('~\\My Documents\\Scans')
 elif platform.system() == 'Darwin':
 	system = 'Mac'
 	slash = '/'
@@ -44,9 +45,11 @@ elif platform.system() == 'Darwin':
 	alt = 'Alt-'
 	alt_abbr = 'Alt-'
 	alt_symbol = '⎇'
-	plistName = os.path.expanduser('~{}Library{}Preferences{}com.stevebunting.rflibrary.plist'.format(slash, slash, slash))
-	defaultLibraryLocation = os.path.expanduser('~{}Documents{}Scans'.format(slash, slash))
+	plistPath = os.path.expanduser('~/Library/Preferences')
+	plistFile = 'com.stevebunting.rflibrary.plist'
+	defaultLibraryLocation = os.path.expanduser('~/Documents/Scans')
 defaultLogFolder = defaultLibraryLocation
+plistName = os.path.join(plistPath, plistFile)
 
 # Software Details
 title = "RF Library"
@@ -59,7 +62,7 @@ pady_default = 2
 
 # Defaults
 defaultDateFormat = 'yyyy-mm-dd'
-defaultDirectoryStructure = '%c{}%t %v{}%y'.format(slash, slash)
+defaultDirectoryStructure = os.path.join('%c, %t %v, %y')
 defaultFilenameStructure = '%t %c-%v-%y%m%d-%i %f %n'
 logFileName = 'rflibrary-log.csv'
 
