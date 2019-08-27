@@ -1,5 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+# Import data file
+import importlib.util
+spec = importlib.util.spec_from_file_location("data.py", "./data.py")
+data = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(data)
+
 # work-around for https://github.com/pyinstaller/pyinstaller/issues/4064
 import distutils
 if distutils.distutils_path.endswith('__init__.py'):
@@ -44,7 +50,7 @@ coll = COLLECT(exe,
 app = BUNDLE(coll,
              name='RF Library.app',
              icon='icons/logo.icns',
-             bundle_identifier=None,
-             info_plist={'CFBundleShortVersionString': '0.4.2',
+             bundle_identifier='com.stevebunting.rflibrary',
+             info_plist={'CFBundleShortVersionString': data.version,
                          'NSPrincipalClass': 'NSApplication',
                          'NSAppleScriptEnabled': False})

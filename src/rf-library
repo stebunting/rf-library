@@ -1264,7 +1264,7 @@ class GUI():
                     statement += '{}\n'.format(writtenFilename)
 
             # Write WSM file
-            if len(outputFile) > 0:
+            if (data.makeWSM and len(outputFile) > 0):
                 writtenFilename = self._writeWSMFile(self.scanOutputLocation, self.scanMasterFilename.get(), outputFile)
                 if not writtenFilename:
                     return False
@@ -1480,7 +1480,7 @@ class GUI():
 
     # Method to display about information
     def _about(self):
-        tkmessagebox.showinfo('About', '{} v{}\n\n{} Stephen Bunting 2017\nhttp://www.stevebunting.com/'.format(data.title, data.version, chr(169)))
+        tkmessagebox.showinfo('About', '{} v{}\n\n{} Stephen Bunting 2019\nhttp://www.stevebunting.com/'.format(data.title, data.version, chr(169)))
 
     # Method to open docs in web browser
     def _openHTTP(self):

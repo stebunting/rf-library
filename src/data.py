@@ -51,7 +51,7 @@ defaultLogFolder = defaultLibraryLocation
 
 # Software Details
 title = "RF Library"
-version = 0.42
+version = "0.5.1"
 icon_location = resource_path('icons{}'.format(slash))
 
 # GUI Constants
@@ -66,6 +66,7 @@ logFileName = 'rflibrary-log.csv'
 
 # Maintenence
 showOfcom = False
+makeWSM = False
 
 # Variables
 TVChannels = {
