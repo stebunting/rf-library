@@ -27,11 +27,10 @@ if platform.system() == 'Windows':
 	alt = 'Alt-'
 	alt_abbr = 'Alt+'
 	alt_symbol = '⎇'
+	plistName = os.path.join(os.environ['APPDATA'], 'RF Library', 'rflibrary.plist')
 	if platform.release() == '10':
-		plistName = '{}{}Documents{}rflibrary.plist'.format(os.path.expanduser('~'), slash, slash)
 		defaultLibraryLocation = os.path.expanduser('~{}Documents{}Scans'.format(slash, slash))
 	else:
-		plistName = '{}{}My Documents{}rflibrary.plist'.format(os.path.expanduser('~'), slash, slash)
 		defaultLibraryLocation = os.path.expanduser('~{}My Documents{}Scans'.format(slash, slash))
 elif platform.system() == 'Darwin':
 	system = 'Mac'
