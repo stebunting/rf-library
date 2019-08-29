@@ -45,20 +45,30 @@ def dir_format(display_location, max_length):
     return display_location
 
 # Load settings plist if it exists yet
+errors = []
 settingsExists = True
+newSettingsFile = False
 if not os.path.isfile(data.plistName):
     settingsExists = False
     try:
-    	os.makedirs(data.plistPath)
-    except FileExistsError:
-    	pass
-    fp = open(data.plistName, 'wb')
-    fp.close()
-    os.chmod(data.plistName, 0o600)
+        os.makedirs(data.plistPath, exist_ok=True)
+    except PermissionError:
+        errors.append(2)
+    try:
+        fp = open(data.plistName, 'wb')
+        fp.close()
+        os.chmod(data.plistName, 0o600)
+    except (PermissionError, FileNotFoundError):
+        errors.append(3)
     plist = dict()
 else:
-    with open(data.plistName, 'rb') as fp:
-        plist = plistlib.load(fp)
+    try:
+        with open(data.plistName, 'rb') as fp:
+            plist = plistlib.load(fp)
+        newSettingsFile = True
+    except PermissionError: 
+        errors.append(1)
+        plist = dict()
 
 # Check for preferences and add default if not there
 vars = ['ofcomAccountName', 'ofcomUserName', 'createLog', 'logFolder', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation', 'defaultLibraryLocation']
@@ -67,8 +77,9 @@ for var, default in zip(vars, defaults):
     if var not in plist:
         plist[var] = default
 
-with open(data.plistName, 'wb') as fp:
-    plistlib.dump(plist, fp)
+if newSettingsFile:
+    with open(data.plistName, 'wb') as fp:
+        plistlib.dump(plist, fp)
 
 dateFormat = set_date_format()
 
@@ -539,10 +550,13 @@ class SettingsWindow():
         plist['createLog'] = self.createLog.get()
         plist['logFolder'] = self.logFolder
 
-        with open(data.plistName, 'wb') as fp:
-            plistlib.dump(plist, fp)
-        if self.passwordChanged:
-            keyring.set_password(data.title, self.ofcomAccountName.get(), self.ofcomPassword.get())
+        try:
+            with open(data.plistName, 'wb') as fp:
+                plistlib.dump(plist, fp)
+            if self.passwordChanged:
+                keyring.set_password(data.title, self.ofcomAccountName.get(), self.ofcomPassword.get())
+        except PermissionError:
+            gui._showError(1)
 
         # Move old log to new log location
         if self.moveOldLog:
@@ -559,7 +573,7 @@ class SettingsWindow():
     # Method to bring settings window to front
     def bringtofront(self):
         self.settingsWindow.lift()
-    
+   
 ################################################################################
 ##########                         GUI OBJECT                         ##########
 ################################################################################
@@ -567,7 +581,7 @@ class SettingsWindow():
 class GUI():
 
     # Initialise class
-    def __init__(self):
+    def __init__(self, errors):
  
         # Variables
         self.files = []
@@ -594,6 +608,9 @@ class GUI():
         self._createFrames()
         self._createMenu()
         self._createWidgets()
+
+        for error in errors:
+            self._showError(error)
         
         # Open settings if settings uninitialised
         if not settingsExists:
@@ -660,6 +677,8 @@ class GUI():
     
     # Create GUI menu
     def _createMenu(self):
+        
+        # Create Menu Bar
         self.menuBar = tk.Menu(self.window)
 
         # File Menu
@@ -671,13 +690,6 @@ class GUI():
         self.fileMenu.add_command(label='Set Destination', accelerator='{}{}D'.format(data.command_abbr, data.modifier_abbr), command=self._customDestination)
         self.fileMenu.add_command(label='Create File', accelerator='{}Return'.format(data.command_abbr), command=self._createFile)
         
-        # Add exit option to Windows menu only
-        if data.system == 'Windows':
-            self.fileMenu.add_separator()
-            self.fileMenu.add_command(label='Exit', accelerator='{}Q'.format(data.command_abbr), command=self._quit)
-
-        self.menuBar.add_cascade(label='File', menu=self.fileMenu)
-        
         # Edit Menu
         self.editMenu = tk.Menu(self.menuBar, tearoff=False)
         self.editMenu.add_command(label='Copy', accelerator='{}C'.format(data.command_abbr), command=lambda: self.window.focus_get().event_generate("<<Copy>>"))
@@ -687,23 +699,39 @@ class GUI():
         self.editMenu.add_separator()
         self.editMenu.add_command(label='Remove File', accelerator='BackSpace', command=self._removeFile)
         self.editMenu.add_command(label='Clear Files', accelerator='{}BackSpace'.format(data.command_abbr), command=self._clearFiles)
-        self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
-
+        
         # Help Menu
-        self.helpMenu = tk.Menu(self.menuBar, tearoff=False)
-        self.helpMenu.add_command(label='Documentation', command=self._openHTTP)
+        self.helpMenu = tk.Menu(self.menuBar, name='help')
+
+        # Application Menu (OS X only)
+        if data.system == 'Mac':
+            self.appMenu = tk.Menu(self.menuBar, name='apple')
+            self.appMenu.add_command(label='About RF Library', command=self._about)
+            self.appMenu.add_command(label='Check for Updates...', command=self._checkForUpdates)
+            self.appMenu.add_separator()
+            self.menuBar.add_cascade(menu=self.appMenu)
+
+            # Configure OS X Built-in menu options
+            self.window.createcommand('::tk::mac::ShowPreferences', self._settings)
+            self.window.createcommand('::tk::mac::ShowHelp', self._openHTTP)
 
         # Extra menus for Windows only
         if data.system == 'Windows':
+            self.fileMenu.add_separator()
+            self.fileMenu.add_command(label='Exit', accelerator='{}Q'.format(data.command_abbr), command=self._quit)
             self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
             self.toolsMenu.add_command(label='Preferences...', command=self._settings)
             self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
             self.helpMenu.add_command(label='About', command=self._about)
+            self.helpMenu.add_command(label='Documentation', command=self._openHTTP)
 
-        # Configure OS X Application menu
+        self.menuBar.add_cascade(label='File', menu=self.fileMenu)
+        self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
+
+        # Window Menu (OS X Only)
         if data.system == 'Mac':
-            self.window.createcommand('tkAboutDialog', self._about)
-            self.window.createcommand('::tk::mac::ShowPreferences', self._settings)
+            self.windowMenu = tk.Menu(self.menuBar, name='window')
+            self.menuBar.add_cascade(menu=self.windowMenu, label='Window')
 
         self.menuBar.add_cascade(label='Help', menu=self.helpMenu)
      
@@ -1048,7 +1076,6 @@ class GUI():
         if self.defaultOutputLocation.get() == 1:
             self.libraryLocation = plist['defaultLibraryLocation']
             self.targetLocation = self.parse_structure(os.path.join(plist['dirStructure'], '%s'))
-            print(self.targetLocation)
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
@@ -1302,8 +1329,11 @@ class GUI():
             plist['defaultDelete'] = self.deleteSourceFiles.get()
             plist['defaultOfcomInclude'] = self.includeOfcomData.get()
 
-            with open(data.plistName, 'wb') as fp:
-                plistlib.dump(plist, fp)
+            try:
+                with open(data.plistName, 'wb') as fp:
+                    plistlib.dump(plist, fp)
+            except PermissionError:
+                gui._showError(1)
             
             if plist['createLog']:
                 if self._writeToLog():
@@ -1387,7 +1417,7 @@ class GUI():
             os.makedirs('{}'.format(self.scanOutputLocation))
             return True
         except OSError:
-            return tkmessagebox.askyesno('Directory already exists', '{} already exists. Are you sure?.'.format(self.scanOutputLocation))
+            return tkmessagebox.askyesno('Directory already exists', '{} already exists. Are you sure?'.format(self.scanOutputLocation))
             
     # Method to remove current preview
     def _clearPreview(self):
@@ -1484,12 +1514,11 @@ class GUI():
 
     # Method to display about information
     def _about(self):
-        tkmessagebox.showinfo('About', '{} v{}\n\n{} Stephen Bunting 2019\nhttp://www.stevebunting.com/'.format(data.title, data.version, chr(169)))
+        tkmessagebox.showinfo('About', '{} v{}\n\n{} Stephen Bunting 2019\n{}'.format(data.title, data.version, chr(169), data.website_uri))
 
     # Method to open docs in web browser
     def _openHTTP(self):
-        browser=webbrowser.get('Safari')
-        browser.open('http://rflibrary.stevebunting.com/documentation.php')
+        webbrowser.open("{}documentation.php".format(data.website_uri), new=2, autoraise=True)
 
     # Method to display settings box
     def _settings(self, event=None):
@@ -1564,11 +1593,36 @@ class GUI():
             self.pmseLookup.xmlGenerate(data, io, filename)
             return filename
 
+    # Check for latest version of software
+    def _checkForUpdates(self):
+        r = requests.get(data.update_file_location)
+        root = xml.etree.ElementTree.fromstring(r.text)
+        latest = root[0][0].text
+        download_uri = root[0][2].text
+        print(download_uri)
+        if latest == data.version:
+            tkmessagebox.showinfo("Check for Updates", "No updates found. You have the latest version of RF Library.")
+        else:
+            if (tkmessagebox.askyesno("Check for Updates", "There is a new version of RF Library available. Would you like to download v{}".format(latest))):
+                webbrowser.open(download_uri, new=2 , autoraise=False)
+
+    # Method to show an error message
+    def _showError(self, code):
+        if code == 1:
+            message = "RF Library could not write to preferences file {}".format(data.plistName)
+        elif code == 2:
+            message = "RF Library could not create preferences path {}".format(data.plistPath)
+        elif code == 3:
+            message = "RF Library could not write preferences file {}".format(data.plistName)
+        else:
+            message = "Undefined"
+        tkmessagebox.showerror("RF Library Error", message)
+
 
 ################################################################################
 ##########                         START GUI                          ##########
 ################################################################################
 
 if __name__ == '__main__':
-    gui = GUI()
+    gui = GUI(errors=errors)
     gui.window.mainloop()

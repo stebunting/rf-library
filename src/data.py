@@ -18,6 +18,8 @@ def resource_path(relative_path):
 title = "RF Library"
 version = "0.5.2"
 icon_location = resource_path('icons')
+website_uri = "https://rflibrary.stevebunting.com/"
+update_file_location = "{}latestVersion.xml".format(website_uri)
 
 # Check system and set necessary variables
 if platform.system() == 'Windows':
@@ -60,7 +62,7 @@ pady_default = 2
 
 # Defaults
 defaultDateFormat = 'yyyy-mm-dd'
-defaultDirectoryStructure = os.path.join('%c, %t %v, %y')
+defaultDirectoryStructure = os.path.join('%c', '%t %v', '%y')
 defaultFilenameStructure = '%t %c-%v-%y%m%d-%i %f %n'
 logFileName = 'rflibrary-log.csv'
 
