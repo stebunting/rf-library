@@ -683,11 +683,11 @@ class GUI():
 
         # File Menu
         self.fileMenu = tk.Menu(self.menuBar, tearoff=False)
-        self.fileMenu.add_command(label='Add Files', accelerator='{}{}A'.format(data.command_abbr, data.modifier_abbr), command=self._addFiles)
-        self.fileMenu.add_command(label='Add Directory', accelerator='{}{}A'.format(data.command_abbr, data.alt_abbr), command=self._addDirectory)
+        self.fileMenu.add_command(label='Add Files...', accelerator='{}{}A'.format(data.command_abbr, data.modifier_abbr), command=self._addFiles)
+        self.fileMenu.add_command(label='Add Directory...', accelerator='{}{}A'.format(data.command_abbr, data.alt_abbr), command=self._addDirectory)
         self.fileMenu.add_separator()
         self.fileMenu.add_command(label='Set Date', accelerator='{}D'.format(data.command_abbr), command=self._useDate)
-        self.fileMenu.add_command(label='Set Destination', accelerator='{}{}D'.format(data.command_abbr, data.modifier_abbr), command=self._customDestination)
+        self.fileMenu.add_command(label='Set Destination...', accelerator='{}{}D'.format(data.command_abbr, data.modifier_abbr), command=self._customDestination)
         self.fileMenu.add_command(label='Create File', accelerator='{}Return'.format(data.command_abbr), command=self._createFile)
         
         # Edit Menu
@@ -701,11 +701,11 @@ class GUI():
         self.editMenu.add_command(label='Clear Files', accelerator='{}BackSpace'.format(data.command_abbr), command=self._clearFiles)
         
         # Help Menu
-        self.helpMenu = tk.Menu(self.menuBar, name='help')
+        self.helpMenu = tk.Menu(self.menuBar, tearoff=False, name='help')
 
         # Application Menu (OS X only)
         if data.system == 'Mac':
-            self.appMenu = tk.Menu(self.menuBar, name='apple')
+            self.appMenu = tk.Menu(self.menuBar, tearoff=False, name='apple')
             self.appMenu.add_command(label='About RF Library', command=self._about)
             self.appMenu.add_command(label='Check for Updates...', command=self._checkForUpdates)
             self.appMenu.add_separator()
@@ -721,9 +721,10 @@ class GUI():
             self.fileMenu.add_command(label='Exit', accelerator='{}Q'.format(data.command_abbr), command=self._quit)
             self.toolsMenu = tk.Menu(self.menuBar, tearoff=False)
             self.toolsMenu.add_command(label='Preferences...', command=self._settings)
-            self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
-            self.helpMenu.add_command(label='About', command=self._about)
             self.helpMenu.add_command(label='Documentation', command=self._openHTTP)
+            self.helpMenu.add_separator()
+            self.helpMenu.add_command(label='Check for Updates...', command=self._checkForUpdates)
+            self.helpMenu.add_command(label='About RF Library', command=self._about)
 
         self.menuBar.add_cascade(label='File', menu=self.fileMenu)
         self.menuBar.add_cascade(label='Edit', menu=self.editMenu)
@@ -733,8 +734,11 @@ class GUI():
             self.windowMenu = tk.Menu(self.menuBar, name='window')
             self.menuBar.add_cascade(menu=self.windowMenu, label='Window')
 
+        # Tools Menu (Windows Only)
+        elif data.system == 'Windows':
+            self.menuBar.add_cascade(label='Tools', menu=self.toolsMenu)
+
         self.menuBar.add_cascade(label='Help', menu=self.helpMenu)
-     
         self.window.config(menu=self.menuBar)
         
         # Bindings for Mac/Windows
