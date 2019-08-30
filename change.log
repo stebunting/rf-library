@@ -1,5 +1,9 @@
 # RF Library Changelog
 
+## [0.5.4]
+- Added connection check for updates
+- Added auto update check function
+
 ## [0.5.3] - 2019-08-29
 - Added rudimentary error-checking to creating, loading and saving preferences file
 - Added option to check for updates

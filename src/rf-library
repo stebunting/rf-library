@@ -71,8 +71,8 @@ else:
         plist = dict()
 
 # Check for preferences and add default if not there
-vars = ['ofcomAccountName', 'ofcomUserName', 'createLog', 'logFolder', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation', 'defaultLibraryLocation']
-defaults = ['', '', True, data.defaultLogFolder, '', '', data.defaultDirectoryStructure, data.defaultFilenameStructure, False, data.defaultDateFormat, 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~'), data.defaultLibraryLocation]
+vars = ['ofcomAccountName', 'ofcomUserName', 'createLog', 'logFolder', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation', 'defaultLibraryLocation', 'autoUpdateCheck']
+defaults = ['', '', True, data.defaultLogFolder, '', '', data.defaultDirectoryStructure, data.defaultFilenameStructure, False, data.defaultDateFormat, 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~'), data.defaultLibraryLocation, True]
 for var, default in zip(vars, defaults):
     if var not in plist:
         plist[var] = default
@@ -324,7 +324,6 @@ class SettingsWindow():
         
         self.settingsWindow.title('Settings')
         self.settingsWindow.resizable(width=False, height=False)
-        #self.settingsWindow.geometry('509x556')
         
         self._createSettingsFrames()
         self._createSettingsWidgets()
@@ -345,6 +344,10 @@ class SettingsWindow():
         self.personalData = ttk.LabelFrame(
             self.settingsMasterFrame, text='Personal Data')
         self.personalData.grid(padx=16, pady=16, sticky='NWSE')
+        
+        self.appData = ttk.LabelFrame(
+            self.settingsMasterFrame, text='Application Data')
+        self.appData.grid(padx=16, pady=16, sticky='NWSE')
         
         if data.showOfcom:
             self.ofcomLogin = ttk.LabelFrame(
@@ -369,6 +372,7 @@ class SettingsWindow():
         self.logFolderDisplay = tk.StringVar()
         self.forename = tk.StringVar()
         self.surname = tk.StringVar()
+        self.autoUpdateCheck = tk.BooleanVar()
         self.ofcomAccountName = tk.StringVar()
         self.ofcomUserName = tk.StringVar()
         self.ofcomPassword = tk.StringVar()
@@ -379,12 +383,14 @@ class SettingsWindow():
                 plist['lowFreqLimit'], plist['highFreqLimit'],
                 plist['createLog'], dir_format(plist['logFolder'], 50),
                 plist['defaultDateFormat'], plist['forename'], plist['surname'],
-                plist['ofcomAccountName'], plist['ofcomUserName'], ' ' * 8]
+                plist['ofcomAccountName'], plist['ofcomUserName'], ' ' * 8,
+                plist['autoUpdateCheck']]
         fields = [self.dirStructure, self.fileStructure,
                   self.scansFolderDisplay, self.lowFreqLimit, self.highFreqLimit,
                   self.createLog, self.logFolderDisplay,
                   self.defaultDateFormat, self.forename, self.surname,
-                  self.ofcomAccountName, self.ofcomUserName, self.ofcomPassword]
+                  self.ofcomAccountName, self.ofcomUserName, self.ofcomPassword,
+                  self.autoUpdateCheck]
         for field, var in zip(fields, vars):
             field.set(var)
         self.defaultLibraryLocation = plist['defaultLibraryLocation']
@@ -454,6 +460,12 @@ class SettingsWindow():
         self.surnameEntry = ttk.Entry(self.personalData, textvariable=self.surname)
         self.surnameEntry.grid(column=1, row=1)
         CreateToolTip(self.surnameEntry, 'Your surname')
+
+        # Check for Updates
+        ttk.Label(self.appData, text='Auto Update Check', width='16').grid(column=0, row=0, sticky='w', padx=data.padx_default, pady=data.pady_default)
+        self.checkForUpdatesCheck = ttk.Checkbutton(self.appData, variable=self.autoUpdateCheck)
+        self.checkForUpdatesCheck.grid(column=1, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        CreateToolTip(self.checkForUpdatesCheck, 'Automatically check for updates on startup')
         
         if data.showOfcom:
 
@@ -549,6 +561,7 @@ class SettingsWindow():
         plist['highFreqLimit'] = int(self.highFreqLimit.get())
         plist['createLog'] = self.createLog.get()
         plist['logFolder'] = self.logFolder
+        plist['autoUpdateCheck'] = self.autoUpdateCheck.get()
 
         try:
             with open(data.plistName, 'wb') as fp:
@@ -556,7 +569,7 @@ class SettingsWindow():
             if self.passwordChanged:
                 keyring.set_password(data.title, self.ofcomAccountName.get(), self.ofcomPassword.get())
         except PermissionError:
-            gui._showError(1)
+            gui._displayError(1)
 
         # Move old log to new log location
         if self.moveOldLog:
@@ -610,11 +623,14 @@ class GUI():
         self._createWidgets()
 
         for error in errors:
-            self._showError(error)
+            self._displayError(error)
         
         # Open settings if settings uninitialised
         if not settingsExists:
             self._settings()
+
+        if plist['autoUpdateCheck']:
+            self._checkForUpdates(display=False)
     
     # Create styles for GUI
     def _createStyles(self):
@@ -634,7 +650,7 @@ class GUI():
      
         self.guiStyle = ttk.Style()
         self.guiStyle.theme_use('clam')
-        # self.guiStyle.map('TCombobox', fieldbackground=[('readonly', 'white'), ('pressed', 'red')], foreground=[('readonly', 'black')])
+        #self.guiStyle.map('TCombobox', fieldbackground=[('readonly', 'white'), ('pressed', 'red')], foreground=[('readonly', 'black')])
         self.guiStyle.configure('TLabelframe.Label', font='Arial {}'.format(self.header_size))
         self.guiStyle.map('TCheckbutton', background=[('hover', self.baseBackground)])
         
@@ -1337,7 +1353,7 @@ class GUI():
                 with open(data.plistName, 'wb') as fp:
                     plistlib.dump(plist, fp)
             except PermissionError:
-                gui._showError(1)
+                gui._displayError(1)
             
             if plist['createLog']:
                 if self._writeToLog():
@@ -1598,30 +1614,45 @@ class GUI():
             return filename
 
     # Check for latest version of software
-    def _checkForUpdates(self):
-        r = requests.get(data.update_file_location)
-        root = xml.etree.ElementTree.fromstring(r.text)
-        latest = root[0][0].text
-        download_uri = root[0][2].text
-        print(download_uri)
-        if latest == data.version:
-            tkmessagebox.showinfo("Check for Updates", "No updates found. You have the latest version of RF Library.")
+    def _checkForUpdates(self, **kwargs):
+        if 'display' in kwargs.keys():
+            display = kwargs['display']
         else:
-            if (tkmessagebox.askyesno("Check for Updates", "There is a new version of RF Library available. Would you like to download v{}".format(latest))):
-                webbrowser.open(download_uri, new=2 , autoraise=False)
+            display = True
+        
+        try:
+            r = requests.get(data.update_file_location)
+            updateConnection = True
+        except requests.exceptions.ConnectionError:
+            updateConnection = False
+
+        if updateConnection:
+            root = xml.etree.ElementTree.fromstring(r.text)
+            latest = root[0][0].text
+            download_uri = root[0][2].text
+            if latest == data.version:
+                if display:
+                    tkmessagebox.showinfo("Check for Updates", "No updates found. You have the latest version of RF Library.")
+            else:
+                if (tkmessagebox.askyesno("Check for Updates", "There is a new version of RF Library available. Would you like to download v{}?".format(latest))):
+                    webbrowser.open(download_uri, new=2 , autoraise=False)
+        else:
+            if display:
+                    self._displayError(4)
 
     # Method to show an error message
-    def _showError(self, code):
+    def _displayError(self, code):
         if code == 1:
-            message = "RF Library could not write to preferences file {}".format(data.plistName)
+            message = "Could not write to preferences file {}".format(data.plistName)
         elif code == 2:
-            message = "RF Library could not create preferences path {}".format(data.plistPath)
+            message = "Could not create preferences path {}".format(data.plistPath)
         elif code == 3:
-            message = "RF Library could not write preferences file {}".format(data.plistName)
+            message = "Could not write preferences file {}".format(data.plistName)
+        elif code == 4:
+            message = "Could not connect to update server."
         else:
             message = "Undefined"
         tkmessagebox.showerror("RF Library Error", message)
-
 
 ################################################################################
 ##########                         START GUI                          ##########
