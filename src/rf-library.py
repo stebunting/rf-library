@@ -98,7 +98,6 @@ class SettingsWindow():
         self.moveOldLog = False
 
         self.settingsWindow = tk.Toplevel(takefocus=True)
-        self.bringtofront()
         
         self.settingsWindow.title('Settings')
         self.settingsWindow.resizable(width=False, height=False)
