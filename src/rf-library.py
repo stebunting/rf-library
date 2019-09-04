@@ -28,7 +28,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # Import program data and modules
 import data
 from file import File
-from output import Output
 from tooltip import CreateToolTip
 import ofcom
 
@@ -375,8 +374,7 @@ class GUI():
     def __init__(self, errors):
  
         # Variables
-        self.files = []
-        self.output = Output()                                              
+        self.files = []                                         
         self.fileListboxSelection = None
         self.subdirectory = True
         self.settingsWindowOpen = False
@@ -991,7 +989,6 @@ class GUI():
             if newFile.valid:
                 self.ioGuess += newFile.io
                 self.files.append(newFile)
-                self.output.add(newFile)
                 plist['defaultSourceLocation'] = os.path.dirname(file)
             elif not suppressErrors:
                 tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
