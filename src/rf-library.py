@@ -375,7 +375,7 @@ class GUI():
     def __init__(self, errors):
  
         # Variables
-        self.files = []                                                     ### OUTPUT CLASS TO DELETE
+        self.files = []
         self.output = Output()                                              
         self.fileListboxSelection = None
         self.subdirectory = True
@@ -990,7 +990,7 @@ class GUI():
             newFile = File(file, self.country.get())
             if newFile.valid:
                 self.ioGuess += newFile.io
-                self.files.append(newFile)                                    ### OUTPUT CLASS TO DELETE
+                self.files.append(newFile)
                 self.output.add(newFile)
                 plist['defaultSourceLocation'] = os.path.dirname(file)
             elif not suppressErrors:
