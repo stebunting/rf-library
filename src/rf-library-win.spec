@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['rf-library'],
+a = Analysis(['rf-library.py'],
              pathex=['C:\\Users\\USER\\Documents\\rf-library\\src'],
              binaries=[],
              datas=[('icons/*', 'icons')],

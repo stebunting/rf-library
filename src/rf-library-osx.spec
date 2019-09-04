@@ -13,7 +13,7 @@ if distutils.distutils_path.endswith('__init__.py'):
 
 block_cipher = None
 
-a = Analysis(['rf-library'],
+a = Analysis(['rf-library.py'],
              pathex=['/Users/stebunting/Dev/rf-library/src'],
              binaries=[],
              datas=[('icons/*', 'icons')],

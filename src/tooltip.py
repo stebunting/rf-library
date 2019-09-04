@@ -45,16 +45,16 @@ class CreateToolTip(object):
         x += self.widget.winfo_rootx() + 25
         y += self.widget.winfo_rooty() + 20
         self.tw = tk.Toplevel(self.widget)
+        self.tw.wm_geometry('+%d+%d' % (x, y))
 
         # Leaves only the label and removes the app window
         self.tw.overrideredirect(True)
-        self.tw.update()
-        self.tw.lift()
-        self.tw.wm_geometry('+%d+%d' % (x, y))
         label = ttk.Label(self.tw, text=self.text, justify='left',
                        background='#b0b0b0', relief='solid', borderwidth=1, padding=2, foreground='#4040ff',
                        wraplength = self.wraplength)
         label.pack(ipadx=1)
+        self.tw.update()
+        self.tw.lift()
         
     def hidetip(self):
         tw = self.tw
