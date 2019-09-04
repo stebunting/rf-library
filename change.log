@@ -1,5 +1,8 @@
 # RF Library Changelog
 
+## [0.5.5]
+- Fixed tooltips
+
 ## [0.5.4]
 - Added connection check for updates
 - Added auto update check function
