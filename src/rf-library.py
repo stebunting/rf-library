@@ -27,7 +27,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Import program data and modules
 import data
-from file import File
+import scanfile
 from tooltip import CreateToolTip
 import ofcom
 
@@ -374,11 +374,11 @@ class GUI():
     def __init__(self, errors):
  
         # Variables
-        self.files = []
+        self.files = []                                             # ADDED TO OUTPUT CLASS
         self.fileListboxSelection = None
         self.subdirectory = True
         self.settingsWindowOpen = False
-        self.ioGuess = 0
+        self.ioGuess = 0                                            # ADDED TO OUTPUT CLASS
         self.ioFixed = False
         self.customMasterFilename = False
         self.customSubdirectory = False
@@ -802,21 +802,21 @@ class GUI():
             self._clearPreview()
         else:
             self.dataListbox.insert(tk.END, 'Filename: {}'.format(self.files[self.fileListboxSelection].filename))
-            self.dataListbox.insert(tk.END, 'Date: {}'.format(self.files[self.fileListboxSelection].creationDate.strftime(dateFormat)))
+            self.dataListbox.insert(tk.END, 'Date: {}'.format(self.files[self.fileListboxSelection].creation_date.strftime(dateFormat)))
             self.dataListbox.insert(tk.END, 'Scanner: {}'.format(self.files[self.fileListboxSelection].model))
-            if self.files[self.fileListboxSelection].startTVChannel == None:
+            if self.files[self.fileListboxSelection].start_tv_channel == None:
                 startTV = ''
             else:
-                startTV = ' (TV{})'.format(self.files[self.fileListboxSelection].startTVChannel)
-            self.dataListbox.insert(tk.END, 'Start Frequency: {:.3f}MHz{}'.format(self.files[self.fileListboxSelection].startFrequency, startTV))
-            if self.files[self.fileListboxSelection].stopTVChannel == None:
+                startTV = ' (TV{})'.format(self.files[self.fileListboxSelection].start_tv_channel)
+            self.dataListbox.insert(tk.END, 'Start Frequency: {:.3f}MHz{}'.format(self.files[self.fileListboxSelection].start_frequency, startTV))
+            if self.files[self.fileListboxSelection].stop_tv_channel == None:
                 stopTV = ''
             else:
-                stopTV = ' (TV{})'.format(self.files[self.fileListboxSelection].stopTVChannel)
-            self.dataListbox.insert(tk.END, 'Stop Frequency: {:.3f}MHz{}'.format(self.files[self.fileListboxSelection].stopFrequency, stopTV))
-            self.dataListbox.insert(tk.END, 'Data Points: {}'.format(self.files[self.fileListboxSelection].dataPoints))
+                stopTV = ' (TV{})'.format(self.files[self.fileListboxSelection].stop_tv_channel)
+            self.dataListbox.insert(tk.END, 'Stop Frequency: {:.3f}MHz{}'.format(self.files[self.fileListboxSelection].stop_frequency, stopTV))
+            self.dataListbox.insert(tk.END, 'Data Points: {}'.format(self.files[self.fileListboxSelection].data_points))
             self.dataListbox.insert(tk.END, 'Mean Resolution: {:.3f}MHz'.format(self.files[self.fileListboxSelection].resolution))
-            self.dataListbox.insert(tk.END, 'New Filename: {}'.format(self.files[self.fileListboxSelection].newFilename))
+            self.dataListbox.insert(tk.END, 'New Filename: {}'.format(self.files[self.fileListboxSelection].new_filename))
             self._updatePreview()
         self._buttonDisable()
 
@@ -843,7 +843,7 @@ class GUI():
         if len(self.files) == 0:
             self.scanDateTimestamp = datetime.date.today()
         else:
-            self.scanDateTimestamp = min([file.creationDate for file in self.files])
+            self.scanDateTimestamp = min([file.creation_date for file in self.files])
         self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
     
     # Method to convert user input directory structure into path
@@ -985,13 +985,14 @@ class GUI():
         if selected_files == None:
             selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=plist['defaultSourceLocation'])
         for file in selected_files:
-            newFile = File(file, self.country.get())
-            if newFile.valid:
-                self.ioGuess += newFile.io
-                self.files.append(newFile)
+            try:                                                   # ADDED TO OUTPUT CLASS
+                newFile = scanfile.ScanFile(file, self.country.get())                            # ADDED TO OUTPUT CLASS
+                self.ioGuess += newFile.io                                      # ADDED TO OUTPUT CLASS
+                self.files.append(newFile)                                      # ADDED TO OUTPUT CLASS
                 plist['defaultSourceLocation'] = os.path.dirname(file)
-            elif not suppressErrors:
-                tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list'.format(newFile.filename))
+            except scanfile.InvalidFile as err:
+                if not suppressErrors:
+                    tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list. {}'.format(file, err))
         self._setIO()
         self._printFiles()
 
@@ -1001,21 +1002,21 @@ class GUI():
         selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=plist['defaultSourceLocation'])
         if selectedDir != '':
             plist['defaultSourceLocation'] = selectedDir
-            for file in os.listdir(selectedDir):
-                fullfilename = os.path.join(selectedDir, file)
-                if not file.startswith('.') and not os.path.isdir(fullfilename):
-                    dirFiles.append(fullfilename)
-        if len(dirFiles) != 0:
-            self._addFiles(None, dirFiles, True)
+            for file in os.listdir(selectedDir):                                            # ADDED TO OUTPUT CLASS
+                fullfilename = os.path.join(selectedDir, file)                              # ADDED TO OUTPUT CLASS
+                if not file.startswith('.') and not os.path.isdir(fullfilename):            # ADDED TO OUTPUT CLASS
+                    dirFiles.append(fullfilename)                                           # ADDED TO OUTPUT CLASS
+        if len(dirFiles) != 0:                                                              # ADDED TO OUTPUT CLASS
+            self._addFiles(None, dirFiles, True)                                            # ADDED TO OUTPUT CLASS
 
     # Method to remove file
     def _removeFile(self, event=None):
         if event == None or (event.widget.winfo_class() != 'TEntry' and event.widget.winfo_class() != 'TCombobox'):
             if self.fileListboxSelection == None:
                 return
-            self.ioGuess -= self.files[self.fileListboxSelection].io
+            self.ioGuess -= self.files[self.fileListboxSelection].io                        # ADDED TO OUTPUT CLASS
             self._setIO()
-            self.files.remove(self.files[self.fileListboxSelection])
+            self.files.remove(self.files[self.fileListboxSelection])                        # ADDED TO OUTPUT CLASS
             if len(self.files) == 0:
                 self.fileListboxSelection = None
             elif self.fileListboxSelection > len(self.files) - 1:
@@ -1029,15 +1030,15 @@ class GUI():
             if not tkmessagebox.askyesno('Are you sure?', 'Are you sure you want to clear the file list?'):
                 self.editMenu.entryconfig('Clear Files', state='normal')
                 return
-        del self.files[:]
+        del self.files[:]                                                                   # ADDED TO OUTPUT CLASS  
         self.fileListboxSelection = None
         self.ioFixed = False
-        self.ioGuess = 0
+        self.ioGuess = 0                                                                    # ADDED TO OUTPUT CLASS
         self._printFiles()
          
     # Method to use date from selected file
     def _useDate(self, event=None):
-        self.scanDateTimestamp = self.files[self.fileListboxSelection].creationDate
+        self.scanDateTimestamp = self.files[self.fileListboxSelection].creation_date
         self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
         self._getMasterFilename()
 
@@ -1075,7 +1076,7 @@ class GUI():
         if self._createDirectory():
             if self.copySourceFiles.get():
                 for file in self.files:
-                    writtenFilename = self._writeFile(self.scanOutputLocation, file.newFilename, file.frequencies)
+                    writtenFilename = self._writeFile(self.scanOutputLocation, file.new_filename, file.frequencies)
                     if not writtenFilename:
                         return False
                     else:
@@ -1277,7 +1278,7 @@ class GUI():
         xTicks = []
         prev = 0
         tvCountry = self.country.get() if self.country.get() == 'United States of America' else 'UK'
-        for channel in data.TVChannels[tvCountry]:
+        for channel in data.tv_channels[tvCountry]:
             if channel[1] - prev >= minTickDistance and self.files[self.fileListboxSelection].frequencies[0][0] <= channel[1] and self.files[self.fileListboxSelection].frequencies[-1][0] >= channel[1]:
                 xTicks.append(channel[1])
                 prev = channel[1]
