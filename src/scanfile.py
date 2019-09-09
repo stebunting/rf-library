@@ -8,7 +8,7 @@ import os
 import re
 import datetime
 import xml.etree.ElementTree
-import data
+import config
 
 # Define Exception
 class InvalidFile(Exception):
@@ -38,7 +38,7 @@ class ScanFile():
         self._read_file()
 
         # Analyse file
-        self._update__tv_channels(country)
+        self.update_tv_channels(country)
         self.new_filename = self._get_new_filename()
         self.io = self._in_out_read()
 
@@ -128,18 +128,18 @@ class ScanFile():
     
     # Method to return creation date from file
     def _get_creation_date(self):
-        if data.system == 'Mac':
+        if config.system == 'Mac':
             self.creation_date = datetime.datetime.fromtimestamp(os.stat(self.full_filename).st_birthtime)
-        elif data.system == 'Windows':
+        elif config.system == 'Windows':
             self.creation_date = datetime.datetime.fromtimestamp(os.stat(self.full_filename).st_ctime)
 
     # Method to get TV channels
-    def _update__tv_channels(self, country):
+    def update_tv_channels(self, country):
         if country != 'United States of America':
             country = 'UK'
         self.start_tv_channel = None
         self.stop_tv_channel = None
-        for chan in data.tv_channels[country]:
+        for chan in config.tv_channels[country]:
             if self.start_tv_channel == None:
                 if (self.start_frequency >= float(chan[1]) and
                     self.start_frequency < float(chan[2])):
