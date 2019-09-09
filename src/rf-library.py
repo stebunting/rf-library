@@ -9,7 +9,6 @@ import xml.etree.ElementTree
 import plistlib
 import webbrowser
 import requests
-import keyring
 import csv
 
 # Import Tkinter GUI functions
@@ -33,10 +32,10 @@ import ofcom
 
 # Helper function to set dateFormat
 def set_date_format():
-    if config.dateFormats.get(plist['defaultDateFormat']):
-        return config.dateFormats.get(plist['defaultDateFormat'])
+    if config.date_formats.get(settings.plist['defaultDateFormat']):
+        return config.date_formats.get(settings.plist['defaultDateFormat'])
     else:
-        return config.dateFormats.get(defaultDateFormat)
+        return config.date_formats.get(defaultDateFormat)
         
 # Helper function to format directory nicely
 def dir_format(display_location, max_length):
@@ -45,45 +44,10 @@ def dir_format(display_location, max_length):
         display_location = os.path.join('...', os.path.normpath(display_location.split(os.sep, 2)[2]))
     return display_location
 
-# Load settings plist if it exists yet
-errors = []
-settingsExists = True
-newSettingsFile = False
-if not os.path.isfile(config.plistName):
-    settingsExists = False
-    try:
-        os.makedirs(config.plistPath, exist_ok=True)
-    except PermissionError:
-        errors.append(2)
-    try:
-        fp = open(config.plistName, 'wb')
-        fp.close()
-        os.chmod(config.plistName, 0o600)
-        newSettingsFile = True
-    except (PermissionError, FileNotFoundError):
-        errors.append(3)
-    plist = dict()
-else:
-    try:
-        with open(config.plistName, 'rb') as fp:
-            plist = plistlib.load(fp)
-        print(config.plistName)
-    except PermissionError:
-        errors.append(1)
-        plist = dict()
+# Load Settings
+settings = config.Settings()
 
-# Check for preferences and add default if not there
-vars = ['ofcomAccountName', 'ofcomUserName', 'createLog', 'logFolder', 'forename', 'surname', 'dirStructure', 'fileStructure', 'defaultOfcomInclude', 'defaultDateFormat', 'lowFreqLimit', 'highFreqLimit', 'defaultVenue', 'defaultTown', 'defaultCountry', 'defaultCopy', 'defaultDelete', 'defaultSourceLocation', 'defaultLibraryLocation', 'autoUpdateCheck']
-defaults = ['', '', True, config.defaultLogFolder, '', '', config.defaultDirectoryStructure, config.defaultFilenameStructure, False, config.defaultDateFormat, 0, 0, 'Venue', 'Town', 'United Kingdom', True, False, os.path.expanduser('~'), config.defaultLibraryLocation, True]
-for var, default in zip(vars, defaults):
-    if var not in plist:
-        plist[var] = default
-
-if newSettingsFile:
-    with open(config.plistName, 'wb') as fp:
-        plistlib.dump(plist, fp)
-
-dateFormat = set_date_format()
+date_format = set_date_format()
 
 ################################################################################
 ##########                  SETTINGS WINDOW OBJECT                    ##########
@@ -95,7 +59,7 @@ class SettingsWindow():
     def __init__(self):
 
         # Variables
-        self.passwordChanged = False
+        self.password_changed = False
         self.moveOldLog = False
 
         self.settingsWindow = tk.Toplevel(takefocus=True)
@@ -156,13 +120,13 @@ class SettingsWindow():
         self.ofcomPassword = tk.StringVar()
 
         # Set Variables
-        vars = [plist['dirStructure'], plist['fileStructure'],
-                dir_format(plist['defaultLibraryLocation'], 50),
-                plist['lowFreqLimit'], plist['highFreqLimit'],
-                plist['createLog'], dir_format(plist['logFolder'], 50),
-                plist['defaultDateFormat'], plist['forename'], plist['surname'],
-                plist['ofcomAccountName'], plist['ofcomUserName'], ' ' * 8,
-                plist['autoUpdateCheck']]
+        vars = [settings.plist['dirStructure'], settings.plist['fileStructure'],
+                dir_format(settings.plist['defaultLibraryLocation'], 50),
+                settings.plist['lowFreqLimit'], settings.plist['highFreqLimit'],
+                settings.plist['createLog'], dir_format(settings.plist['logFolder'], 50),
+                settings.plist['defaultDateFormat'], settings.plist['forename'], settings.plist['surname'],
+                settings.plist['ofcomAccountName'], settings.plist['ofcomUserName'], ' ' * 8,
+                settings.plist['autoUpdateCheck']]
         fields = [self.dirStructure, self.fileStructure,
                   self.scansFolderDisplay, self.lowFreqLimit, self.highFreqLimit,
                   self.createLog, self.logFolderDisplay,
@@ -171,8 +135,8 @@ class SettingsWindow():
                   self.autoUpdateCheck]
         for field, var in zip(fields, vars):
             field.set(var)
-        self.defaultLibraryLocation = plist['defaultLibraryLocation']
-        self.logFolder = plist['logFolder']
+        self.defaultLibraryLocation = settings.plist['defaultLibraryLocation']
+        self.logFolder = settings.plist['logFolder']
         
         # Scans Folder
         ttk.Label(self.outputPreferences, text='Scans Folder', width='16').grid(column=0, row=0, sticky='W', padx=config.padx_default, pady=config.pady_default)
@@ -197,7 +161,7 @@ class SettingsWindow():
         # Date Format
         ttk.Label(self.outputPreferences, text='Date Format', width='16').grid(column=0, row=4, sticky='W', padx=config.padx_default, pady=config.pady_default)
         self.dateFormatBox = ttk.Combobox(self.outputPreferences, textvariable=self.defaultDateFormat)
-        self.dateFormatBox['values'] = [key for key in config.dateFormats]
+        self.dateFormatBox['values'] = [key for key in config.date_formats]
         self.dateFormatBox.grid(column=1, row=4, sticky='W', padx=config.padx_default, pady=config.pady_default)
         CreateToolTip(self.dateFormatBox, 'Preferred date format')
         
@@ -285,24 +249,24 @@ class SettingsWindow():
     
     # Method to detect if password is amended
     def _passwordEntry(self, event=None):
-        if not self.passwordChanged:
-            self.passwordChanged = True
+        if not self.password_changed:
+            self.password_changed = True
             self.ofcomPassword.set(self.ofcomPassword.get().lstrip())
             
     # Method to select scans base folder
     def _changeBaseFolder(self):
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=plist['defaultLibraryLocation'])
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Scan Folder', initialdir=settings.plist['defaultLibraryLocation'])
         if dir != '':
             self.defaultLibraryLocation = dir
             self.scansFolderDisplay.set(dir_format(self.defaultLibraryLocation, 50))
 
     # Method to select default log folder
     def _changeLogFolder(self):
-        if os.path.exists(os.path.join(plist['logFolder'], config.logFileName)):
+        if os.path.exists(os.path.join(settings.plist['logFolder'], config.logFileName)):
             self.moveOldLog = True
-            self.oldLogLocation = plist['logFolder']
+            self.oldLogLocation = settings.plist['logFolder']
 
-        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=plist['logFolder'])
+        dir = tkfiledialog.askdirectory(parent=self.settingsMasterFrame, title='Select Source Folder', initialdir=settings.plist['logFolder'])
         if dir != '':
             self.logFolder = dir
             self.logFolderDisplay.set(dir_format(self.logFolder, 50))
@@ -311,7 +275,7 @@ class SettingsWindow():
     def _saveSettings(self, event=None):
         
         # Ensure limits are good ints else revert to default
-        defaults = [plist['lowFreqLimit'], plist['highFreqLimit']]
+        defaults = [settings.plist['lowFreqLimit'], settings.plist['highFreqLimit']]
         for var, default in zip([self.lowFreqLimit, self.highFreqLimit], defaults):
             if var.get() == '':
                 var.set(0)
@@ -327,32 +291,29 @@ class SettingsWindow():
         elif int(self.highFreqLimit.get()) < int(self.lowFreqLimit.get()):
             self.highFreqLimit.set(self.lowFreqLimit.get())
 
-        plist['ofcomAccountName'] = self.ofcomAccountName.get()
-        plist['ofcomUserName'] = self.ofcomUserName.get()
-        plist['defaultLibraryLocation'] = self.defaultLibraryLocation
-        plist['forename'] = self.forename.get()
-        plist['surname'] = self.surname.get()
-        plist['dirStructure'] = self.dirStructure.get().strip('/')
-        plist['fileStructure'] = self.fileStructure.get()
-        plist['defaultDateFormat'] = self.defaultDateFormat.get()
-        plist['lowFreqLimit'] = int(self.lowFreqLimit.get())
-        plist['highFreqLimit'] = int(self.highFreqLimit.get())
-        plist['createLog'] = self.createLog.get()
-        plist['logFolder'] = self.logFolder
-        plist['autoUpdateCheck'] = self.autoUpdateCheck.get()
+        settings.plist['ofcomAccountName'] = self.ofcomAccountName.get()
+        settings.plist['ofcomUserName'] = self.ofcomUserName.get()
+        settings.plist['defaultLibraryLocation'] = self.defaultLibraryLocation
+        settings.plist['forename'] = self.forename.get()
+        settings.plist['surname'] = self.surname.get()
+        settings.plist['dirStructure'] = self.dirStructure.get().strip('/')
+        settings.plist['fileStructure'] = self.fileStructure.get()
+        settings.plist['defaultDateFormat'] = self.defaultDateFormat.get()
+        settings.plist['lowFreqLimit'] = int(self.lowFreqLimit.get())
+        settings.plist['highFreqLimit'] = int(self.highFreqLimit.get())
+        settings.plist['createLog'] = self.createLog.get()
+        settings.plist['logFolder'] = self.logFolder
+        settings.plist['autoUpdateCheck'] = self.autoUpdateCheck.get()
 
-        try:
-            with open(config.plistName, 'wb') as fp:
-                plistlib.dump(plist, fp)
-            if self.passwordChanged:
-                keyring.set_password(config.title, self.ofcomAccountName.get(), self.ofcomPassword.get())
-        except PermissionError:
-            gui._displayError(1)
+        # Save Settings
+        settings.dump()
+        if self.password_changed:
+            settings.set_ofcom_password(self.ofcomAccountName.get(), self.ofcomPassword.get())
 
         # Move old log to new log location
         if self.moveOldLog:
             os.rename(os.path.join(self.oldLogLocation, config.logFileName),
-                      os.path.join(plist['logFolder'], config.logFileName))
+                      os.path.join(settings.plist['logFolder'], config.logFileName))
 
         self._closeSettings()
     
@@ -372,7 +333,7 @@ class SettingsWindow():
 class GUI():
 
     # Initialise class
-    def __init__(self, errors):
+    def __init__(self):
  
         # Variables
         self.files = []                                             # ADDED TO OUTPUT CLASS
@@ -400,14 +361,15 @@ class GUI():
         self._createMenu()
         self._createWidgets()
 
-        for error in errors:
-            self._displayError(error)
+        # Show startup errors
+        while settings.has_error():
+            self._displayError(settings.display_error())
         
-        # Open settings if settings uninitialised
-        if not settingsExists:
+        # Open settings if settings un-initialised
+        if not settings.exists:
             self._settings()
 
-        if plist['autoUpdateCheck']:
+        if settings.plist['autoUpdateCheck']:
             self._checkForUpdates(display=False)
     
     # Create styles for GUI
@@ -572,7 +534,7 @@ class GUI():
         
         # Set default values
         fields = [self.venue, self.town, self.country, self.copySourceFiles, self.deleteSourceFiles, self.includeOfcomData]
-        vars = [plist['defaultVenue'], plist['defaultTown'], plist['defaultCountry'], plist['defaultCopy'], plist['defaultDelete'], plist['defaultOfcomInclude']]
+        vars = [settings.plist['defaultVenue'], settings.plist['defaultTown'], settings.plist['defaultCountry'], settings.plist['defaultCopy'], settings.plist['defaultDelete'], settings.plist['defaultOfcomInclude']]
         for field, var in zip(fields, vars):
             field.set(var)
         self.ofcomVenueList = ['No venues found...']
@@ -803,7 +765,7 @@ class GUI():
             self._clearPreview()
         else:
             self.dataListbox.insert(tk.END, 'Filename: {}'.format(self.files[self.fileListboxSelection].filename))
-            self.dataListbox.insert(tk.END, 'Date: {}'.format(self.files[self.fileListboxSelection].creation_date.strftime(dateFormat)))
+            self.dataListbox.insert(tk.END, 'Date: {}'.format(self.files[self.fileListboxSelection].creation_date.strftime(date_format)))
             self.dataListbox.insert(tk.END, 'Scanner: {}'.format(self.files[self.fileListboxSelection].model))
             if self.files[self.fileListboxSelection].start_tv_channel == None:
                 startTV = ''
@@ -845,7 +807,7 @@ class GUI():
             self.scanDateTimestamp = datetime.date.today()
         else:
             self.scanDateTimestamp = min([file.creation_date for file in self.files])
-        self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
+        self.scanDate.set(self.scanDateTimestamp.strftime(date_format))
     
     # Method to convert user input directory structure into path
     def parse_structure(self, s):
@@ -855,8 +817,8 @@ class GUI():
                          ('%y', str(self.scanDateTimestamp.year)),
                          ('%i', self.io.get()),
                          ('%s', self.targetSubdirectory.get()),
-                         ('%f', plist['forename']),
-                         ('%n', plist['surname']),
+                         ('%f', settings.plist['forename']),
+                         ('%n', settings.plist['surname']),
                          ('%m', '{:02d}'.format(self.scanDateTimestamp.month)),
                          ('%M', self.scanDateTimestamp.strftime('%B')),
                          ('%d', '{:02d}'.format(self.scanDateTimestamp.day))]:
@@ -870,10 +832,10 @@ class GUI():
         if self.customMasterFilename:
             return
         
-        self.scanMasterFilename.set(self.parse_structure(plist['fileStructure'] + '.csv'))
+        self.scanMasterFilename.set(self.parse_structure(settings.plist['fileStructure'] + '.csv'))
         if self.defaultOutputLocation.get() == 1:
-            self.libraryLocation = plist['defaultLibraryLocation']
-            self.targetLocation = self.parse_structure(os.path.join(plist['dirStructure'], '%s'))
+            self.libraryLocation = settings.plist['defaultLibraryLocation']
+            self.targetLocation = self.parse_structure(os.path.join(settings.plist['dirStructure'], '%s'))
         else:
             self.targetLocation = self.targetSubdirectory.get()
             if self.targetSubdirectory.get() != '':
@@ -923,8 +885,8 @@ class GUI():
  
     # Method to refresh file data, for use when country or settings change
     def _refresh(self, event=None):
-        global dateFormat
-        dateFormat = set_date_format()
+        global date_format
+        date_format = set_date_format()
         for file in self.files:
             file.update_tv_channels(self.country.get())
         self._printFiles()
@@ -984,13 +946,13 @@ class GUI():
     # Method to open file dialogue and allow selection of files
     def _addFiles(self, event=None, selected_files=None, suppressErrors=False):
         if selected_files == None:
-            selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=plist['defaultSourceLocation'])
+            selected_files = tkfiledialog.askopenfilenames(parent=self.inputFrame, title='Add files', initialdir=settings.plist['defaultSourceLocation'])
         for file in selected_files:
             try:                                                   # ADDED TO OUTPUT CLASS
                 newFile = scanfile.ScanFile(file, self.country.get())                            # ADDED TO OUTPUT CLASS
                 self.ioGuess += newFile.io                                      # ADDED TO OUTPUT CLASS
                 self.files.append(newFile)                                      # ADDED TO OUTPUT CLASS
-                plist['defaultSourceLocation'] = os.path.dirname(file)
+                settings.plist['defaultSourceLocation'] = os.path.dirname(file)
             except scanfile.InvalidFile as err:
                 if not suppressErrors:
                     tkmessagebox.showwarning('Invalid File', '{} is not a valid scan file and will not be added to the file list. {}'.format(file, err))
@@ -1000,9 +962,9 @@ class GUI():
     # Method to open file dialogue and allow selection of all files in a directory
     def _addDirectory(self, event=None):
         dirFiles = []
-        selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=plist['defaultSourceLocation'])
+        selectedDir = tkfiledialog.askdirectory(parent=self.inputFrame, title='Add directory', initialdir=settings.plist['defaultSourceLocation'])
         if selectedDir != '':
-            plist['defaultSourceLocation'] = selectedDir
+            settings.plist['defaultSourceLocation'] = selectedDir
             for file in os.listdir(selectedDir):                                            # ADDED TO OUTPUT CLASS
                 fullfilename = os.path.join(selectedDir, file)                              # ADDED TO OUTPUT CLASS
                 if not file.startswith('.') and not os.path.isdir(fullfilename):            # ADDED TO OUTPUT CLASS
@@ -1040,7 +1002,7 @@ class GUI():
     # Method to use date from selected file
     def _useDate(self, event=None):
         self.scanDateTimestamp = self.files[self.fileListboxSelection].creation_date
-        self.scanDate.set(self.scanDateTimestamp.strftime(dateFormat))
+        self.scanDate.set(self.scanDateTimestamp.strftime(date_format))
         self._getMasterFilename()
 
     # Method to create master file
@@ -1061,7 +1023,7 @@ class GUI():
         statement = 'The following files were successfully written!\n\nDIRECTORY:\n{}\n\n'.format(self.scanOutputLocation)
         for file in self.files:
             for freq, value in file.frequencies:
-                if freq >= plist['lowFreqLimit'] and (plist['highFreqLimit'] == 0 or freq <= plist['highFreqLimit']):
+                if freq >= settings.plist['lowFreqLimit'] and (settings.plist['highFreqLimit'] == 0 or freq <= settings.plist['highFreqLimit']):
                     outputFile.append([float(freq), float(value)])
         
         # Remove duplicates
@@ -1121,24 +1083,20 @@ class GUI():
                 return
 
             # Write defaults to plist
-            plist['defaultVenue'] = self.venue.get()
-            plist['defaultTown'] = self.town.get()
-            plist['defaultCountry'] = self.country.get()
-            plist['defaultCopy'] = self.copySourceFiles.get()
-            plist['defaultDelete'] = self.deleteSourceFiles.get()
-            plist['defaultOfcomInclude'] = self.includeOfcomData.get()
+            settings.plist['defaultVenue'] = self.venue.get()
+            settings.plist['defaultTown'] = self.town.get()
+            settings.plist['defaultCountry'] = self.country.get()
+            settings.plist['defaultCopy'] = self.copySourceFiles.get()
+            settings.plist['defaultDelete'] = self.deleteSourceFiles.get()
+            settings.plist['defaultOfcomInclude'] = self.includeOfcomData.get()
 
-            try:
-                with open(config.plistName, 'wb') as fp:
-                    plistlib.dump(plist, fp)
-            except PermissionError:
-                gui._displayError(1)
+            settings.dump()
             
-            if plist['createLog']:
+            if settings.plist['createLog']:
                 if self._writeToLog():
                     statement += 'Log file updated.\n'
                 else:
-                    statement += 'WARNING: Log could not be updated at {}\n'.format(plist['logFolder'])
+                    statement += 'WARNING: Log could not be updated at {}\n'.format(settings.plist['logFolder'])
          
             if delSourceConfirmed:
                 statement += '\nThe following files were deleted:\n'
@@ -1153,7 +1111,7 @@ class GUI():
 
     # Method to write to log file
     def _writeToLog(self):
-        logFile = os.path.join(plist['logFolder'], config.logFileName)
+        logFile = os.path.join(settings.plist['logFolder'], config.logFileName)
 
         if not os.path.exists(logFile):
             newFile = True
@@ -1201,7 +1159,7 @@ class GUI():
         try:
             with open(target, 'w') as fp:
                 wsm_date = self.scanDateTimestamp.strftime('%Y-%m-%d 00:00:00')
-                fp.write('Receiver;{}\nDate/Time;{}\nRFUnit;dBm\n\n\nFrequency Range [kHz];{:06d};{:06d};\n'.format(config.title, wsm_date, plist['lowFreqLimit'] * 1000, plist['highFreqLimit'] * 1000))
+                fp.write('Receiver;{}\nDate/Time;{}\nRFUnit;dBm\n\n\nFrequency Range [kHz];{:06d};{:06d};\n'.format(config.title, wsm_date, settings.plist['lowFreqLimit'] * 1000, settings.plist['highFreqLimit'] * 1000))
                 fp.write('Frequency;RF level (%);RF level\n')
                 for freq, value in reversed(array):
                     fp.write('{:06d};;{:04.1f}\n'.format(int(freq * 1000), value))
@@ -1334,7 +1292,7 @@ class GUI():
 
     # Method to login to OFCOM Site
     def _ofcomLogin(self):
-        lookup = ofcom.PMSELookup(plist['ofcomAccountName'], plist['ofcomUserName'], keyring.get_password(config.title, plist['ofcomAccountName']))
+        lookup = ofcom.PMSELookup(settings.plist['ofcomAccountName'], settings.plist['ofcomUserName'], settings.get_ofcom_password())
         
         # Login to OFCOM site
         try:
@@ -1422,11 +1380,11 @@ class GUI():
     # Method to show an error message
     def _displayError(self, code):
         if code == 1:
-            message = "Could not read from preferences file {}".format(config.plistName)
+            message = "Could not read from preferences file:\n{}".format(settings.plistName)
         elif code == 2:
-            message = "Could not create preferences path {}".format(config.plistPath)
+            message = "Could not create preferences path:\n{}".format(settings.plistPath)
         elif code == 3:
-            message = "Could not write preferences file {}".format(config.plistName)
+            message = "Could not write preferences file:\n{}".format(settings.plistName)
         elif code == 4:
             message = "Could not connect to update server."
         else:
@@ -1438,5 +1396,5 @@ class GUI():
 ################################################################################
 
 if __name__ == '__main__':
-    gui = GUI(errors=errors)
+    gui = GUI()
     gui.window.mainloop()
