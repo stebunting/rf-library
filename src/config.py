@@ -17,11 +17,11 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # Software Details
-title = "RF Library"
-version = "0.5.4"
-icon_location = resource_path('icons')
-website_uri = "https://rflibrary.stevebunting.com/"
-update_file_location = "{}latestVersion.xml".format(website_uri)
+APPLICATION_NAME = "RF Library"
+APPLICATION_VERSION = "0.5.4"
+WEBSITE_URI = "https://rflibrary.stevebunting.com/"
+APPLICATION_UPDATE_XML_LOCATION = "{}latestVersion.xml".format(WEBSITE_URI)
+ICON_LOCATION = resource_path('icons')
 
 # Check system and set necessary variables
 if platform.system() == 'Windows':
@@ -48,14 +48,14 @@ elif platform.system() == 'Darwin':
     alt_symbol = '⎇'
 
 # GUI Constants
-padx_default = 2
-pady_default = 2
+PAD_X = 2
+PAD_Y = 2
 
 # Defaults
 logFileName = 'rflibrary-log.csv'
 
 # Maintenence
-showOfcom = False
+show_ofcom = False
 makeWSM = False
 
 class Settings():
@@ -150,11 +150,11 @@ class Settings():
 
     # Update OFCOM password in Keychain
     def set_ofcom_password(self, account_name, account_password):
-        keyring.set_password(title, account_name, account_password)
+        keyring.set_password(APPLICATION_NAME, account_name, account_password)
 
     # Retrieve OFCOM password from Keychain
     def get_ofcom_password(self):
-        return keyring.get_password(title, self.plist['ofcomAccountName'])
+        return keyring.get_password(APPLICATION_NAME, self.plist['ofcomAccountName'])
 
     # Return true if errors are present
     def has_error(self):
