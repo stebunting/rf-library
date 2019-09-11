@@ -18,7 +18,7 @@ class InvalidFile(Exception):
 class ScanFile():
 
     # Initialise class
-    def __init__(self, name, country):
+    def __init__(self, name, tv_country):
 
         # Filename with complete path
         self.full_filename = name
@@ -38,9 +38,10 @@ class ScanFile():
         self._read_file()
 
         # Analyse file
-        self.update_tv_channels(country)
+        self.update_tv_channels(tv_country)
         self.new_filename = self._get_new_filename()
         self.io = self._in_out_read()
+        self._get_graph_values()
 
     # Method to check validity and get file destails
     def _read_file(self):
@@ -129,17 +130,17 @@ class ScanFile():
     # Method to return creation date from file
     def _get_creation_date(self):
         if config.system == 'Mac':
-            self.creation_date = datetime.datetime.fromtimestamp(os.stat(self.full_filename).st_birthtime)
+            self.creation_date = datetime.date.fromtimestamp(os.stat(self.full_filename).st_birthtime)
         elif config.system == 'Windows':
-            self.creation_date = datetime.datetime.fromtimestamp(os.stat(self.full_filename).st_ctime)
+            self.creation_date = datetime.date.fromtimestamp(os.stat(self.full_filename).st_ctime)
 
     # Method to get TV channels
-    def update_tv_channels(self, country):
-        if country != 'United States of America':
-            country = 'UK'
+    def update_tv_channels(self, tv_country):
+        if tv_country != 'United States of America':
+            tv_country = 'UK'
         self.start_tv_channel = None
         self.stop_tv_channel = None
-        for chan in config.tv_channels[country]:
+        for chan in config.tv_channels[tv_country]:
             if self.start_tv_channel == None:
                 if (self.start_frequency >= float(chan[1]) and
                     self.start_frequency < float(chan[2])):
@@ -186,3 +187,36 @@ class ScanFile():
             return -1
         else:
             return 0
+
+    # Method to get graph values
+    def _get_graph_values(self):
+
+        # Get x,y values
+        self.mean = 0
+        for x in self.frequencies:
+            try:
+                previous
+            except:
+                previous = [x[0], x[1]]
+                self.x_values = []
+                self.y_values = []
+            self.mean += x[1]
+            if previous[0] + (self.resolution * 2) < x[0]:
+                self.x_values.append(previous[0] + self.resolution)
+                self.y_values.append(-200)
+                self.x_values.append(x[0] - self.resolution)
+                self.y_values.append(-200)
+            self.x_values.append(x[0])
+            self.y_values.append(x[1])
+            previous = x
+        
+        # Calculate mean value for potential scaling
+        self.mean /= len(self.frequencies)
+
+        # Get axis values
+        self.y_min = min(i for i in self.y_values if i > -120)
+        self.y_max = max(self.y_values)
+        self.y_min = int((self.y_min - 5) / 5) * 5 if self.y_min > -95 or self.y_min < -105 else -105
+        self.y_max = int((self.y_max + 5) / 5) * 5 if self.y_max > self.y_min + 45 else self.y_min + 45
+        self.x_min = self.x_values[0]
+        self.x_max = self.x_values[-1]

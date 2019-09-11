@@ -339,6 +339,9 @@ class GUI():
  
         # Variables
         self.op = output.Output()
+
+        # Variable to hold file list selection index
+        self.file_list_selection = None
         
         # Create instance
         self.window = tk.Tk()
@@ -353,10 +356,13 @@ class GUI():
             'logo.ico'))))
         
         # Build window
-        self._createStyles()
-        self._createFrames()
-        self._createMenu()
-        self._createWidgets()
+        self._create_styles()
+        self._create_frames()
+        self._create_menu_bar()
+        self._create_widgets()
+         
+        # Initialise Lists
+        self._update_file_list()
 
         # Show startup errors
         while settings.has_error():
@@ -370,7 +376,7 @@ class GUI():
             self._check_for_updates(display=False)
     
     # Create styles for GUI
-    def _createStyles(self):
+    def _create_styles(self):
         if config.system == 'Mac':
             self.font_size = 13
             self.header_size = 18
@@ -391,7 +397,7 @@ class GUI():
         self.gui_style.map('TCheckbutton', background=[('hover', self.base_background)])
         
     # Create GUI frames
-    def _createFrames(self):
+    def _create_frames(self):
         self.master_frame = ttk.Frame(self.window)
         self.master_frame.grid(padx=0, pady=0, sticky='NWE')
      
@@ -425,10 +431,10 @@ class GUI():
         self.canvas = FigureCanvasTkAgg(self.fig, self.preview_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        #self._clearPreview()
+        self._clear_preview()
     
     # Create GUI menu
-    def _createMenu(self):
+    def _create_menu_bar(self):
         
         # Create Menu Bar
         self.menu_bar = tk.Menu(self.window)
@@ -556,7 +562,7 @@ class GUI():
             self.window.bind_all('<{}BackSpace>'.format(config.command), self._clear_files)
     
     # Create GUI widgets
-    def _createWidgets(self):
+    def _create_widgets(self):
     
         # Initialise tkinter variables
         self.tk_num_files = tk.StringVar()
@@ -595,32 +601,31 @@ class GUI():
         
         # Data List
         ttk.Label(self.input_frame, text='Selected File Information').grid(column=1, row=0, sticky='W')
-        self.dataListbox = tk.Listbox(self.input_frame, height=8, width=30)
-        self.dataListbox.grid(column=1, row=1, padx=config.PAD_X, pady=config.PAD_Y)
-        self.dataListbox.configure(background='lightGrey')
+        self.file_data = tk.Listbox(self.input_frame, height=8, width=30)
+        self.file_data.grid(column=1, row=1, padx=config.PAD_X, pady=config.PAD_Y)
+        self.file_data.configure(background='lightGrey')
      
         # File List Edit Buttons
         self.fileListEditFrame = ttk.Frame(self.input_frame)
         self.fileListEditFrame.grid(column=0, row=2, columnspan=2, sticky='E')
         
         calendar_image = ImageTk.PhotoImage(Image.open(os.path.join(config.ICON_LOCATION, 'calendar_disabled.png')))
-        self.useDateButton = ttk.Button(self.fileListEditFrame, image=calendar_image, state='disabled', command=self._use_date)
-        self.useDateButton.grid(column=4, row=0, sticky='E', padx=config.PAD_X, pady=0)
-        self.useDateButton.image = calendar_image
-        tooltip.CreateToolTip(self.useDateButton, 'Use currently selected file\'s creation date for scan date ({}D)'.format(config.command_symbol))
+        self.use_date_button = ttk.Button(self.fileListEditFrame, image=calendar_image, state='disabled', command=self._use_date)
+        self.use_date_button.grid(column=4, row=0, sticky='E', padx=config.PAD_X, pady=0)
+        self.use_date_button.image = calendar_image
+        tooltip.CreateToolTip(self.use_date_button, 'Use currently selected file\'s creation date for scan date ({}D)'.format(config.command_symbol))
         
         bin_image = ImageTk.PhotoImage(Image.open(os.path.join(config.ICON_LOCATION, 'bin_disabled.png')))
-        self.clearFilesButton = ttk.Button(self.fileListEditFrame, image=bin_image, state='disabled', command=self._clear_files)
-        self.clearFilesButton.grid(column=3, row=0, sticky='E', padx=config.PAD_X, pady=0)
-
-        self.clearFilesButton.image = bin_image
-        tooltip.CreateToolTip(self.clearFilesButton, 'Remove all files from file list ({}\u232b)'.format(config.command_symbol))
+        self.clear_files_button = ttk.Button(self.fileListEditFrame, image=bin_image, state='disabled', command=self._clear_files)
+        self.clear_files_button.grid(column=3, row=0, sticky='E', padx=config.PAD_X, pady=0)
+        self.clear_files_button.image = bin_image
+        tooltip.CreateToolTip(self.clear_files_button, 'Remove all files from file list ({}\u232b)'.format(config.command_symbol))
         
         minus_image = ImageTk.PhotoImage(Image.open(os.path.join(config.ICON_LOCATION, 'minus_disabled.png')))
-        self.removeFileButton = ttk.Button(self.fileListEditFrame, image=minus_image, state='disabled', command=self._remove_file)
-        self.removeFileButton.grid(column=2, row=0, sticky='E', padx=config.PAD_X, pady=0)
-        self.removeFileButton.image = minus_image
-        tooltip.CreateToolTip(self.removeFileButton, 'Remove selected file from file list (\u232b)')
+        self.remove_file_button = ttk.Button(self.fileListEditFrame, image=minus_image, state='disabled', command=self._remove_file)
+        self.remove_file_button.grid(column=2, row=0, sticky='E', padx=config.PAD_X, pady=0)
+        self.remove_file_button.image = minus_image
+        tooltip.CreateToolTip(self.remove_file_button, 'Remove selected file from file list (\u232b)')
         
         folder_image = ImageTk.PhotoImage(Image.open(os.path.join(config.ICON_LOCATION, 'folder.png')))
         self.addDirectoryButton = ttk.Button(self.fileListEditFrame, image=folder_image, command=self._add_directory)
@@ -765,41 +770,119 @@ class GUI():
         self.window.bind_all('<{}Return>'.format(config.command), self._create_file)
         self.file_list.bind('<Escape>', self._deselectFileListbox)
         self.file_list.bind('<BackSpace>', self._remove_file)
-         
-        # Initialise Lists
-        self._printFiles()
 
 ################################################################################
 ##########                       GUI METHODS                          ##########
 ################################################################################
 
-    # Method to display about information
-    def _about(self):
-        tkmessagebox.showinfo(
-            'About',
-            '{} v{}\n\n{} Stephen Bunting 2019\n{}'
-            .format(config.APPLICATION_NAME, config.APPLICATION_VERSION,
-                    chr(169), config.WEBSITE_URI))
-
-    # Method to open docs in web browser
-    def _open_http(self):
-        webbrowser.open(
-            "{}documentation.php"
-            .format(config.WEBSITE_URI), new=2, autoraise=True)
-
     # Method to update filelist
     def _update_file_list(self):
+
+        # Clear file list
         self.file_list.delete(0, tk.END)
+
+        # Insert all files in op object
         for file in self.op.files:
             self.file_list.insert(tk.END, file.filename)
+        self._select_file()
 
+        # Print number of files added
+        self._print_num_files()
+
+    # Method to print number of files added
+    def _print_num_files(self):
+        num_files = self.op.num_files()
+        plural = '' if num_files == 1 else 's'
+        if num_files == 0:
+            self.fileStatus.configure(foreground='red')
+        else:
+            self.fileStatus.configure(foreground='black')
+        self.tk_num_files.set('{} file{} added'.format(num_files, plural))
+
+    # Method to execute when file selected in file_list
     def _select_file(self, event=None):
         if event:
             try:
                 self.file_list_selection = int(event.widget.curselection()[0])
             except (AttributeError, IndexError):
                 pass
-        #self._printFileData()
+        self._print_file_data()
+        
+    # Method to print file data to data_list
+    def _print_file_data(self):
+
+        # Clear box
+        self.file_data.delete(0, tk.END)
+
+        # If no file selected
+        if self.file_list_selection == None:
+            self.file_data.insert(tk.END, 'No file selected')
+            self._clear_preview()
+
+        # If file selected
+        else:
+            current_file = self.op.files[self.file_list_selection]
+            self.file_data.insert(tk.END, 'Filename: {}'.format(current_file.filename))
+            self.file_data.insert(tk.END, 'Date: {}'.format(current_file.creation_date.strftime(date_format)))
+            self.file_data.insert(tk.END, 'Scanner: {}'.format(current_file.model))
+            if current_file.start_tv_channel == None:
+                start_tv_channel = ''
+            else:
+                start_tv_channel = ' (TV{})'.format(current_file.start_tv_channel)
+            self.file_data.insert(tk.END, 'Start Frequency: {:.3f}MHz{}'.format(current_file.start_frequency, start_tv_channel))
+            if current_file.stop_tv_channel == None:
+                stop_tv_channel = ''
+            else:
+                stop_tv_channel = ' (TV{})'.format(current_file.stop_tv_channel)
+            self.file_data.insert(tk.END, 'Stop Frequency: {:.3f}MHz{}'.format(current_file.stop_frequency, stop_tv_channel))
+            self.file_data.insert(tk.END, 'Data Points: {}'.format(current_file.data_points))
+            self.file_data.insert(tk.END, 'Mean Resolution: {:.3f}MHz'.format(current_file.resolution))
+            self.file_data.insert(tk.END, 'New Filename: {}'.format(current_file.new_filename))
+
+            # Draw graph
+            self._update_preview()
+
+        self._check_button_status()
+
+    # Method to decide if buttons should be disabled or not
+    def _check_button_status(self):
+        if self.op.num_files() == 0 :
+            self._button_status('disabled', 'disabled')
+        elif self.file_list_selection == None:
+            self._button_status('disabled', 'enabled')
+        else:
+            self._button_status('enabled', 'enabled')
+        
+    # Method to disable/enable buttons/menu items based on selected files
+    def _button_status(self, input_status=None, output_status=None):
+        if input_status != None:
+
+            # Enable Buttons
+            for x in ((self.remove_file_button, 'minus'), (self.use_date_button, 'calendar')):
+                im = ImageTk.PhotoImage(Image.open(os.path.join(config.ICON_LOCATION, '{}_{}.png'.format(x[1], input_status))))
+                x[0].config(state=input_status, image=im)
+                x[0].image = im
+
+            # Enable Menu Itmes
+            if input_status == 'enabled':
+                input_status = 'normal'
+            for (menu, item) in ((self.edit_menu, 'Remove File'), (self.file_menu, 'Set Date')):
+                menu.entryconfig(item, state=input_status)
+                
+        if output_status != None:
+            im = ImageTk.PhotoImage(Image.open(os.path.join(config.ICON_LOCATION, 'bin_{}.png'.format(output_status))))
+            self.clear_files_button.config(state=output_status, image=im)
+            self.clear_files_button.image = im
+            if output_status == 'enabled':
+                self.window.bind_all('<{}d>'.format(config.command), self._use_date)
+                self.window.bind_all('<{}D>'.format(config.command), self._use_date)
+                self.edit_menu.entryconfig('Clear Files', state='normal')
+                self.file_menu.entryconfig('Create File', state='normal')
+            else:
+                self.window.unbind_all('<{}d>'.format(config.command))
+                self.window.unbind_all('<{}D>'.format(config.command))
+                self.edit_menu.entryconfig('Clear Files', state='disabled')
+                self.file_menu.entryconfig('Create File', state='disabled')
 
     # Methods to interface with output
     # Add selected files
@@ -808,6 +891,10 @@ class GUI():
             parent=self.input_frame,
             title='Add files',
             initialdir=settings.plist['defaultSourceLocation'])
+
+        # Return if no files selected
+        if len(selected_files) == 0:
+            return
 
         # Throw an error if invalid file added
         for filename in selected_files:
@@ -833,6 +920,96 @@ class GUI():
         # Update file list
         self._update_file_list()
 
+    # Method to remove a file
+    def _remove_file(self, event=None):
+
+        # Do nothing if no file selected
+        if self.file_list_selection == None:
+            return
+
+        self.op.remove_file(self.file_list_selection)
+
+        #self._setIO()
+        
+        # Move cursor to 
+        if self.op.num_files() == 0:
+            self.file_list_selection = None
+        elif self.file_list_selection > self.op.num_files() - 1:
+            self.file_list_selection = self.op.num_files() - 1
+
+        # Redraw file list
+        self._update_file_list()
+
+    # Method to clear all files
+    def _clear_files(self, **kwargs):
+
+        # Show confirmation box if necessary
+        if 'confirm_required' in kwargs and kwargs['confirm_required']:
+            if not tkmessagebox.askyesno('Are you sure?', 'Are you sure you want to clear the file list?'):
+                self.edit_menu.entryconfig('Clear Files', state='normal')
+                return
+
+        self.op.clear_all_files()
+        self.file_list_selection = None
+
+        # Redraw file list
+        self._update_file_list()
+
+    # Graph Drawing Methods
+    # Method to remove current preview
+    def _clear_preview(self):
+    
+        # Clear Graph
+        self.ax.clear()
+        
+        # Set Style
+        self.ax.set_facecolor('lightGrey')
+        self.ax.grid(linestyle='None')
+        self.ax.set_axisbelow(True)
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+        self.ax.set_xlabel('Frequency /MHz')
+        self.ax.set_ylabel('Level /dBm')
+        
+        # Set Font
+        matplotlib.rcParams.update({'font.size': 9 })
+        
+        # Draw Canvas
+        self.canvas.draw()
+ 
+    # Method to draw preview of current selection
+    def _update_preview(self):
+        
+        current_file = self.op.files[self.file_list_selection]
+        
+        # Get x tick values
+        minPixelDistance = 25
+        axeswidth = self.ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted()).width * self.fig.dpi
+        minTickDistance = ((current_file.x_max - current_file.x_min) * minPixelDistance) / axeswidth
+        x_ticks = []
+        prev = 0
+        for channel in config.tv_channels[self.op.tv_country]:
+            if channel[1] - prev >= minTickDistance and current_file.frequencies[0][0] <= channel[1] and current_file.frequencies[-1][0] >= channel[1]:
+                x_ticks.append(channel[1])
+                prev = channel[1]
+
+        # Clear previous graph
+        self.ax.clear()
+        
+        # Set Style
+        self.ax.get_yaxis().set_visible(True)
+        self.ax.get_xaxis().set_visible(True)
+        self.ax.grid(linestyle='-', color='grey')
+        self.ax.fill_between(current_file.x_values, int(current_file.y_min) - 1, current_file.y_values, facecolor='lightGreen')
+
+        # Set axis/ticks
+        self.ax.axis([current_file.x_min, current_file.x_max, current_file.y_min, current_file.y_max])
+        self.ax.set_xticks(x_ticks, minor=False)
+
+        # Draw Graph
+        self.ax.plot(current_file.x_values, current_file.y_values, color='green')
+        self.canvas.draw()
+
     def _use_date(self):
         pass
 
@@ -840,12 +1017,6 @@ class GUI():
         pass
 
     def _create_file(self):
-        pass
-
-    def _remove_file(self):
-        pass
-
-    def _clear_files(self):
         pass
 
     def _check_for_updates(self):
@@ -878,8 +1049,19 @@ class GUI():
     def _deselectFileListbox(self):
         pass
 
-    def _printFiles(self):
-        pass
+    # Method to display about information
+    def _about(self):
+        tkmessagebox.showinfo(
+            'About',
+            '{} v{}\n\n{} Stephen Bunting 2019\n{}'
+            .format(config.APPLICATION_NAME, config.APPLICATION_VERSION,
+                    chr(169), config.WEBSITE_URI))
+
+    # Method to open docs in web browser
+    def _open_http(self):
+        webbrowser.open(
+            "{}documentation.php"
+            .format(config.WEBSITE_URI), new=2, autoraise=True)
 
     # Method to show an error message
     def _display_error(self, code, **kwargs):
