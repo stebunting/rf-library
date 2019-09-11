@@ -801,11 +801,25 @@ class GUI():
 
     # Method to execute when file selected in file_list
     def _select_file(self, event=None):
+
+        # If list box clicked
         if event:
             try:
                 self.file_list_selection = int(event.widget.curselection()[0])
             except (AttributeError, IndexError):
                 pass
+
+        # If list box not clicked
+        else:
+            if self.file_list_selection != None:
+                self.file_list.select_set(self.file_list_selection)
+                self.file_list.activate(self.file_list_selection)
+                self.file_list.event_generate("<<ListboxGenerate>>")
+                self.file_list.see(self.file_list_selection)
+                self.file_list.focus_set()
+            else:
+                self.file_list.selection_clear(0, tk.END)
+
         self._print_file_data()
         
     # Method to print file data to data_list
