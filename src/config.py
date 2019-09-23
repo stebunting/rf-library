@@ -18,7 +18,7 @@ def resource_path(relative_path):
 
 # Software Details
 APPLICATION_NAME = "RF Library"
-APPLICATION_VERSION = "0.5.4"
+APPLICATION_VERSION = "0.5.3"
 WEBSITE_URI = "https://rflibrary.stevebunting.com/"
 APPLICATION_UPDATE_XML_LOCATION = "{}latestVersion.xml".format(WEBSITE_URI)
 ICON_LOCATION = resource_path('icons')
@@ -50,6 +50,7 @@ elif platform.system() == 'Darwin':
 # GUI Constants
 PAD_X = 2
 PAD_Y = 2
+MAX_DIR_LENGTH = 80
 
 # Defaults
 logFileName = 'rflibrary-log.csv'
@@ -82,7 +83,7 @@ class Settings():
         self.defaultLogFolder = self.defaultLibraryLocation
 
         # Defaults
-        self.defaultDateFormat = 'yyyy-mm-dd'
+        self.default_date_format = 'yyyy-mm-dd'
         self.defaultDirectoryStructure = os.path.join('%c', '%t %v', '%y')
         self.defaultFilenameStructure = '%t %c-%v-%y%m%d-%i %f %n'
 
@@ -128,7 +129,7 @@ class Settings():
                 'autoUpdateCheck')
         defaults = ('', '', True, self.defaultLogFolder,
                     '', '', self.defaultDirectoryStructure,
-                    self.defaultFilenameStructure, False, self.defaultDateFormat,
+                    self.defaultFilenameStructure, False, self.default_date_format,
                     0, 0, 'Venue', 'Town',
                     'United Kingdom', True, False,
                     os.path.expanduser('~'), self.defaultLibraryLocation,
@@ -139,6 +140,8 @@ class Settings():
 
         if new_settings_file:
             self.dump()
+
+        self._set_date_format()
 
     # Dump plist to settings file
     def dump(self):
@@ -166,6 +169,13 @@ class Settings():
     # Return error code for display
     def display_error(self):
         return self._errors.pop(0)
+
+    # Set date format
+    def _set_date_format(self):
+        if date_formats.get(self.plist['defaultDateFormat']):
+            self.date_format = date_formats.get(self.plist['defaultDateFormat'])
+        else:
+            self.date_format = date_formats.get(self.default_date_format)
 
 # Variables
 tv_channels = {

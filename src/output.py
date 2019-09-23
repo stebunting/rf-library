@@ -25,12 +25,15 @@ class Output:
         # Postive is inside, negative is outside
         self.in_out_guess = 0
 
-        # Scan Date
-        self.scan_date_timestamp = datetime.date.today()
+        self.custom_filename = False
 
+        # Output Variables
         self.venue = settings.plist['defaultVenue']
         self.town = settings.plist['defaultTown']
         self.country = settings.plist['defaultCountry']
+        self.date = datetime.date.today()
+        self.io = 'Inside'
+        self.subdirectory = self.io
         self.copy_source_files = settings.plist['defaultCopy']
         self.delete_source_files = settings.plist['defaultDelete']
         self.include_ofcom_data = settings.plist['defaultOfcomInclude']
@@ -39,6 +42,8 @@ class Output:
             self.tv_country = 'UK'
         else:
             self.tv_country = 'United States of America'
+
+        self.get_master_filename()
 
     # Return number of scan files in list
     def num_files(self):
@@ -51,8 +56,8 @@ class Output:
         newFile = scanfile.ScanFile(name, self.tv_country)
         self.files.append(newFile)
         self.in_out_guess += newFile.io
-        if newFile.creation_date < self.scan_date_timestamp:
-            self.scan_date_timestamp = newFile.creation_date
+        if newFile.creation_date < self.date:
+            self.set_date(newFile.creation_date)
 
     # Method that takes a list/tuple and adds all files
     def add_files(self, files):
@@ -86,11 +91,64 @@ class Output:
     def clear_all_files(self):
         self.files = list()
         self.in_out_guess = 0
-        self.scan_date_timestamp = datetime.date.today()
+        self.date = datetime.date.today()
+
+    # Method to use date from a particular file
+    def use_date(self, i):
+        if i < 0 or i >= self.num_files():
+            return
+
+        self.date = self.files[i].creation_date
 
     # Method to get earliest date from all files or todays date (default)
     def _get_scan_date(self):
         if self.num_files() == 0:
-            self.scan_date_timestamp = datetime.date.today()
+            self.date = datetime.date.today()
         else:
-            self.scan_date_timestamp = min([file.creation_date for file in self.files])
+            self.date = min([file.creation_date for file in self.files])
+
+    # Method to return formatted date
+    def get_formatted_date(self):
+        return self.date.strftime(settings.date_format)
+
+    # Method to convert user input directory structure into path
+    def _parse_structure(self, s):
+        for old, new in (('%c', self.country),
+                         ('%t', self.town),
+                         ('%v', self.venue),
+                         ('%y', str(self.date.year)),
+                         ('%i', self.io),
+                         ('%s', self.subdirectory),
+                         ('%f', settings.plist['forename']),
+                         ('%n', settings.plist['surname']),
+                         ('%m', '{:02d}'.format(self.date.month)),
+                         ('%M', self.date.strftime('%B')),
+                         ('%d', '{:02d}'.format(self.date.day))):
+            s = s.replace(old, new)
+        return s
+
+    # Method to create master filename
+    def get_master_filename(self):
+        if not self.custom_filename:
+            self.filename = self._parse_structure(settings.plist['fileStructure'] + '.csv')
+
+        base_location = settings.plist['defaultLibraryLocation']
+        path = self._parse_structure(os.path.join(settings.plist['dirStructure'], '%s'))
+        self.destination = os.path.join(base_location, path)
+
+        """self.scanMasterFilename.set(self.parse_structure(settings.plist['fileStructure'] + '.csv'))
+        if self.defaultOutputLocation.get() == 1:
+            self.libraryLocation = settings.plist['defaultLibraryLocation']
+            self.targetLocation = self.parse_structure(os.path.join(settings.plist['dirStructure'], '%s'))
+        else:
+            self.targetLocation = self.targetSubdirectory.get()
+            if self.targetSubdirectory.get() != '':
+                self.targetLocation = self.targetLocation
+        self.scanOutputLocation = os.path.join(self.libraryLocation, self.targetLocation)
+        self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))"""
+
+    def set_date(self, d):
+        if type(d) == datetime.date:
+            self.date = d
+        else:
+            print("TRYING TO SET DATE WITH NO DATETIME CLASS")

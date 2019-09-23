@@ -28,28 +28,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import config
 import scanfile
 import output
+import functions
 import tooltip
 import ofcom
 
-# Helper function to set date_format
-def set_date_format():
-    if config.date_formats.get(settings.plist['defaultDateFormat']):
-        return config.date_formats.get(settings.plist['defaultDateFormat'])
-    else:
-        return config.date_formats.get(defaultDateFormat)
-        
-# Helper function to format directory nicely
-def dir_format(display_location, max_length):
-    display_location = display_location.replace(os.path.expanduser('~'), '~', 1)
-    while len(display_location) > max_length:
-        display_location = os.path.join('...', os.path.normpath(display_location.split(os.sep, 2)[2]))
-    return display_location
-
 # Load Settings
 settings = config.Settings()
-
-# Set Date Format
-date_format = set_date_format()
 
 ################################################################################
 ##########                  SETTINGS WINDOW OBJECT                    ##########
@@ -566,28 +550,33 @@ class GUI():
     
         # Initialise tkinter variables
         self.tk_num_files = tk.StringVar()
-        self.tk_venue = tk.StringVar()
-        self.tk_town = tk.StringVar()
-        self.tk_country = tk.StringVar()
-        self.tk_scan_date = tk.StringVar()
-        self.tk_io = tk.StringVar()
+        self.tk_venue = tk.StringVar(name='venue')
+        self.tk_venue.trace('w', self._update_output_vars)
+        self.tk_town = tk.StringVar(name='town')
+        self.tk_town.trace('w', self._update_output_vars)
+        self.tk_country = tk.StringVar(name='country')
+        self.tk_country.trace('w', self._update_output_vars)
+        self.tk_date = tk.StringVar()
+        self.tk_io = tk.StringVar(name='io')
+        self.tk_io.trace('w', self._update_output_vars)
         self.tk_ofcom_search = tk.StringVar()
         self.tk_ofcom_venue = tk.StringVar()
         self.tk_include_ofcom_data = tk.BooleanVar()
         self.tk_output_path_display = tk.StringVar()
-        self.tk_target_subdirectory = tk.StringVar()
+        self.tk_subdirectory = tk.StringVar(name='subdirectory')
+        self.tk_subdirectory.trace('w', self._update_output_vars)
         self.tk_default_output_path = tk.BooleanVar()
         self.tk_output_filename = tk.StringVar()
         self.tk_default_output_filename = tk.BooleanVar()
         self.tk_copy_source_files = tk.BooleanVar()
         self.tk_delete_source_files = tk.BooleanVar()
-        
+
         # Set default values
-        fields = (self.tk_venue, self.tk_town,
-                  self.tk_country, self.tk_copy_source_files,
+        fields = (self.tk_venue, self.tk_town, self.tk_country,
+                  self.tk_date, self.tk_copy_source_files,
                   self.tk_delete_source_files, self.tk_include_ofcom_data)
-        vars = (self.op.venue, self.op.town,
-                self.op.country, self.op.copy_source_files,
+        vars = (self.op.venue, self.op.town, self.op.country, 
+                self.op.get_formatted_date(), self.op.copy_source_files,
                 self.op.delete_source_files, self.op.include_ofcom_data)
         for field, var in zip(fields, vars):
             field.set(var)
@@ -645,7 +634,11 @@ class GUI():
      
         # Source Venue Data
         ttk.Label(self.info_frame, text='Venue', width=self.left_indent).grid(column=0, row=0, sticky='NW', padx=config.PAD_X, pady=config.PAD_Y)
-        self.venueEntry = ttk.Entry(self.info_frame, textvariable=self.tk_venue, width=20, font='TkDefaultFont {}'.format(self.font_size))
+        self.venueEntry = ttk.Entry(
+            self.info_frame,
+            textvariable=self.tk_venue,
+            width=20,
+            font='TkDefaultFont {}'.format(self.font_size))
         self.venueEntry.grid(column=1, row=0)
         tooltip.CreateToolTip(self.venueEntry, 'Scan location name')
 
@@ -660,12 +653,11 @@ class GUI():
         self.countryBox = ttk.Combobox(self.info_frame, textvariable=self.tk_country, width=20, font='TkDefaultFont {}'.format(self.font_size))
         self.countryBox['values'] = config.countries
         self.countryBox.grid(column=1, row=2, sticky='W', padx=config.PAD_X, pady=config.PAD_Y)
-        self.countryBox.bind('<<ComboboxSelected>>', self._refresh)
         tooltip.CreateToolTip(self.countryBox, 'Scan location country')
      
         # Source Scan Date
         ttk.Label(self.info_frame, text='Scan Date', width=self.left_indent).grid(column=0, row=3, sticky='NW', padx=config.PAD_X, pady=config.PAD_Y)
-        self.dateEntry = ttk.Entry(self.info_frame, textvariable=self.tk_scan_date, width=20, font='TkDefaultFont {}'.format(self.font_size))
+        self.dateEntry = ttk.Entry(self.info_frame, textvariable=self.tk_date, width=20, font='TkDefaultFont {}'.format(self.font_size))
         self.dateEntry.grid(column=1, row=3)
         self.dateEntry.config(state='readonly')
         tooltip.CreateToolTip(self.dateEntry, 'Date scan was taken')
@@ -676,12 +668,11 @@ class GUI():
         self.ioBox['values'] = ['Inside', 'Outside']
         self.ioBox.grid(column=1, row=4)
         self.ioBox.current(0)
-        self.ioBox.bind('<<ComboboxSelected>>', self._ioBoxEdit)
         tooltip.CreateToolTip(self.ioBox, 'Was the scan taken inside or outside?')
         
         # Output Location
         reset_image = ImageTk.PhotoImage(Image.open(os.path.join(config.ICON_LOCATION, 'reset.png')))
-        self.tk_target_subdirectory.set(self.tk_io.get())
+        self.tk_subdirectory.set(self.tk_io.get())
         ttk.Label(self.output_frame, text='Destination', width=self.left_indent).grid(column=0, row=0, sticky='W', padx=config.PAD_X, pady=config.PAD_Y)
         self.tk_default_output_path.set(1)
         self.defaultOutputCheck = ttk.Button(self.output_frame, image=reset_image, command=self._resetOutputLocation)
@@ -694,7 +685,7 @@ class GUI():
         
         # Subdirectory
         ttk.Label(self.output_frame, text='Subdirectory', width=self.left_indent).grid(column=0, row=1, sticky='W', padx=config.PAD_X, pady=config.PAD_Y)
-        self.targetSubdirectoryEntry = ttk.Entry(self.output_frame, textvariable=self.tk_target_subdirectory, width=20, font='TkDefaultFont {}'.format(self.font_size), style='Subdirectory.TEntry')
+        self.targetSubdirectoryEntry = ttk.Entry(self.output_frame, textvariable=self.tk_subdirectory, width=20, font='TkDefaultFont {}'.format(self.font_size), style='Subdirectory.TEntry')
         self.targetSubdirectoryEntry.grid(column=2, row=1, sticky='W', padx=0, pady=config.PAD_Y)
         self.targetSubdirectoryEntry.bind('<KeyRelease>', self._customSubDirectory)
         tooltip.CreateToolTip(self.targetSubdirectoryEntry, 'Optional subdirectory')
@@ -702,14 +693,14 @@ class GUI():
         # Output Master Filename
         ttk.Label(self.output_frame, text='Master Filename', width=self.left_indent).grid(column=0, row=2, sticky='W', padx=config.PAD_X, pady=config.PAD_Y)
         self.tk_default_output_filename.set(1)
-        self.defaultMasterFilenameReset = ttk.Button(self.output_frame, image=reset_image, command=self._standardMasterFilename)
+        self.defaultMasterFilenameReset = ttk.Button(self.output_frame, image=reset_image, command=self._standard_master_filename)
         self.defaultMasterFilenameReset.grid(column=1, row=2, sticky='W', padx=0, pady=0)
         self.defaultMasterFilenameReset.image = reset_image
         tooltip.CreateToolTip(self.defaultMasterFilenameReset, 'Check to use default filename')
         self.scanMasterFilenameEntry = ttk.Entry(self.output_frame, textvariable=self.tk_output_filename, font='TkDefaultFont {}'.format(self.font_size))
         self.scanMasterFilenameEntry.grid(column=2, row=2, sticky='W', padx=config.PAD_X, pady=config.PAD_Y)
         self.scanMasterFilenameEntry.config(width=60)
-        self.scanMasterFilenameEntry.bind('<KeyRelease>', self._customMasterFilename)
+        self.scanMasterFilenameEntry.bind('<KeyRelease>', self._custom_master_filename)
         tooltip.CreateToolTip(self.scanMasterFilenameEntry, 'Master output filename')
         
         # Options
@@ -761,10 +752,14 @@ class GUI():
 
             self.window.bind_all('<{}s>'.format(config.command), self._ofcomSearch)
      
-        # Add styling to all entry boxes
-        for x in [self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox]:
+        # Loop through entry boxes
+        for x in (self.venueEntry, self.townEntry, self.countryBox, self.dateEntry, self.ioBox):
+
+            # Add styling to all entry boxes
             x.grid(sticky='NW', padx=config.PAD_X, pady=config.PAD_Y)
-            x.bind('<KeyRelease>', self._getMasterFilename)
+
+            # Add binding to all entry boxes to update output object
+            #x.bind('<KeyRelease>', self._update_output_vars)
         
         # Key Bindings
         self.window.bind_all('<{}Return>'.format(config.command), self._create_file)
@@ -837,7 +832,7 @@ class GUI():
         else:
             current_file = self.op.files[self.file_list_selection]
             self.file_data.insert(tk.END, 'Filename: {}'.format(current_file.filename))
-            self.file_data.insert(tk.END, 'Date: {}'.format(current_file.creation_date.strftime(date_format)))
+            self.file_data.insert(tk.END, 'Date: {}'.format(current_file.get_formatted_date()))
             self.file_data.insert(tk.END, 'Scanner: {}'.format(current_file.model))
             if current_file.start_tv_channel == None:
                 start_tv_channel = ''
@@ -917,6 +912,9 @@ class GUI():
             except scanfile.InvalidFile as err:
                 self._display_error(5, error=err)
 
+        # Set date
+        self.tk_date.set(self.op.get_formatted_date())
+
         # Set default directory to last used
         settings.plist['defaultSourceLocation'] = os.path.dirname(selected_files[-1])
 
@@ -930,6 +928,9 @@ class GUI():
             title='Add directory',
             initialdir=settings.plist['defaultSourceLocation'])
         self.op.add_directory(selected_dir)
+
+        # Set date
+        self.tk_date.set(self.op.get_formatted_date())
 
         # Update file list
         self._update_file_list()
@@ -1024,8 +1025,10 @@ class GUI():
         self.ax.plot(current_file.x_values, current_file.y_values, color='green')
         self.canvas.draw()
 
+    # Method to use current selected files date
     def _use_date(self):
-        pass
+        self.op.use_date(self.file_list_selection)
+        self.tk_date.set(self.op.get_formatted_date())
 
     def _custom_destination(self):
         pass
@@ -1033,32 +1036,84 @@ class GUI():
     def _create_file(self):
         pass
 
-    def _check_for_updates(self):
-        pass
+    # Check for latest version of software
+    def _check_for_updates(self, **kwargs):
+        try:
+            updates_available = functions.check_for_updates()
+        except ConnectionError:
+            self._display_error(4)
+            return
 
+        if type(updates_available) == dict:
+            if (tkmessagebox.askyesno(
+                "Check for Updates",
+                "There is a new version of RF Library available. Would you like to download v{}?".format(
+                    updates_available['version']))):
+                webbrowser.open(updates_available['uri'], new=2 , autoraise=False)
+        elif updates_available == None:
+
+            # Decide whether to display no update found message
+            if 'display' in kwargs:
+                display = kwargs.get('display')
+            else:
+                display = True
+
+            if display:
+                tkmessagebox.showinfo("Check for Updates", "No updates found. You have the latest version of RF Library.")
+            
     def _settings(self):
         pass
 
-    def _refresh(self):
+    def _refresh(self, event=None):
         pass
 
-    def _ioBoxEdit(self):
+    def _ioBoxEdit(self, event=None):
         pass
 
     def _resetOutputLocation(self):
         pass
 
-    def _customSubDirectory(self):
+    def _customSubDirectory(self, event=None):
         pass
 
-    def _standardMasterFilename(self):
-        pass
+    # Method to handle with input to master filename
+    def _custom_master_filename(self, event=None):
+        self.op.custom_filename = True
+        self.op.filename = self.tk_output_filename.get()
 
-    def _customMasterFilename(self):
-        pass
+    # Method to reset master filename to normal
+    def _standard_master_filename(self):
+        self.op.custom_filename = False
+        self.op.get_master_filename()
+        self.tk_output_filename.set(self.op.filename)
+   
+    # Helper method to format directory nicely
+    def _dir_format(self, display_location, max_length):
+        display_location = display_location.replace(os.path.expanduser('~'), '~', 1)
+        while len(display_location) > max_length:
+            display_location = os.path.join('...', os.path.normpath(display_location.split(os.sep, 2)[2]))
+        return display_location
 
-    def _getMasterFilename(self):
-        pass
+    # Callback method when entry boxes edited to updated variables
+    def _update_output_vars(self, name, m, x):
+
+        # Update output object variables when edited
+        if name == 'venue':
+            self.op.venue = self.tk_venue.get()
+        elif name == 'town':
+            self.op.town = self.tk_town.get()
+        elif name == 'country':
+            self.op.country = self.tk_country.get()
+        elif name == 'io':
+            self.op.io = self.tk_io.get()
+            self.tk_subdirectory.set(self.tk_io.get())
+        elif name == 'subdirectory':
+            self.op.subdirectory = self.tk_subdirectory.get()
+
+        # Update master filename
+        self.op.get_master_filename()
+        self.tk_output_filename.set(self.op.filename)
+        self.tk_output_path_display.set(self._dir_format(self.op.destination, config.MAX_DIR_LENGTH))
 
     def _deselectFileListbox(self):
         pass
@@ -1074,7 +1129,7 @@ class GUI():
     # Method to open docs in web browser
     def _open_http(self):
         webbrowser.open(
-            "{}documentation.php"
+            '{}documentation.php'
             .format(config.WEBSITE_URI), new=2, autoraise=True)
 
     # Method to show an error message
@@ -1084,18 +1139,18 @@ class GUI():
         else:
             error = ''
         if code == 1:
-            message = "Could not read from preferences file:\n{}".format(settings.plistName)
+            message = 'Could not read from preferences file:\n{}'.format(settings.plistName)
         elif code == 2:
-            message = "Could not create preferences path:\n{}".format(settings.plistPath)
+            message = 'Could not create preferences path:\n{}'.format(settings.plistPath)
         elif code == 3:
-            message = "Could not write preferences file:\n{}".format(settings.plistName)
+            message = 'Could not write preferences file:\n{}'.format(settings.plistName)
         elif code == 4:
-            message = "Could not connect to update server."
+            message = 'Could not connect to update server.'
         elif code == 5:
-            message = "Invalid file:\n{}".format(error)
+            message = 'Invalid file:\n{}'.format(error)
         else:
-            message = "Undefined"
-        tkmessagebox.showerror("RF Library Error", message)
+            message = 'Undefined'
+        tkmessagebox.showerror('RF Library Error', message)
 
 
 ################################################################################

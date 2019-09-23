@@ -10,6 +10,9 @@ import datetime
 import xml.etree.ElementTree
 import config
 
+# Load Settings
+settings = config.Settings()
+
 # Define Exception
 class InvalidFile(Exception):
     pass
@@ -91,7 +94,7 @@ class ScanFile():
             self.model = 'Shure {} ({})'.format(model, xmldoc.attrib['band'])
         for freq, level in zip(xmldoc[0][0], xmldoc[0][1]):
             self.frequencies.append((float(freq.text) / 1000, float(level.text)))
-        self.creation_date = datetime.datetime.fromtimestamp(
+        self.creation_date = datetime.date.fromtimestamp(
                             float(xmldoc[0][1].attrib['date_time']) / 1000)
             
     # Parse a CSV file
@@ -133,6 +136,10 @@ class ScanFile():
             self.creation_date = datetime.date.fromtimestamp(os.stat(self.full_filename).st_birthtime)
         elif config.system == 'Windows':
             self.creation_date = datetime.date.fromtimestamp(os.stat(self.full_filename).st_ctime)
+
+    # Method to return formatted date
+    def get_formatted_date(self):
+        return self.creation_date.strftime(settings.date_format)
 
     # Method to get TV channels
     def update_tv_channels(self, tv_country):
