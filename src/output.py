@@ -26,6 +26,7 @@ class Output:
         self.in_out_guess = 0
 
         self.custom_filename = False
+        self.custom_subdirectory = False
 
         # Output Variables
         self.venue = settings.plist['defaultVenue']

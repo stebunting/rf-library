@@ -687,7 +687,7 @@ class GUI():
         ttk.Label(self.output_frame, text='Subdirectory', width=self.left_indent).grid(column=0, row=1, sticky='W', padx=config.PAD_X, pady=config.PAD_Y)
         self.targetSubdirectoryEntry = ttk.Entry(self.output_frame, textvariable=self.tk_subdirectory, width=20, font='TkDefaultFont {}'.format(self.font_size), style='Subdirectory.TEntry')
         self.targetSubdirectoryEntry.grid(column=2, row=1, sticky='W', padx=0, pady=config.PAD_Y)
-        self.targetSubdirectoryEntry.bind('<KeyRelease>', self._customSubDirectory)
+        self.targetSubdirectoryEntry.bind('<KeyRelease>', self._custom_sub_directory)
         tooltip.CreateToolTip(self.targetSubdirectoryEntry, 'Optional subdirectory')
      
         # Output Master Filename
@@ -1073,8 +1073,8 @@ class GUI():
     def _resetOutputLocation(self):
         pass
 
-    def _customSubDirectory(self, event=None):
-        pass
+    def _custom_sub_directory(self, event=None):
+        self.op.custom_subdirectory = True
 
     # Method to handle with input to master filename
     def _custom_master_filename(self, event=None):
@@ -1106,7 +1106,11 @@ class GUI():
             self.op.country = self.tk_country.get()
         elif name == 'io':
             self.op.io = self.tk_io.get()
-            self.tk_subdirectory.set(self.tk_io.get())
+
+            # Update subdirectoy if not custom
+            if not self.op.custom_subdirectory:
+                self.tk_subdirectory.set(self.tk_io.get())
+
         elif name == 'subdirectory':
             self.op.subdirectory = self.tk_subdirectory.get()
 
