@@ -17,11 +17,23 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # Software Details
-APPLICATION_NAME = "RF Library"
-APPLICATION_VERSION = "0.5.3"
-WEBSITE_URI = "https://rflibrary.stevebunting.com/"
-APPLICATION_UPDATE_XML_LOCATION = "{}latestVersion.xml".format(WEBSITE_URI)
+APPLICATION_NAME = 'RF Library'
+APPLICATION_VERSION = '0.5.3'
+APPLICATION_CREATOR = 'Stephen Bunting'
+YEAR = '2019'
+WEBSITE_URI = 'https://rflibrary.stevebunting.com/'
+DOCUMENTATION_URI = '{}documentation.php'.format(WEBSITE_URI)
+APPLICATION_UPDATE_XML_LOCATION = '{}latestVersion.xml'.format(WEBSITE_URI)
 ICON_LOCATION = resource_path('icons')
+
+# Error Codes
+error_codes = {
+    1 : 'Could not read from preferences file:',
+    2 : 'Could not create preferences path:',
+    3 : 'Could not write preferences file:',
+    4 : 'Could not connect to update server.',
+    5 : 'Invalid file:'
+}
 
 # Check system and set necessary variables
 if platform.system() == 'Windows':

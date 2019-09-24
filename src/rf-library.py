@@ -551,33 +551,34 @@ class GUI():
         # Initialise tkinter variables
         self.tk_num_files = tk.StringVar()
         self.tk_venue = tk.StringVar(name='venue')
-        self.tk_venue.trace('w', self._update_output_vars)
         self.tk_town = tk.StringVar(name='town')
-        self.tk_town.trace('w', self._update_output_vars)
         self.tk_country = tk.StringVar(name='country')
-        self.tk_country.trace('w', self._update_output_vars)
         self.tk_date = tk.StringVar()
         self.tk_io = tk.StringVar(name='io')
-        self.tk_io.trace('w', self._update_output_vars)
         self.tk_ofcom_search = tk.StringVar()
         self.tk_ofcom_venue = tk.StringVar()
         self.tk_include_ofcom_data = tk.BooleanVar()
         self.tk_output_path_display = tk.StringVar()
         self.tk_subdirectory = tk.StringVar(name='subdirectory')
-        self.tk_subdirectory.trace('w', self._update_output_vars)
         self.tk_default_output_path = tk.BooleanVar()
         self.tk_output_filename = tk.StringVar()
         self.tk_default_output_filename = tk.BooleanVar()
-        self.tk_copy_source_files = tk.BooleanVar()
-        self.tk_delete_source_files = tk.BooleanVar()
+        self.tk_copy_source_files = tk.BooleanVar(name='copy_source_files')
+        self.tk_del_source_files = tk.BooleanVar(name='del_source_files')
+
+        # Trace variables
+        for var in (self.tk_venue, self.tk_town, self.tk_country, self.tk_io,
+                    self.tk_subdirectory, self.tk_copy_source_files,
+                    self.tk_del_source_files):
+            var.trace('w', self._update_output_vars)
 
         # Set default values
         fields = (self.tk_venue, self.tk_town, self.tk_country,
                   self.tk_date, self.tk_copy_source_files,
-                  self.tk_delete_source_files, self.tk_include_ofcom_data)
+                  self.tk_del_source_files, self.tk_include_ofcom_data)
         vars = (self.op.venue, self.op.town, self.op.country, 
                 self.op.get_formatted_date(), self.op.copy_source_files,
-                self.op.delete_source_files, self.op.include_ofcom_data)
+                self.op.del_source_files, self.op.include_ofcom_data)
         for field, var in zip(fields, vars):
             field.set(var)
         self.tk_ofcom_venueList = ['No venues found...']
@@ -675,7 +676,7 @@ class GUI():
         self.tk_subdirectory.set(self.tk_io.get())
         ttk.Label(self.output_frame, text='Destination', width=self.left_indent).grid(column=0, row=0, sticky='W', padx=config.PAD_X, pady=config.PAD_Y)
         self.tk_default_output_path.set(1)
-        self.defaultOutputCheck = ttk.Button(self.output_frame, image=reset_image, command=self._resetOutputLocation)
+        self.defaultOutputCheck = ttk.Button(self.output_frame, image=reset_image, command=self._reset_destination)
         self.defaultOutputCheck.grid(column=1, row=0, sticky='W', padx=0, pady=0)
         self.defaultOutputCheck.image = reset_image
         tooltip.CreateToolTip(self.defaultOutputCheck, 'Check to use default library destination folder')
@@ -708,7 +709,7 @@ class GUI():
         self.copySourceFilesCheck.grid(column=1, row=3, sticky='E', padx=config.PAD_X, pady=config.PAD_Y)
         ttk.Label(self.output_frame, text='Duplicate Source Files').grid(column=2, row=3, sticky='W')
         tooltip.CreateToolTip(self.copySourceFilesCheck, 'Duplicate source files in library')
-        self.deleteSourceFilesCheck = ttk.Checkbutton(self.output_frame, variable=self.tk_delete_source_files)
+        self.deleteSourceFilesCheck = ttk.Checkbutton(self.output_frame, variable=self.tk_del_source_files)
         self.deleteSourceFilesCheck.grid(column=1, row=4, sticky='E', padx=config.PAD_X, pady=config.PAD_Y)
         ttk.Label(self.output_frame, text='Delete Source Files').grid(column=2, row=4, sticky='W')
         tooltip.CreateToolTip(self.deleteSourceFilesCheck, 'Delete source files on file creation')
@@ -1030,8 +1031,21 @@ class GUI():
         self.op.use_date(self.file_list_selection)
         self.tk_date.set(self.op.get_formatted_date())
 
+    # Method to set custom destination
     def _custom_destination(self):
-        pass
+        custom_directory = tkfiledialog.askdirectory(
+            parent=self.master_frame,
+            title='Select Destination Folder')
+
+        if custom_directory != '':
+            self.op.set_destination(custom_directory, custom=True)
+            self.tk_output_path_display.set(self._dir_format(self.op.destination, config.MAX_DIR_LENGTH))
+
+    # Method to reset destination
+    def _reset_destination(self):
+        self.op.custom_destination = False
+        self.op.get_destination()
+        self.tk_output_path_display.set(self._dir_format(self.op.destination, config.MAX_DIR_LENGTH))
 
     def _create_file(self):
         pass
@@ -1046,8 +1060,8 @@ class GUI():
 
         if type(updates_available) == dict:
             if (tkmessagebox.askyesno(
-                "Check for Updates",
-                "There is a new version of RF Library available. Would you like to download v{}?".format(
+                'Check for Updates',
+                'There is a new version of RF Library available. Would you like to download v{}?'.format(
                     updates_available['version']))):
                 webbrowser.open(updates_available['uri'], new=2 , autoraise=False)
         elif updates_available == None:
@@ -1059,7 +1073,7 @@ class GUI():
                 display = True
 
             if display:
-                tkmessagebox.showinfo("Check for Updates", "No updates found. You have the latest version of RF Library.")
+                tkmessagebox.showinfo('Check for Updates', 'No updates found. You have the latest version of RF Library.')
             
     def _settings(self):
         pass
@@ -1068,9 +1082,6 @@ class GUI():
         pass
 
     def _ioBoxEdit(self, event=None):
-        pass
-
-    def _resetOutputLocation(self):
         pass
 
     def _custom_sub_directory(self, event=None):
@@ -1113,10 +1124,17 @@ class GUI():
 
         elif name == 'subdirectory':
             self.op.subdirectory = self.tk_subdirectory.get()
+        elif name == 'copy_source_files':
+            self.op.copy_source_files = self.tk_copy_source_files.get()
+        elif name == 'del_source_files':
+            self.op.del_source_files = self.tk_del_source_files.get()
 
         # Update master filename
         self.op.get_master_filename()
         self.tk_output_filename.set(self.op.filename)
+
+        # Update destination
+        self.op.get_destination()
         self.tk_output_path_display.set(self._dir_format(self.op.destination, config.MAX_DIR_LENGTH))
 
     def _deselectFileListbox(self):
@@ -1126,15 +1144,14 @@ class GUI():
     def _about(self):
         tkmessagebox.showinfo(
             'About',
-            '{} v{}\n\n{} Stephen Bunting 2019\n{}'
+            '{} v{}\n\n{} {} {}\n{}'
             .format(config.APPLICATION_NAME, config.APPLICATION_VERSION,
-                    chr(169), config.WEBSITE_URI))
+                    chr(169), config.APPLICATION_CREATOR, config.YEAR,
+                    config.WEBSITE_URI))
 
     # Method to open docs in web browser
     def _open_http(self):
-        webbrowser.open(
-            '{}documentation.php'
-            .format(config.WEBSITE_URI), new=2, autoraise=True)
+        webbrowser.open(config.DOCUMENTATION_URI, new=2, autoraise=True)
 
     # Method to show an error message
     def _display_error(self, code, **kwargs):

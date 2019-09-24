@@ -27,6 +27,9 @@ class Output:
 
         self.custom_filename = False
         self.custom_subdirectory = False
+        self.custom_destination = False
+        self.copy_source_files = settings.plist['defaultCopy']
+        self.del_source_files = settings.plist['defaultDelete']
 
         # Output Variables
         self.venue = settings.plist['defaultVenue']
@@ -133,23 +136,22 @@ class Output:
         if not self.custom_filename:
             self.filename = self._parse_structure(settings.plist['fileStructure'] + '.csv')
 
-        base_location = settings.plist['defaultLibraryLocation']
-        path = self._parse_structure(os.path.join(settings.plist['dirStructure'], '%s'))
-        self.destination = os.path.join(base_location, path)
-
-        """self.scanMasterFilename.set(self.parse_structure(settings.plist['fileStructure'] + '.csv'))
-        if self.defaultOutputLocation.get() == 1:
-            self.libraryLocation = settings.plist['defaultLibraryLocation']
-            self.targetLocation = self.parse_structure(os.path.join(settings.plist['dirStructure'], '%s'))
-        else:
-            self.targetLocation = self.targetSubdirectory.get()
-            if self.targetSubdirectory.get() != '':
-                self.targetLocation = self.targetLocation
-        self.scanOutputLocation = os.path.join(self.libraryLocation, self.targetLocation)
-        self.scanOutputLocationDisplay.set(dir_format(self.scanOutputLocation, 90))"""
+    # Method to create destination path
+    def get_destination(self):
+        if not self.custom_destination:
+            base_location = settings.plist['defaultLibraryLocation']
+            path = self._parse_structure(os.path.join(settings.plist['dirStructure'], '%s'))
+            self.destination = os.path.join(base_location, path)
 
     def set_date(self, d):
         if type(d) == datetime.date:
             self.date = d
         else:
             print("TRYING TO SET DATE WITH NO DATETIME CLASS")
+
+    # Method to set destination
+    def set_destination(self, destination, **kwargs):
+        if kwargs.get('custom'):
+            self.custom_destination = kwargs.get('custom')
+
+        self.destination = destination
