@@ -764,7 +764,7 @@ class GUI():
         
         # Key Bindings
         self.window.bind_all('<{}Return>'.format(config.command), self._create_file)
-        self.file_list.bind('<Escape>', self._deselectFileListbox)
+        self.file_list.bind('<Escape>', self._deselect_file_listbox)
         self.file_list.bind('<BackSpace>', self._remove_file)
 
 ################################################################################
@@ -817,6 +817,11 @@ class GUI():
                 self.file_list.selection_clear(0, tk.END)
 
         self._print_file_data()
+
+    # Method to execute when escape pressed to deselect files in file_list
+    def _deselect_file_listbox(self, event=None):
+        self.file_list_selection = None
+        self._select_file()
         
     # Method to print file data to data_list
     def _print_file_data(self):
@@ -1136,9 +1141,6 @@ class GUI():
         # Update destination
         self.op.get_destination()
         self.tk_output_path_display.set(self._dir_format(self.op.destination, config.MAX_DIR_LENGTH))
-
-    def _deselectFileListbox(self):
-        pass
 
     # Method to display about information
     def _about(self):
