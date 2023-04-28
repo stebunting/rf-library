@@ -22,6 +22,7 @@ from PIL import Image, ImageTk
 
 # Import Matplotlib graph plotting functions
 import matplotlib
+import matplotlib.figure
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
