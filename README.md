@@ -1,4 +1,7 @@
 # rf-library
+
+[![CI](https://github.com/stebunting/rf-library/actions/workflows/ci.yml/badge.svg)](https://github.com/stebunting/rf-library/actions/workflows/ci.yml)
+
 App for converting, merging and organising RF scans from various sources for use in IM calculation software.
 
 This app started as a personal project for me to expedite the process of taking multiple RF scans, copying them to my computer, opening each one up to remove the headers, combining them all into one file, removing the duplicates and then saving them into a master file, before opening up the file in Shure Wireless Workbench 6 and doing a co-ordination. This all happened during the load-in where there is almost never an abundance of time!
