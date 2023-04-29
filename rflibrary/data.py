@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import platform
 import os
 import sys
@@ -22,24 +20,7 @@ WEBSITE_URI = "https://rflibrary.stevebunting.com/"
 UPDATE_FILE_LOCATION = f'{WEBSITE_URI}latestVersion.xml'
 
 # Check system and set necessary variables
-if platform.system() == 'Windows':
-    SYSTEM = 'Windows'
-    COMMAND = 'Control-'
-    COMMAND_ABBR = 'Ctrl+'
-    COMMAND_SYMBOL = '^'
-    MODIFIER = 'Shift-'
-    MODIFIER_ABBR = 'Shift+'
-    MODIFIER_SYMBOL = '⇧'
-    ALT = 'Alt-'
-    ALT_ABBR = 'Alt+'
-    ALT_SYMBOL = '⎇'
-    PLIST_PATH = os.path.join(os.environ['APPDATA'], 'RF Library')
-    PLIST_FILE = 'rflibrary.plist'
-    if platform.release() == '10':
-        default_library_location = os.path.expanduser('~\\Documents\\Scans')
-    else:
-        default_library_location = os.path.expanduser('~\\My Documents\\Scans')
-elif platform.system() == 'Darwin':
+if platform.system() == 'Darwin':
     SYSTEM = 'Mac'
     COMMAND = 'Command-'
     COMMAND_ABBR = 'Command-'
@@ -53,6 +34,27 @@ elif platform.system() == 'Darwin':
     PLIST_PATH = os.path.expanduser('~/Library/Preferences')
     PLIST_FILE = 'com.stevebunting.rflibrary.plist'
     default_library_location = os.path.expanduser('~/Documents/Scans')
+else:
+    SYSTEM = 'Windows'
+    COMMAND = 'Control-'
+    COMMAND_ABBR = 'Ctrl+'
+    COMMAND_SYMBOL = '^'
+    MODIFIER = 'Shift-'
+    MODIFIER_ABBR = 'Shift+'
+    MODIFIER_SYMBOL = '⇧'
+    ALT = 'Alt-'
+    ALT_ABBR = 'Alt+'
+    ALT_SYMBOL = '⎇'
+    PLIST_FILE = 'rflibrary.plist'
+    if platform.system() == 'Windows':
+        PLIST_PATH = os.path.join(os.environ['APPDATA'], 'RF Library')
+        if platform.release() >= '10':
+            default_library_location = os.path.expanduser('~\\Documents\\Scans')
+        else:
+            default_library_location = os.path.expanduser('~\\My Documents\\Scans')
+    else:
+        PLIST_PATH = os.path.expanduser('~\\.rflibrary')
+        default_library_location = os.path.expanduser('~\\Scans')
 DEFAULT_LOG_FOLDER = default_library_location
 PLIST_NAME = os.path.join(PLIST_PATH, PLIST_FILE)
 

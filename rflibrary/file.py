@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
-
-################################################################################
-##########                        FILE OBJECT                         ##########
-################################################################################
-
 import os
 import re
 import datetime
 import xml.etree.ElementTree
 import data
+
+################################################################################
+##########                        FILE OBJECT                         ##########
+################################################################################
 
 # Define Data class
 class File:
@@ -39,10 +37,10 @@ class File:
             self._io_read()
 
     def start_frequency_format(self):
-        return f'{self._start_frequency:.3f}MHz'
+        return None if self._start_frequency is None else f'{self._start_frequency:.3f}MHz'
 
     def stop_frequency_format(self):
-        return f'{self._stop_frequency:.3f}MHz'
+        return None if self._stop_frequency is None else f'{self._stop_frequency:.3f}MHz'
 
     def resolution_format(self):
         return f'{self.resolution:.3f}MHz'

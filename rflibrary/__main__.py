@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Import Python Modules
+# Standard library imports
 import os
 import sys
 import datetime
@@ -8,23 +6,24 @@ import xml.etree.ElementTree
 import plistlib
 import webbrowser
 
-# Import Tkinter GUI functions
+# Tkinter GUI imports
 import tkinter as tk
 from tkinter import ttk
 import tkinter.filedialog as tkfiledialog
 import tkinter.font as tkfont
 import tkinter.messagebox as tkmessagebox
 
+# Third party imports
 import csv
 from PIL import Image, ImageTk
 import requests
 
-# Import Matplotlib graph plotting functions
+# Matplotlib graph plotting imports
 import matplotlib
 import matplotlib.figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Import program data and modules
+# Program data and module imports
 import data
 from file import File
 from tooltip import CreateToolTip
