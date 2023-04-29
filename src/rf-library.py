@@ -31,7 +31,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import data
 from file import File
 from tooltip import CreateToolTip
-import ofcom
 
 # Helper function to set dateFormat
 def set_date_format():
@@ -76,8 +75,6 @@ else:
 
 # Check for preferences and add default if not there
 vars = [
-    'ofcom_account_name',
-    'ofcom_username',
     'create_log',
     'logFolder',
     'forename',
@@ -97,8 +94,6 @@ vars = [
     'default_library_location',
     'auto_update_check']
 defaults = [
-    '',
-    '',
     True,
     data.default_log_folder,
     '',
@@ -137,7 +132,6 @@ class SettingsWindow():
     def __init__(self):
 
         # Variables
-        self.password_changed = False
         self.move_old_log = False
 
         self.settings_window = tk.Toplevel(takefocus=True)
@@ -169,11 +163,6 @@ class SettingsWindow():
             self.settings_master_frame, text='Application Data')
         self.app_data.grid(padx=16, pady=16, sticky='NWSE')
 
-        if data.show_ofcom:
-            self.ofcom_login = ttk.LabelFrame(
-                self.settings_master_frame, text='OFCOM Login Data')
-            self.ofcom_login.grid(padx=16, pady=16, sticky='NWSE')
-
         self.settings_buttons_frame = ttk.Frame(self.settings_master_frame)
         self.settings_buttons_frame.grid(
             padx=16, pady=16, columnspan=2, sticky='NWSE')
@@ -193,9 +182,6 @@ class SettingsWindow():
         self.forename = tk.StringVar()
         self.surname = tk.StringVar()
         self.auto_update_check = tk.BooleanVar()
-        self.ofcom_account_name = tk.StringVar()
-        self.ofcom_username = tk.StringVar()
-        self.ofcom_password = tk.StringVar()
 
         # Set Variables
         vars = [plist['dir_structure'], plist['file_structure'],
@@ -203,13 +189,11 @@ class SettingsWindow():
                 plist['low_freq_limit'], plist['high_freq_limit'],
                 plist['create_log'], dir_format(plist['logFolder'], 50),
                 plist['default_date_format'], plist['forename'], plist['surname'],
-                plist['ofcom_account_name'], plist['ofcom_username'], ' ' * 8,
                 plist['auto_update_check']]
         fields = [self.dir_structure, self.file_structure,
                   self.scans_folder_display, self.low_freq_limit, self.high_freq_limit,
                   self.create_log, self.log_folder_display,
                   self.default_date_format, self.forename, self.surname,
-                  self.ofcom_account_name, self.ofcom_username, self.ofcom_password,
                   self.auto_update_check]
         for field, var in zip(fields, vars):
             field.set(var)
@@ -407,45 +391,6 @@ class SettingsWindow():
             pady=data.pady_default)
         CreateToolTip(self.check_for_updates_check, 'Automatically check for updates on startup')
 
-        if data.show_ofcom:
-
-            # OFCOM Account Name Entry
-            ttk.Label(
-                self.ofcom_login,
-                text='Account Name',
-                width='16'
-            ).grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
-            self.ofcom_account_name_entry = ttk.Entry(
-                self.ofcom_login,
-                textvariable=self.ofcom_account_name)
-            self.ofcom_account_name_entry.grid(column=1, row=0)
-            CreateToolTip(self.ofcom_account_name_entry, 'Your OFCOM Account Name')
-
-            # OFCOM User Name Entry
-            ttk.Label(
-                self.ofcom_login,
-                text='User Name',
-                width='16'
-            ).grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
-            self.ofcom_username_entry = ttk.Entry(self.ofcom_login, textvariable=self.ofcom_username)
-            self.ofcom_username_entry.grid(column=1, row=1)
-            CreateToolTip(self.ofcom_username_entry, 'Your OFCOM User Name')
-
-            # OFCOM Password Entry
-            ttk.Label(
-                self.ofcom_login,
-                text='Password',
-                width='16'
-            ).grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
-            self.ofcom_password_entry = ttk.Entry(
-                self.ofcom_login,
-                show="\u2022",
-                textvariable=self.ofcom_password)
-            self.ofcom_password_entry.grid(column=1, row=2)
-            CreateToolTip(self.ofcom_password_entry, 'Your OFCOM Password')
-
-            self.ofcom_password_entry.bind('<KeyRelease>', self._password_entry)
-
         # Buttons
         self.save_settings_button = ttk.Button(
             self.settings_buttons_frame,
@@ -474,12 +419,6 @@ class SettingsWindow():
             self.save_settings_button,
             self.cancel_settings_button]:
             widget.grid(sticky='W', padx=data.padx_default, pady=data.pady_default)
-
-    # Method to detect if password is amended
-    def _password_entry(self):
-        if not self.password_changed:
-            self.password_changed = True
-            self.ofcom_password.set(self.ofcom_password.get().lstrip())
 
     # Method to select scans base folder
     def _change_base_folder(self):
@@ -525,8 +464,6 @@ class SettingsWindow():
         elif int(self.high_freq_limit.get()) < int(self.low_freq_limit.get()):
             self.high_freq_limit.set(self.low_freq_limit.get())
 
-        plist['ofcom_account_name'] = self.ofcom_account_name.get()
-        plist['ofcom_username'] = self.ofcom_username.get()
         plist['default_library_location'] = self.default_library_location
         plist['forename'] = self.forename.get()
         plist['surname'] = self.surname.get()
@@ -542,11 +479,6 @@ class SettingsWindow():
         try:
             with open(data.plist_name, 'wb') as file:
                 plistlib.dump(plist, file)
-            if self.password_changed:
-                keyring.set_password(
-                    data.title,
-                    self.ofcom_account_name.get(),
-                    self.ofcom_password.get())
         except PermissionError:
             gui._display_error(1)
 
@@ -657,10 +589,6 @@ class GUI():
         self.preview_frame = ttk.LabelFrame(self.right_container, text='Source Preview')
         self.preview_frame.grid(column=0, row=0, columnspan=2, padx=8, pady=8, sticky='NWE')
         CreateToolTip(self.preview_frame, 'Selected scan preview')
-
-        if data.show_ofcom:
-            self.ofcom_frame = ttk.LabelFrame(self.right_container, text='OFCOM')
-            self.ofcom_frame.grid(column=0, row=1, padx=8, pady=8, sticky='NWE')
 
         self.output_frame = ttk.LabelFrame(self.master_frame, text='Output Data')
         self.output_frame.grid(column=0, row=1, columnspan=3, padx=8, pady=8, sticky='NWE')
@@ -812,9 +740,6 @@ class GUI():
         self.country = tk.StringVar()
         self.scan_date = tk.StringVar()
         self.in_out = tk.StringVar()
-        self.ofcom_search = tk.StringVar()
-        self.ofcom_venue = tk.StringVar()
-        self.include_ofcom_data = tk.BooleanVar()
         self.scan_output_location_display = tk.StringVar()
         self.target_subdirectory = tk.StringVar()
         self.default_output_location = tk.BooleanVar()
@@ -829,18 +754,15 @@ class GUI():
             self.town,
             self.country,
             self.copy_source_files,
-            self.delete_source_files,
-            self.include_ofcom_data]
+            self.delete_source_files]
         vars = [
             plist['defaultVenue'],
             plist['defaultTown'],
             plist['defaultCountry'],
             plist['defaultCopy'],
-            plist['defaultDelete'],
-            plist['defaultOfcomInclude']]
+            plist['defaultDelete']]
         for field, var in zip(fields, vars):
             field.set(var)
-        self.ofcom_venue_list = ['No venues found...']
 
         # File List
         ttk.Label(self.input_frame, text='File List').grid(column=0, row=0, sticky='W')
@@ -1139,70 +1061,6 @@ class GUI():
             self.custom_output_button,
             f'Set custom destination for output files ({data.command_symbol}{data.modifier_symbol}D)')
 
-        if data.show_ofcom:
-
-            # OFCOM Search Bar
-            ttk.Label(
-                self.right_container,
-                text='OFCOM Search',
-                width=self.left_indent
-            ).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-            self.ofcom_search_entry = ttk.Entry(
-                self.right_container,
-                textvariable=self.ofcom_search,
-                width=20,
-                font=f'TkDefaultFont {self.font_size}')
-            self.ofcom_search_entry.grid(column=1, row=1, sticky='NW')
-            CreateToolTip(self.ofcom_search_entry, 'OFCOM Database Search')
-
-            # OFCOM Search Buton
-            self.ofcom_search_button = ttk.Button(
-                self.right_container,
-                text='OFCOM Search',
-                command=self._ofcom_search)
-            self.ofcom_search_button.grid(
-                column=1,
-                row=2,
-                sticky='NW',
-                padx=data.padx_default,
-                pady=data.pady_default)
-            CreateToolTip(
-                self.ofcom_search_button,
-                f'Search OFCOM database ({data.command_symbol}S)')
-
-            # OFCOM Venue List
-            ttk.Label(
-                self.right_container,
-                text='Venue Check',
-                width=self.left_indent
-            ).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
-            self.ofcom_box = ttk.Combobox(
-                self.right_container,
-                textvariable=self.ofcom_venue,
-                width=20,
-                state='readonly',
-                font=f'TkDefaultFont {self.font_size}')
-            self.ofcom_box['values'] = self.ofcom_venue_list
-            self.ofcom_box.grid(column=1, row=3, sticky='NW')
-            self.ofcom_box.current(0)
-            self.ofcom_box.config(state='disabled')
-            CreateToolTip(self.ofcom_box, 'Select the correct venue from the list')
-
-            # OFCOM Include Button
-            self.include_ofcom_data_check = ttk.Checkbutton(
-                self.right_container,
-                text='Include Exclusion Files',
-                variable=self.include_ofcom_data)
-            self.include_ofcom_data_check.grid(
-                column=1,
-                row=4,
-                sticky='W',
-                padx=data.padx_default,
-                pady=data.pady_default)
-            CreateToolTip(self.include_ofcom_data_check, 'Include OFCOM Exclusion Data')
-
-            self.window.bind_all(f'<{data.command}s>', self._ofcom_search)
-
         # Add styling to all entry boxes
         for x in [
             self.venue_entry,
@@ -1361,9 +1219,6 @@ class GUI():
                 self.target_location = self.target_location
         self.scan_output_location = os.path.join(self.library_location, self.target_location)
         self.scan_output_location_display.set(dir_format(self.scan_output_location, 90))
-
-        # Set OFCOM Search box when venue edited
-        self.ofcom_search.set(f'{self.town.get()} {self.venue.get()}')
 
     # Method to disable/enable buttons/menu items based on selected files
     def _button_status(self, input_status=None, output_status=None):
@@ -1538,7 +1393,7 @@ class GUI():
 
     # Method to create master file
     def _create_file(self):
-        if len(self.files) == 0 and not self.include_ofcom_data.get():
+        if len(self.files) == 0:
             tkmessagebox.showinfo('No Files To Create', 'No files to create.')
             return
 
@@ -1603,22 +1458,6 @@ class GUI():
                 files_written += 1
                 statement += f'{written_filename}\n'
 
-            # Write OFCOM Exclusion Files
-            if (data.show_ofcom and self.include_ofcom_data.get()):
-                filename = self._find_unused_file(
-                    self.scan_output_location,
-                    f'{os.path.splitext(self.scan_master_filename.get())[0]}.cxl')
-                target = os.path.join(self.scan_output_location, filename)
-
-                written_filename = self._ofcom_generate(None, self.in_out.get(), target)
-                if written_filename:
-                    files_written += 1
-                    statement += f'{filename}\n'
-                else:
-                    tkmessagebox.showwarning(
-                        'Timeout',
-                        'Could not connect to the JFMG service, please check your connection.')
-
             statement += f'\n{files_written} files written to disk.\n'
 
             if files_written == 0:
@@ -1631,7 +1470,6 @@ class GUI():
             plist['defaultCountry'] = self.country.get()
             plist['defaultCopy'] = self.copy_source_files.get()
             plist['defaultDelete'] = self.delete_source_files.get()
-            plist['defaultOfcomInclude'] = self.include_ofcom_data.get()
 
             try:
                 with open(data.plist_name, 'wb') as file:
@@ -1851,75 +1689,6 @@ class GUI():
             self.settings.settings_window.mainloop()
             self.settings_window_open = False
             self._refresh()
-
-    # Method to login to OFCOM Site
-    def _ofcom_login(self):
-        lookup = ofcom.PMSELookup(
-            plist['ofcom_account_name'],
-            plist['ofcom_username'],
-            keyring.get_password(data.title, plist['ofcom_account_name']))
-
-        # Login to OFCOM site
-        try:
-            lookup.login()
-        except requests.exceptions.ConnectionError:
-            tkmessagebox.showwarning(
-                'Connection Error',
-                'There was an error connecting to this service, please check your connection.')
-            return False
-        except ofcom.LoginError:
-            if (tkmessagebox.askyesno(
-                'Login Fail',
-                'Could not login to pmse.ofcom.org.uk.\n\nWould you like to check your login details?')):
-                self._settings()
-            return False
-        return lookup
-
-    # Method to search OFCOM database and return a list of possible venues
-    def _ofcom_search(self):
-        try:
-            hasattr(self.pmse_lookup, 'account_name')
-        except AttributeError as e:
-            self.pmse_lookup = self._ofcom_login()
-            if not self.pmse_lookup:
-                return
-        else:
-            if not self.pmse_lookup or not self.pmse_lookup.loggedin:
-                self.pmse_lookup = self._ofcom_login()
-                if not self.pmse_lookup:
-                    return
-
-        # Look up venues
-        self.pmse_lookup_venues = self.pmse_lookup.getList(self.ofcom_search.get())
-
-        # Venues found
-        if len(self.pmse_lookup_venues[0]) > 0:
-            self.ofcom_box['values'] = self.pmse_lookup_venues[0]
-            self.ofcom_box.config(state='enabled')
-
-        # No venues found
-        else:
-            tkmessagebox.showwarning(
-                'No venues found',
-                'No venues found.\n\nTry editing your search term.')
-            self.ofcom_box['values'] = self.ofcom_venue_list
-            self.ofcom_box.config(state='disabled')
-        self.ofcom_box.current(0)
-
-    # Method to retrieve data from OFCOM and generate exclusion file
-    def _ofcom_generate(self, in_out='Outside', filename=''):
-        if len(self.pmse_lookup_venues[0]) == 0:
-            return False
-
-        venue_id = self.pmse_lookup_venues[1][self.ofcom_box.current()]
-
-        try:
-            data = self.pmse_lookup.getData(venue_id)
-        except requests.exceptions.Timeout:
-            return False
-
-        self.pmse_lookup.xmlGenerate(data, in_out, filename)
-        return filename
 
     # Check for latest version of software
     def _check_for_updates(self, **kwargs):

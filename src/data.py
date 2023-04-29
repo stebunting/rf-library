@@ -67,7 +67,6 @@ default_filename_structure = '%t %c-%v-%y%m%d-%i %f %n'
 log_filename = 'rflibrary-log.csv'
 
 # Maintenence
-show_ofcom = False
 makeWSM = False
 
 # Variables
