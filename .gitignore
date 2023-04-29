@@ -1,10 +1,4 @@
-src/__pycache__
-build
-dist
-Scans
+src/__pycache__/
 src/build
 src/dist
-src/backup
-rflibrary.dmg
-src/icons/.DS_Store
 src/pyinstaller-hooks
