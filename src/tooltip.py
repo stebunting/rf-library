@@ -5,12 +5,12 @@
 ################################################################################
 
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk
 
-# SOURCE: https://stackoverflow.com/questions/3221956/what-is-the-simplest-way-to-make-tooltips-in-tkinter
+# SOURCE:
+# https://stackoverflow.com/questions/3221956/what-is-the-simplest-way-to-make-tooltips-in-tkinter
 
-class CreateToolTip(object):
-    
+class CreateToolTip:
     def __init__(self, widget, text='widget info'):
         self.waittime = 500     # miliseconds
         self.wraplength = 250   # pixels
@@ -19,8 +19,8 @@ class CreateToolTip(object):
         self.widget.bind('<Enter>', self.enter)
         self.widget.bind('<Leave>', self.leave)
         self.widget.bind('<ButtonPress>', self.leave)
-        self.id = None
-        self.tw = None
+        self.id_value = None
+        self.top_level = None
 
     def enter(self, event=None):
         self.schedule()
@@ -31,33 +31,40 @@ class CreateToolTip(object):
 
     def schedule(self):
         self.unschedule()
-        self.id = self.widget.after(self.waittime, self.showtip)
+        self.id_value = self.widget.after(self.waittime, self.showtip)
 
     def unschedule(self):
-        id = self.id
-        self.id = None
-        if id:
+        id_value = self.id_value
+        self.id_value = None
+        if id_value:
             self.widget.after_cancel(id)
 
-    def showtip(self, event=None):
-        x = y = 0
-        x, y, cx, cy = self.widget.bbox('insert')
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + 20
-        self.tw = tk.Toplevel(self.widget)
-        self.tw.wm_geometry('+%d+%d' % (x, y))
+    def showtip(self):
+        x_pnt = y_pnt = 0
+        x_pnt, y_pnt, _, _ = self.widget.bbox('insert')
+        x_pnt += self.widget.winfo_rootx() + 25
+        y_pnt += self.widget.winfo_rooty() + 20
+        self.top_level = tk.Toplevel(self.widget)
+        self.top_level.wm_geometry(f'+{x_pnt}+{y_pnt}')
 
         # Leaves only the label and removes the app window
-        self.tw.overrideredirect(True)
-        label = ttk.Label(self.tw, text=self.text, justify='left',
-                       background='#b0b0b0', relief='solid', borderwidth=1, padding=2, foreground='#4040ff',
-                       wraplength = self.wraplength)
+        self.top_level.overrideredirect(True)
+        label = ttk.Label(
+            self.top_level,
+            text=self.text,
+            justify='left',
+            background='#b0b0b0',
+            relief='solid',
+            borderwidth=1,
+            padding=2,
+            foreground='#4040ff',
+            wraplength = self.wraplength)
         label.pack(ipadx=1)
-        self.tw.update()
-        self.tw.lift()
-        
+        self.top_level.update()
+        self.top_level.lift()
+
     def hidetip(self):
-        tw = self.tw
-        self.tw = None
-        if tw:
-            tw.destroy()
+        top_level = self.top_level
+        self.top_level = None
+        if top_level:
+            top_level.destroy()

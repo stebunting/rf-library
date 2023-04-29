@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 # Import Python Modules
-import platform
 import os
 import sys
 import datetime
@@ -11,7 +10,7 @@ import webbrowser
 
 # Import Tkinter GUI functions
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk
 import tkinter.filedialog as tkfiledialog
 import tkinter.font as tkfont
 import tkinter.messagebox as tkmessagebox
@@ -19,18 +18,18 @@ import tkinter.messagebox as tkmessagebox
 import csv
 from PIL import Image, ImageTk
 import requests
-import keyring
 
 # Import Matplotlib graph plotting functions
 import matplotlib
 import matplotlib.figure
-matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Import program data and modules
 import data
 from file import File
 from tooltip import CreateToolTip
+
+matplotlib.use('TkAgg')
 
 # Helper function to set dateFormat
 def set_date_format():
@@ -48,33 +47,33 @@ def dir_format(display_location, max_length):
     return display_location
 
 # Load settings plist if it exists yet
-errors = []
+errors_to_display = []
 SETTINGS_EXISTS = True
 NEW_SETTINGS_FILE = False
-if not os.path.isfile(data.plist_name):
+if not os.path.isfile(data.PLIST_NAME):
     SETTINGS_EXISTS = False
     try:
-        os.makedirs(data.plistPath, exist_ok=True)
+        os.makedirs(data.PLIST_PATH, exist_ok=True)
     except PermissionError:
-        errors.append(2)
+        errors_to_display.append(2)
     try:
-        file = open(data.plist_name, 'wb')
-        file.close()
-        os.chmod(data.plist_name, 0o600)
+        plist_file = open(data.PLIST_NAME, 'wb')
+        plist_file.close()
+        os.chmod(data.PLIST_NAME, 0o600)
         NEW_SETTINGS_FILE = True
     except (PermissionError, FileNotFoundError):
-        errors.append(3)
-    plist = dict()
+        errors_to_display.append(3)
+    plist = {}
 else:
     try:
-        with open(data.plist_name, 'rb') as file:
-            plist = plistlib.load(file)
+        with open(data.PLIST_NAME, 'rb') as plist_file:
+            plist = plistlib.load(plist_file)
     except PermissionError:
-        errors.append(1)
-        plist = dict()
+        errors_to_display.append(1)
+        plist = {}
 
 # Check for preferences and add default if not there
-vars = [
+plist_keys = [
     'create_log',
     'logFolder',
     'forename',
@@ -93,15 +92,15 @@ vars = [
     'defaultSourceLocation',
     'default_library_location',
     'auto_update_check']
-defaults = [
+plist_defaults = [
     True,
-    data.default_log_folder,
+    data.DEFAULT_LOG_FOLDER,
     '',
     '',
-    data.default_directory_structure,
-    data.default_filename_structure,
+    data.DEFAULT_DIRECTORY_STRUCTURE,
+    data.DEFAULT_FILENAME_STRUCTURE,
     False,
-    data.default_date_format,
+    data.DEFAULT_DATE_FORMAT,
     0,
     0,
     'Venue',
@@ -112,13 +111,13 @@ defaults = [
     os.path.expanduser('~'),
     data.default_library_location,
     True]
-for var, default in zip(vars, defaults):
-    if var not in plist:
-        plist[var] = default
+for plist_var, plist_default in zip(plist_keys, plist_defaults):
+    if plist_var not in plist:
+        plist[plist_var] = plist_default
 
 if NEW_SETTINGS_FILE:
-    with open(data.plist_name, 'wb') as file:
-        plistlib.dump(plist, file)
+    with open(data.PLIST_NAME, 'wb') as plist_file:
+        plistlib.dump(plist, plist_file)
 
 dateFormat = set_date_format()
 
@@ -126,8 +125,7 @@ dateFormat = set_date_format()
 ##########                  SETTINGS WINDOW OBJECT                    ##########
 ################################################################################
 
-class SettingsWindow():
-
+class SettingsWindow:
     # Initialise class
     def __init__(self):
 
@@ -141,6 +139,9 @@ class SettingsWindow():
 
         self._create_settings_frames()
         self._create_settings_widgets()
+
+    def start(self):
+        self.settings_window.mainloop()
 
     # Create settings frames
     def _create_settings_frames(self):
@@ -184,18 +185,18 @@ class SettingsWindow():
         self.auto_update_check = tk.BooleanVar()
 
         # Set Variables
-        vars = [plist['dir_structure'], plist['file_structure'],
+        settings_vars = [plist['dir_structure'], plist['file_structure'],
                 dir_format(plist['default_library_location'], 50),
                 plist['low_freq_limit'], plist['high_freq_limit'],
                 plist['create_log'], dir_format(plist['logFolder'], 50),
                 plist['default_date_format'], plist['forename'], plist['surname'],
                 plist['auto_update_check']]
-        fields = [self.dir_structure, self.file_structure,
+        settings_fields = [self.dir_structure, self.file_structure,
                   self.scans_folder_display, self.low_freq_limit, self.high_freq_limit,
                   self.create_log, self.log_folder_display,
                   self.default_date_format, self.forename, self.surname,
                   self.auto_update_check]
-        for field, var in zip(fields, vars):
+        for field, var in zip(settings_fields, settings_vars):
             field.set(var)
         self.default_library_location = plist['default_library_location']
         self.log_folder = plist['logFolder']
@@ -205,7 +206,7 @@ class SettingsWindow():
             self.output_preferences,
             text='Scans Folder',
             width='16'
-        ).grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.scans_folder_label = ttk.Label(
             self.output_preferences,
             textvariable=self.scans_folder_display,
@@ -214,8 +215,8 @@ class SettingsWindow():
             column=1,
             row=0,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(self.scans_folder_label, 'Scan library base folder')
         self.change_base_folder_button = ttk.Button(
             self.output_preferences,
@@ -228,7 +229,7 @@ class SettingsWindow():
             self.output_preferences,
             text='Directory Structure',
             width='16'
-        ).grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=2, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.dir_structure_entry = ttk.Entry(
             self.output_preferences,
             textvariable=self.dir_structure,
@@ -237,8 +238,8 @@ class SettingsWindow():
             column=1,
             row=2,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(
             self.dir_structure_entry,
             'Default library directory structure (see docs for more details')
@@ -248,7 +249,7 @@ class SettingsWindow():
             self.output_preferences,
             text='Filename Structure',
             width='16'
-        ).grid(column=0, row=3, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=3, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.file_structure_entry = ttk.Entry(
             self.output_preferences,
             textvariable=self.file_structure,
@@ -257,8 +258,8 @@ class SettingsWindow():
             column=1,
             row=3,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(
             self.file_structure_entry,
             'Default library filename structure (see docs for more details')
@@ -268,17 +269,17 @@ class SettingsWindow():
             self.output_preferences,
             text='Date Format',
             width='16'
-        ).grid(column=0, row=4, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=4, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.date_format_box = ttk.Combobox(
             self.output_preferences,
             textvariable=self.default_date_format)
-        self.date_format_box['values'] = [key for key in data.dateFormats]
+        self.date_format_box['values'] = list(data.dateFormats)
         self.date_format_box.grid(
             column=1,
             row=4,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(self.date_format_box, 'Preferred date format')
 
         # Low Frequency Limit
@@ -286,7 +287,7 @@ class SettingsWindow():
             self.output_preferences,
             text='Low Frequency Limit',
             width='16'
-        ).grid(column=0, row=5, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=5, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.low_freq_limit_entry = ttk.Entry(
             self.output_preferences,
             textvariable=self.low_freq_limit)
@@ -300,7 +301,7 @@ class SettingsWindow():
             self.output_preferences,
             text='High Frequency Limit',
             width='16'
-        ).grid(column=0, row=6, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=6, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.high_freq_limit_entry = ttk.Entry(
             self.output_preferences,
             textvariable=self.high_freq_limit)
@@ -314,7 +315,7 @@ class SettingsWindow():
             self.logging_preferences,
             text='Write To Log File',
             width='16'
-        ).grid(column=0, row=0, sticky='w', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=0, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.create_log_check = ttk.Checkbutton(
             self.logging_preferences,
             variable=self.create_log)
@@ -322,8 +323,8 @@ class SettingsWindow():
             column=1,
             row=0,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(self.create_log_check, 'Turn log file writing on/off')
 
         # Log Location
@@ -331,7 +332,7 @@ class SettingsWindow():
             self.logging_preferences,
             text='Log Location',
             width='16'
-        ).grid(column=0, row=1, sticky='w', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=1, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.log_location_entry = ttk.Label(
             self.logging_preferences,
             textvariable=self.log_folder_display,
@@ -340,8 +341,8 @@ class SettingsWindow():
             column=1,
             row=1,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(self.log_location_entry, 'Log file location')
         self.change_log_location = ttk.Button(
             self.logging_preferences,
@@ -351,15 +352,15 @@ class SettingsWindow():
             column=1,
             row=2,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
 
         # Forename Entry
         ttk.Label(
             self.personal_data,
             text='Forename',
             width='16'
-        ).grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.forename_entry = ttk.Entry(self.personal_data, textvariable=self.forename)
         self.forename_entry.grid(column=1, row=0)
         CreateToolTip(self.forename_entry, 'Your forename')
@@ -369,7 +370,7 @@ class SettingsWindow():
             self.personal_data,
             text='Surname',
             width='16'
-        ).grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=1, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.surname_entry = ttk.Entry(self.personal_data, textvariable=self.surname)
         self.surname_entry.grid(column=1, row=1)
         CreateToolTip(self.surname_entry, 'Your surname')
@@ -379,7 +380,7 @@ class SettingsWindow():
             self.app_data,
             text='Auto Update Check',
             width='16'
-        ).grid(column=0, row=0, sticky='w', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=0, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.check_for_updates_check = ttk.Checkbutton(
             self.app_data,
             variable=self.auto_update_check)
@@ -387,8 +388,8 @@ class SettingsWindow():
             column=1,
             row=0,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(self.check_for_updates_check, 'Automatically check for updates on startup')
 
         # Buttons
@@ -418,30 +419,30 @@ class SettingsWindow():
             self.high_freq_limit_entry,
             self.save_settings_button,
             self.cancel_settings_button]:
-            widget.grid(sticky='W', padx=data.padx_default, pady=data.pady_default)
+            widget.grid(sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
 
     # Method to select scans base folder
     def _change_base_folder(self):
-        dir = tkfiledialog.askdirectory(
+        directory = tkfiledialog.askdirectory(
             parent=self.settings_master_frame,
             title='Select Scan Folder',
             initialdir=plist['default_library_location'])
-        if dir != '':
-            self.default_library_location = dir
+        if directory != '':
+            self.default_library_location = directory
             self.scans_folder_display.set(dir_format(self.default_library_location, 50))
 
     # Method to select default log folder
     def _change_log_folder(self):
-        if os.path.exists(os.path.join(plist['logFolder'], data.log_filename)):
+        if os.path.exists(os.path.join(plist['logFolder'], data.LOG_FILENAME)):
             self.move_old_log = True
             self.old_log_location = plist['logFolder']
 
-        dir = tkfiledialog.askdirectory(
+        directory = tkfiledialog.askdirectory(
             parent=self.settings_master_frame,
             title='Select Source Folder',
             initialdir=plist['logFolder'])
-        if dir != '':
-            self.log_folder = dir
+        if directory != '':
+            self.log_folder = directory
             self.log_folder_display.set(dir_format(self.log_folder, 50))
 
     # Method to save settings and close window
@@ -477,15 +478,15 @@ class SettingsWindow():
         plist['auto_update_check'] = self.auto_update_check.get()
 
         try:
-            with open(data.plist_name, 'wb') as file:
+            with open(data.PLIST_NAME, 'wb') as file:
                 plistlib.dump(plist, file)
         except PermissionError:
             gui._display_error(1)
 
         # Move old log to new log location
         if self.move_old_log:
-            os.rename(os.path.join(self.old_log_location, data.log_filename),
-                      os.path.join(plist['logFolder'], data.log_filename))
+            os.rename(os.path.join(self.old_log_location, data.LOG_FILENAME),
+                      os.path.join(plist['logFolder'], data.LOG_FILENAME))
 
         self._close_settings()
 
@@ -502,8 +503,7 @@ class SettingsWindow():
 ##########                         GUI OBJECT                         ##########
 ################################################################################
 
-class GUI():
-
+class GUI:
     # Initialise class
     def __init__(self, errors):
 
@@ -523,13 +523,13 @@ class GUI():
 
         # Configure main window
         self.window.resizable(width=False, height=False)
-        self.window.title(data.title)
+        self.window.title(data.TITLE)
         self.window.config(background='lightGrey')
         self.window.tk.call(
             'wm',
             'iconphoto',
             self.window._w,
-            ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'logo.ico'))))
+            ImageTk.PhotoImage(Image.open(os.path.join(data.ICON_LOCATION, 'logo.ico'))))
 
         # Build window
         self._create_styles()
@@ -547,9 +547,12 @@ class GUI():
         if plist['auto_update_check']:
             self._check_for_updates(display=False)
 
+    def start(self):
+        self.window.mainloop()
+
     # Create styles for GUI
     def _create_styles(self):
-        if data.system == 'Mac':
+        if data.SYSTEM == 'Mac':
             self.font_size = 13
             self.header_size = 18
             self.left_indent = 12
@@ -565,7 +568,11 @@ class GUI():
 
         self.gui_style = ttk.Style()
         self.gui_style.theme_use('clam')
-        #self.gui_style.map('TCombobox', fieldbackground=[('readonly', 'white'), ('pressed', 'red')], foreground=[('readonly', 'black')])
+        # self.gui_style.map(
+        #     'TCombobox',
+        #     fieldbackground=[('readonly', 'white'),
+        #                      ('pressed', 'red')],
+        #                      foreground=[('readonly', 'black')])
         self.gui_style.configure('TLabelframe.Label', font=f'Arial {self.header_size}')
         self.gui_style.map('TCheckbutton', background=[('hover', self.base_background)])
 
@@ -595,8 +602,8 @@ class GUI():
 
         # Initialise graph window
         self.fig = matplotlib.figure.Figure(figsize=(3.2, 2.65), dpi=100, facecolor='white')
-        self.ax = self.fig.add_subplot(111)
-        self.ax.set_position([0.15, 0.1, 0.81, 0.81])
+        self.axis = self.fig.add_subplot(111)
+        self.axis.set_position([0.15, 0.1, 0.81, 0.81])
         self.canvas = FigureCanvasTkAgg(self.fig, self.preview_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -611,44 +618,44 @@ class GUI():
         # File Menu
         self.file_menu = tk.Menu(self.menu_bar, tearoff=False)
         self.file_menu.add_command(
-            label=f'Add Files...',
-            accelerator=f'{data.command_abbr}{data.modifier_abbr}A',
+            label='Add Files...',
+            accelerator=f'{data.COMMAND_ABBR}{data.MODIFIER_ABBR}A',
             command=self._add_files)
         self.file_menu.add_command(
             label='Add Directory...',
-            accelerator=f'{data.command_abbr}{data.alt_abbr}A',
+            accelerator=f'{data.COMMAND_ABBR}{data.ALT_ABBR}A',
             command=self._add_directory)
         self.file_menu.add_separator()
         self.file_menu.add_command(
             label='Set Date',
-            accelerator=f'{data.command_abbr}D',
+            accelerator=f'{data.COMMAND_ABBR}D',
             command=self._use_date)
         self.file_menu.add_command(
             label='Set Destination...',
-            accelerator=f'{data.command_abbr}{data.modifier_abbr}D',
+            accelerator=f'{data.COMMAND_ABBR}{data.MODIFIER_ABBR}D',
             command=self._custom_destination)
         self.file_menu.add_command(
             label='Create File',
-            accelerator=f'{data.command_abbr}Return',
+            accelerator=f'{data.COMMAND_ABBR}Return',
             command=self._create_file)
 
         # Edit Menu
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=False)
         self.edit_menu.add_command(
             label='Copy',
-            accelerator=f'{data.command_abbr}C',
+            accelerator=f'{data.COMMAND_ABBR}C',
             command=lambda: self.window.focus_get().event_generate("<<Copy>>"))
         self.edit_menu.add_command(
             label='Cut',
-            accelerator=f'{data.command_abbr}X',
+            accelerator=f'{data.COMMAND_ABBR}X',
             command=lambda: self.window.focus_get().event_generate("<<Cut>>"))
         self.edit_menu.add_command(
             label='Paste',
-            accelerator=f'{data.command_abbr}V',
+            accelerator=f'{data.COMMAND_ABBR}V',
             command=lambda: self.window.focus_get().event_generate("<<Paste>>"))
         self.edit_menu.add_command(
             label='Select All',
-            accelerator=f'{data.command_abbr}A',
+            accelerator=f'{data.COMMAND_ABBR}A',
             command=lambda: self.window.focus_get().event_generate("<<SelectAll>>"))
         self.edit_menu.add_separator()
         self.edit_menu.add_command(
@@ -657,14 +664,14 @@ class GUI():
             command=self._remove_file)
         self.edit_menu.add_command(
             label='Clear Files',
-            accelerator=f'{data.command_abbr}BackSpace',
+            accelerator=f'{data.COMMAND_ABBR}BackSpace',
             command=self._clear_files)
 
         # Help Menu
         self.help_menu = tk.Menu(self.menu_bar, tearoff=False, name='help')
 
         # Application Menu (OS X only)
-        if data.system == 'Mac':
+        if data.SYSTEM == 'Mac':
             self.app_menu = tk.Menu(self.menu_bar, tearoff=False, name='apple')
             self.app_menu.add_command(
                 label='About RF Library',
@@ -680,11 +687,11 @@ class GUI():
             self.window.createcommand('::tk::mac::ShowHelp', self._open_http)
 
         # Extra menus for Windows only
-        if data.system == 'Windows':
+        if data.SYSTEM == 'Windows':
             self.file_menu.add_separator()
             self.file_menu.add_command(
                 label='Exit',
-                accelerator=f'{data.command_abbr}Q',
+                accelerator=f'{data.COMMAND_ABBR}Q',
                 command=self._quit)
             self.tools_menu = tk.Menu(self.menu_bar, tearoff=False)
             self.tools_menu.add_command(
@@ -705,30 +712,30 @@ class GUI():
         self.menu_bar.add_cascade(label='Edit', menu=self.edit_menu)
 
         # Window Menu (OS X Only)
-        if data.system == 'Mac':
+        if data.SYSTEM == 'Mac':
             self.window_menu = tk.Menu(self.menu_bar, name='window')
             self.menu_bar.add_cascade(menu=self.window_menu, label='Window')
 
         # Tools Menu (Windows Only)
-        elif data.system == 'Windows':
+        elif data.SYSTEM == 'Windows':
             self.menu_bar.add_cascade(label='Tools', menu=self.tools_menu)
 
         self.menu_bar.add_cascade(label='Help', menu=self.help_menu)
         self.window.config(menu=self.menu_bar)
 
         # Bindings for Mac/Windows
-        self.window.bind_all(f'<{data.command}{data.modifier}a>', self._add_files)
+        self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}a>', self._add_files)
 
         # Bindings for Windows only
-        if data.system == 'Windows':
-            self.window.bind_all(f'<{data.command}{data.modifier}A>', self._add_files)
-            self.window.bind_all(f'<{data.command}{data.alt}a>', self._add_directory)
-            self.window.bind_all(f'<{data.command}{data.alt}A>', self._add_directory)
-            self.window.bind_all(f'<{data.command}{data.modifier}d>', self._custom_destination)
-            self.window.bind_all(f'<{data.command}{data.modifier}D>', self._custom_destination)
-            self.window.bind_all(f'<{data.command}q>', self._quit)
-            self.window.bind_all(f'<{data.command}Q>', self._quit)
-            self.window.bind_all(f'<{data.command}BackSpace>', self._clear_files)
+        if data.SYSTEM == 'Windows':
+            self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}A>', self._add_files)
+            self.window.bind_all(f'<{data.COMMAND}{data.ALT}a>', self._add_directory)
+            self.window.bind_all(f'<{data.COMMAND}{data.ALT}A>', self._add_directory)
+            self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}d>', self._custom_destination)
+            self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}D>', self._custom_destination)
+            self.window.bind_all(f'<{data.COMMAND}q>', self._quit)
+            self.window.bind_all(f'<{data.COMMAND}Q>', self._quit)
+            self.window.bind_all(f'<{data.COMMAND}BackSpace>', self._clear_files)
 
     # Create GUI widgets
     def _create_widgets(self):
@@ -749,26 +756,26 @@ class GUI():
         self.delete_source_files = tk.BooleanVar()
 
         # Set default values
-        fields = [
+        input_fields = [
             self.venue,
             self.town,
             self.country,
             self.copy_source_files,
             self.delete_source_files]
-        vars = [
+        input_defaults = [
             plist['defaultVenue'],
             plist['defaultTown'],
             plist['defaultCountry'],
             plist['defaultCopy'],
             plist['defaultDelete']]
-        for field, var in zip(fields, vars):
-            field.set(var)
+        for field, default in zip(input_fields, input_defaults):
+            field.set(default)
 
         # File List
         ttk.Label(self.input_frame, text='File List').grid(column=0, row=0, sticky='W')
         self.file_listbox = tk.Listbox(self.input_frame, height=8, width=20)
         self.file_listbox.bind('<<ListboxSelect>>', self._select_file_item)
-        self.file_listbox.grid(column=0, row=1, padx=data.padx_default, pady=data.pady_default)
+        self.file_listbox.grid(column=0, row=1, padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
 
         # Data List
         ttk.Label(
@@ -776,7 +783,7 @@ class GUI():
             text='Selected File Information'
         ).grid(column=1, row=0, sticky='W')
         self.data_listbox = tk.Listbox(self.input_frame, height=8, width=30)
-        self.data_listbox.grid(column=1, row=1, padx=data.padx_default, pady=data.pady_default)
+        self.data_listbox.grid(column=1, row=1, padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.data_listbox.configure(background='lightGrey')
 
         # File List Edit Buttons
@@ -784,20 +791,20 @@ class GUI():
         self.file_list_edit_frame.grid(column=0, row=2, columnspan=2, sticky='E')
 
         calendar_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.icon_location, 'calendar_disabled.png')))
+            Image.open(os.path.join(data.ICON_LOCATION, 'calendar_disabled.png')))
         self.use_date_button = ttk.Button(
             self.file_list_edit_frame,
             image=calendar_image,
             state='disabled',
             command=self._use_date)
-        self.use_date_button.grid(column=4, row=0, sticky='E', padx=data.padx_default, pady=0)
+        self.use_date_button.grid(column=4, row=0, sticky='E', padx=data.PAD_X_DEFAULT, pady=0)
         self.use_date_button.image = calendar_image
         CreateToolTip(
             self.use_date_button,
-            f'Use currently selected file\'s creation date for scan date ({data.command_symbol}D)')
+            f'Use currently selected file\'s creation date for scan date ({data.COMMAND_SYMBOL}D)')
 
         bin_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.icon_location, 'bin_disabled.png')))
+            Image.open(os.path.join(data.ICON_LOCATION, 'bin_disabled.png')))
         self.clear_files_button = ttk.Button(
             self.file_list_edit_frame,
             image=bin_image,
@@ -807,26 +814,26 @@ class GUI():
             column=3,
             row=0,
             sticky='E',
-            padx=data.padx_default,
+            padx=data.PAD_X_DEFAULT,
             pady=0)
         self.clear_files_button.image = bin_image
         CreateToolTip(
             self.clear_files_button,
-            f'Remove all files from file list ({data.command_symbol}\u232b)')
+            f'Remove all files from file list ({data.COMMAND_SYMBOL}\u232b)')
 
         minus_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.icon_location, 'minus_disabled.png')))
+            Image.open(os.path.join(data.ICON_LOCATION, 'minus_disabled.png')))
         self.remove_file_button = ttk.Button(
             self.file_list_edit_frame,
             image=minus_image,
             state='disabled',
             command=self._remove_file)
-        self.remove_file_button.grid(column=2, row=0, sticky='E', padx=data.padx_default, pady=0)
+        self.remove_file_button.grid(column=2, row=0, sticky='E', padx=data.PAD_X_DEFAULT, pady=0)
         self.remove_file_button.image = minus_image
         CreateToolTip(self.remove_file_button, 'Remove selected file from file list (\u232b)')
 
         folder_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.icon_location, 'folder.png')))
+            Image.open(os.path.join(data.ICON_LOCATION, 'folder.png')))
         self.add_directory_button = ttk.Button(
             self.file_list_edit_frame,
             image=folder_image,
@@ -835,14 +842,14 @@ class GUI():
             column=1,
             row=0,
             sticky='E',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         self.add_directory_button.image = folder_image
         CreateToolTip(
             self.add_directory_button,
-            f'Add directory to file list ({data.command_symbol}{data.alt_symbol}A)')
+            f'Add directory to file list ({data.COMMAND_SYMBOL}{data.ALT_SYMBOL}A)')
 
-        plus_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'plus.png')))
+        plus_image = ImageTk.PhotoImage(Image.open(os.path.join(data.ICON_LOCATION, 'plus.png')))
         self.add_files_button = ttk.Button(
             self.file_list_edit_frame,
             image=plus_image,
@@ -851,12 +858,12 @@ class GUI():
             column=0,
             row=0,
             sticky='E',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         self.add_files_button.image = plus_image
         CreateToolTip(
             self.add_files_button,
-            f'Add files to file list ({data.command_symbol}{data.modifier_symbol}A)')
+            f'Add files to file list ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}A)')
 
         # File Info status
         self.file_status = ttk.Label(self.input_frame, textvariable=self.num_files)
@@ -864,15 +871,15 @@ class GUI():
             column=0,
             row=2,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
 
         # Source Venue Data
         ttk.Label(
             self.info_frame,
             text='Venue',
             width=self.left_indent
-        ).grid(column=0, row=0, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=0, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.venue_entry = ttk.Entry(
             self.info_frame,
             textvariable=self.venue,
@@ -886,7 +893,7 @@ class GUI():
             self.info_frame,
             text='Town',
             width=self.left_indent
-        ).grid(column=0, row=1, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=1, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.town_entry = ttk.Entry(
             self.info_frame,
             textvariable=self.town,
@@ -900,19 +907,19 @@ class GUI():
             self.info_frame,
             text='Country',
             width=self.left_indent
-        ).grid(column=0, row=2, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=2, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.country_box = ttk.Combobox(
             self.info_frame,
             textvariable=self.country,
             width=20,
             font=f'TkDefaultFont {self.font_size}')
-        self.country_box['values'] = data.countries
+        self.country_box['values'] = data.COUNTRIES
         self.country_box.grid(
             column=1,
             row=2,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         self.country_box.bind('<<ComboboxSelected>>', self._refresh)
         CreateToolTip(self.country_box, 'Scan location country')
 
@@ -921,7 +928,7 @@ class GUI():
             self.info_frame,
             text='Scan Date',
             width=self.left_indent
-        ).grid(column=0, row=3, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=3, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.date_entry = ttk.Entry(
             self.info_frame,
             textvariable=self.scan_date,
@@ -936,7 +943,7 @@ class GUI():
             self.info_frame,
             text='Inside/Outside',
             width=self.left_indent
-        ).grid(column=0, row=4, sticky='NW', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=4, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.io_box = ttk.Combobox(
             self.info_frame,
             textvariable=self.in_out,
@@ -950,13 +957,13 @@ class GUI():
         CreateToolTip(self.io_box, 'Was the scan taken inside or outside?')
 
         # Output Location
-        reset_image = ImageTk.PhotoImage(Image.open(os.path.join(data.icon_location, 'reset.png')))
+        reset_image = ImageTk.PhotoImage(Image.open(os.path.join(data.ICON_LOCATION, 'reset.png')))
         self.target_subdirectory.set(self.in_out.get())
         ttk.Label(
             self.output_frame,
             text='Destination',
             width=self.left_indent
-        ).grid(column=0, row=0, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.default_output_location.set(1)
         self.default_output_check = ttk.Button(
             self.output_frame,
@@ -975,9 +982,9 @@ class GUI():
         # Subdirectory
         ttk.Label(
             self.output_frame,
-            text='Subdirectory', 
+            text='Subdirectory',
             width=self.left_indent
-        ).grid(column=0, row=1, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=1, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.target_subdirectory_entry = ttk.Entry(
             self.output_frame,
             textvariable=self.target_subdirectory,
@@ -989,7 +996,7 @@ class GUI():
             row=1,
             sticky='W',
             padx=0,
-            pady=data.pady_default)
+            pady=data.PAD_Y_DEFAULT)
         self.target_subdirectory_entry.bind('<KeyRelease>', self._custom_subdirectory)
         CreateToolTip(self.target_subdirectory_entry, 'Optional subdirectory')
 
@@ -998,7 +1005,7 @@ class GUI():
             self.output_frame,
             text='Master Filename',
             width=self.left_indent
-        ).grid(column=0, row=2, sticky='W', padx=data.padx_default, pady=data.pady_default)
+        ).grid(column=0, row=2, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         self.default_master_filename.set(1)
         self.default_master_filename_reset = ttk.Button(
             self.output_frame,
@@ -1015,21 +1022,43 @@ class GUI():
             column=2,
             row=2,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         self.scan_master_filename_entry.config(width=60)
         self.scan_master_filename_entry.bind('<KeyRelease>', self._custom_master_filename)
         CreateToolTip(self.scan_master_filename_entry, 'Master output filename')
 
         # Options
-        self.copy_source_files_check = ttk.Checkbutton(self.output_frame, variable=self.copy_source_files)
-        self.copy_source_files_check.grid(column=1, row=3, sticky='E', padx=data.padx_default, pady=data.pady_default)
-        ttk.Label(self.output_frame, text='Duplicate Source Files').grid(column=2, row=3, sticky='W')
+        self.copy_source_files_check = ttk.Checkbutton(
+            self.output_frame,
+            variable=self.copy_source_files)
+        self.copy_source_files_check.grid(
+            column=1,
+            row=3,
+            sticky='E',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        ttk.Label(
+            self.output_frame,
+            text='Duplicate Source Files'
+        ).grid(column=2, row=3, sticky='W')
         CreateToolTip(self.copy_source_files_check, 'Duplicate source files in library')
-        self.delete_source_files_check = ttk.Checkbutton(self.output_frame, variable=self.delete_source_files)
-        self.delete_source_files_check.grid(column=1, row=4, sticky='E', padx=data.padx_default, pady=data.pady_default)
-        ttk.Label(self.output_frame, text='Delete Source Files').grid(column=2, row=4, sticky='W')
-        CreateToolTip(self.delete_source_files_check, 'Delete source files on file creation')
+        self.delete_source_files_check = ttk.Checkbutton(
+            self.output_frame,
+            variable=self.delete_source_files)
+        self.delete_source_files_check.grid(
+            column=1,
+            row=4,
+            sticky='E',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        ttk.Label(
+            self.output_frame,
+            text='Delete Source Files'
+        ).grid(column=2, row=4, sticky='W')
+        CreateToolTip(
+            self.delete_source_files_check,
+            'Delete source files on file creation')
 
         # Output Buttons
         self.output_buttons = ttk.Frame(self.output_frame)
@@ -1042,11 +1071,11 @@ class GUI():
             column=0,
             row=0,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(
             self.create_file_button,
-            f'Create master file ({data.command_symbol}\u23ce)')
+            f'Create master file ({data.COMMAND_SYMBOL}\u23ce)')
         self.custom_output_button = ttk.Button(
             self.output_buttons,
             text='Set Destination',
@@ -1055,24 +1084,24 @@ class GUI():
             column=1,
             row=0,
             sticky='W',
-            padx=data.padx_default,
-            pady=data.pady_default)
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
         CreateToolTip(
             self.custom_output_button,
-            f'Set custom destination for output files ({data.command_symbol}{data.modifier_symbol}D)')
+            f'Set custom destination for output files ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}D)')
 
         # Add styling to all entry boxes
-        for x in [
+        for entry_box in [
             self.venue_entry,
             self.town_entry,
             self.country_box,
             self.date_entry,
             self.io_box]:
-            x.grid(sticky='NW', padx=data.padx_default, pady=data.pady_default)
-            x.bind('<KeyRelease>', self._get_master_filename)
+            entry_box.grid(sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+            entry_box.bind('<KeyRelease>', self._get_master_filename)
 
         # Key Bindings
-        self.window.bind_all(f'<{data.command}Return>', self._create_file)
+        self.window.bind_all(f'<{data.COMMAND}Return>', self._create_file)
         self.file_listbox.bind('<Escape>', self._deselect_file_listbox)
         self.file_listbox.bind('<BackSpace>', self._remove_file)
 
@@ -1094,19 +1123,19 @@ class GUI():
         self._get_master_filename()
 
     # Method to select file_listbox item
-    """def _select_file_item(self, event=None):
-        if event:
-            try:
-                self.file_listbox_selection = int(event.widget.curselection()[0])
-            except (AttributeError, IndexError):
-                pass
-        #self.file_listbox.selection_clear(0, tk.END)
-        #if self.file_listbox_selection != None:
-        #    self.file_listbox.select_set(self.file_listbox_selection)
-        #    self.file_listbox.activate(self.file_listbox_selection)
-        #if self.file_listbox_selection:
-        #    self.file_listbox.see(self.file_listbox_selection)
-        self._print_file_data()"""
+    # def _select_file_item(self, event=None):
+    #     if event:
+    #         try:
+    #             self.file_listbox_selection = int(event.widget.curselection()[0])
+    #         except (AttributeError, IndexError):
+    #             pass
+    #     #self.file_listbox.selection_clear(0, tk.END)
+    #     #if self.file_listbox_selection != None:
+    #     #    self.file_listbox.select_set(self.file_listbox_selection)
+    #     #    self.file_listbox.activate(self.file_listbox_selection)
+    #     #if self.file_listbox_selection:
+    #     #    self.file_listbox.see(self.file_listbox_selection)
+    #     self._print_file_data()
 
     def _select_file_item(self, event=None):
         if event:
@@ -1123,38 +1152,17 @@ class GUI():
             self.data_listbox.insert(tk.END, 'No file selected')
             self._clear_preview()
         else:
-            self.data_listbox.insert(
-                tk.END,
-                f'Filename: {self.files[self.file_listbox_selection].filename}')
-            self.data_listbox.insert(
-                tk.END,
-                f'Date: {self.files[self.file_listbox_selection].creationDate.strftime(dateFormat)}')
-            self.data_listbox.insert(
-                tk.END,
-                f'Scanner: {self.files[self.file_listbox_selection].model}')
-            if self.files[self.file_listbox_selection].start_tv_channel is None:
-                start_tv = ''
-            else:
-                start_tv = f' (TV{self.files[self.file_listbox_selection].start_tv_channel})'
-            self.data_listbox.insert(
-                tk.END,
-                f'Start Frequency: {self.files[self.file_listbox_selection].startFrequency:.3f}MHz{start_tv}')
-            if self.files[self.file_listbox_selection].stop_tv_channel is None:
-                stop_tv = ''
-            else:
-                stop_tv = f' (TV{self.files[self.file_listbox_selection].stop_tv_channel})'
-            self.data_listbox.insert(
-                tk.END,
-                f'Stop Frequency: {self.files[self.file_listbox_selection].stopFrequency:.3f}MHz{stop_tv}')
-            self.data_listbox.insert(
-                tk.END,
-                f'Data Points: {self.files[self.file_listbox_selection].dataPoints}')
-            self.data_listbox.insert(
-                tk.END,
-                f'Mean Resolution: {self.files[self.file_listbox_selection].resolution:.3f}MHz')
-            self.data_listbox.insert(
-                tk.END,
-                f'New Filename: {self.files[self.file_listbox_selection].new_filename}')
+            selected_file = self.files[self.file_listbox_selection]
+            self.data_listbox.insert(tk.END, f'Filename: {selected_file.filename}')
+            self.data_listbox.insert(tk.END, f'Date: {selected_file.creation_date.strftime(dateFormat)}')
+            self.data_listbox.insert(tk.END, f'Scanner: {selected_file.model}')
+            start_tv = '' if selected_file.start_tv_channel is None else f' (TV{selected_file.start_tv_channel})'
+            self.data_listbox.insert(tk.END, f'Start Frequency: {selected_file.start_frequency_format()}{start_tv}')
+            stop_tv = '' if selected_file.stop_tv_channel is None else f' (TV{selected_file.stop_tv_channel})'
+            self.data_listbox.insert(tk.END, f'Stop Frequency: {selected_file.stop_frequency_format()}{stop_tv}')
+            self.data_listbox.insert(tk.END, f'Data Points: {selected_file.data_points}')
+            self.data_listbox.insert(tk.END, f'Mean Resolution: {selected_file.resolution_format()}')
+            self.data_listbox.insert(tk.END, f'New Filename: {selected_file.new_filename}')
             self._update_preview()
         self._button_disable()
 
@@ -1181,11 +1189,11 @@ class GUI():
         if len(self.files) == 0:
             self.scan_datetimestamp = datetime.date.today()
         else:
-            self.scan_datetimestamp = min([file.creationDate for file in self.files])
+            self.scan_datetimestamp = min([file.creation_date for file in self.files])
         self.scan_date.set(self.scan_datetimestamp.strftime(dateFormat))
 
     # Method to convert user input directory structure into path
-    def parse_structure(self, s):
+    def parse_structure(self, string):
         for old, new in [
             ('%c', self.country.get()),
             ('%t', self.town.get()),
@@ -1198,8 +1206,8 @@ class GUI():
             ('%m', f'{self.scan_datetimestamp.month:02d}'),
             ('%M', self.scan_datetimestamp.strftime('%B')),
             ('%d', f'{self.scan_datetimestamp.day:02d}')]:
-            s = s.replace(old, new)
-        return s
+            string = string.replace(old, new)
+        return string
 
     # Method to create master filename
     def _get_master_filename(self):
@@ -1223,11 +1231,11 @@ class GUI():
     # Method to disable/enable buttons/menu items based on selected files
     def _button_status(self, input_status=None, output_status=None):
         if input_status is not None:
-            for x in [(self.remove_file_button, 'minus'), (self.use_date_button, 'calendar')]:
+            for btn in [(self.remove_file_button, 'minus'), (self.use_date_button, 'calendar')]:
                 img = ImageTk.PhotoImage(Image.open(
-                    os.path.join(data.icon_location, f'{x[1]}_{input_status}.png')))
-                x[0].config(state=input_status, image=img)
-                x[0].image = img
+                    os.path.join(data.ICON_LOCATION, f'{btn[1]}_{input_status}.png')))
+                btn[0].config(state=input_status, image=img)
+                btn[0].image = img
             if input_status == 'enabled':
                 input_status = 'normal'
             for (menu, item) in [(self.edit_menu, 'Remove File'), (self.file_menu, 'Set Date')]:
@@ -1235,17 +1243,17 @@ class GUI():
 
         if output_status is not None:
             img = ImageTk.PhotoImage(Image.open(
-                os.path.join(data.icon_location, f'bin_{output_status}.png')))
+                os.path.join(data.ICON_LOCATION, f'bin_{output_status}.png')))
             self.clear_files_button.config(state=output_status, image=img)
             self.clear_files_button.image = img
             if output_status == 'enabled':
-                self.window.bind_all(f'<{data.command}d>', self._use_date)
-                self.window.bind_all(f'<{data.command}D>', self._use_date)
+                self.window.bind_all(f'<{data.COMMAND}d>', self._use_date)
+                self.window.bind_all(f'<{data.COMMAND}D>', self._use_date)
                 self.edit_menu.entryconfig('Clear Files', state='normal')
                 self.file_menu.entryconfig('Create File', state='normal')
             else:
-                self.window.unbind_all(f'<{data.command}d>')
-                self.window.unbind_all(f'<{data.command}D>')
+                self.window.unbind_all(f'<{data.COMMAND}d>')
+                self.window.unbind_all(f'<{data.COMMAND}D>')
                 self.edit_menu.entryconfig('Clear Files', state='disabled')
                 self.file_menu.entryconfig('Create File', state='disabled')
 
@@ -1331,7 +1339,7 @@ class GUI():
         for file in selected_files:
             new_file = File(file, self.country.get())
             if new_file.valid:
-                self.io_guess += new_file.io
+                self.io_guess += new_file.in_out
                 self.files.append(new_file)
                 plist['defaultSourceLocation'] = os.path.dirname(file)
             elif not suppress_errors:
@@ -1354,7 +1362,7 @@ class GUI():
                 if not file.startswith('.') and not os.path.isdir(fullfilename):
                     dir_files.append(fullfilename)
         if len(dir_files) != 0:
-            self._add_files(None, dir_files, True)
+            self._add_files(dir_files, True)
 
     # Method to remove file
     def _remove_file(self, event=None):
@@ -1387,7 +1395,7 @@ class GUI():
 
     # Method to use date from selected file
     def _use_date(self):
-        self.scan_datetimestamp = self.files[self.file_listbox_selection].creationDate
+        self.scan_datetimestamp = self.files[self.file_listbox_selection].creation_date
         self.scan_date.set(self.scan_datetimestamp.strftime(dateFormat))
         self._get_master_filename()
 
@@ -1398,12 +1406,10 @@ class GUI():
             return
 
         # Check if user really wants to delete source files
-        if self.delete_source_files.get() == 1 and tkmessagebox.askyesno(
+        del_source_confirmed = bool(
+            self.delete_source_files.get() == 1 and tkmessagebox.askyesno(
             'Are you sure?',
-            'Are you sure you want to delete the input files?'):
-            del_source_confirmed = True
-        else:
-            del_source_confirmed = False
+            'Are you sure you want to delete the input files?'))
 
         # Add all files into output_file list if within limits
         output_file = []
@@ -1448,7 +1454,7 @@ class GUI():
                 statement += f'{written_filename}\n'
 
             # Write WSM file
-            if (data.makeWSM and len(output_file) > 0):
+            if (data.MAKE_WSM and len(output_file) > 0):
                 written_filename = self._write_wsm_file(
                     self.scan_output_location,
                     self.scan_master_filename.get(),
@@ -1472,7 +1478,7 @@ class GUI():
             plist['defaultDelete'] = self.delete_source_files.get()
 
             try:
-                with open(data.plist_name, 'wb') as file:
+                with open(data.PLIST_NAME, 'wb') as file:
                     plistlib.dump(plist, file)
             except PermissionError:
                 gui._display_error(1)
@@ -1488,24 +1494,21 @@ class GUI():
                 for file in self.files:
                     os.remove(file.fullfilename)
                     statement += f'{file.filename}\n'
-                self._clear_files(None, False)
+                self._clear_files(False)
                 tkmessagebox.showinfo('Success!', statement)
             else:
                 if tkmessagebox.askyesno(
                     'Success!',
                     f'{statement}\nWould you like to clear the file list?'):
-                    self._clear_files(None, False)
+                    self._clear_files(False)
 
     # Method to write to log file
     def _write_to_log(self):
-        log_file = os.path.join(plist['logFolder'], data.log_filename)
+        log_file = os.path.join(plist['logFolder'], data.LOG_FILENAME)
 
-        if not os.path.exists(log_file):
-            new_file = True
-        else:
-            new_file = False
+        new_file = bool(not os.path.exists(log_file))
 
-        with open(log_file, 'a', newline='') as csvfile:
+        with open(log_file, 'a', newline='', encoding='UTF-8') as csvfile:
             log_writer = csv.writer(
                 csvfile,
                 delimiter=',',
@@ -1537,12 +1540,12 @@ class GUI():
         filename = self._find_unused_file(directory, filename)
         target = os.path.join(directory, filename)
         try:
-            with open(target, 'w') as file:
+            with open(target, 'w', encoding='UTF-8') as file:
                 for freq, value in array:
                     file.write(f'{freq:09.4f},{value:09.4f}\n')
             return filename
         except IOError:
-            tkmessagebox.showwarning(f'Fail!', '{target} could not be written.')
+            tkmessagebox.showwarning('Fail!', f'{target} could not be written.')
             return False
 
     # Method to write WSM file to disk
@@ -1553,9 +1556,14 @@ class GUI():
         filename = self._find_unused_file(directory, filename)
         target = os.path.join(directory, filename)
         try:
-            with open(target, 'w') as file:
+            with open(target, 'w', encoding='UTF-8') as file:
                 wsm_date = self.scan_datetimestamp.strftime('%Y-%m-%d 00:00:00')
-                file.write(f'Receiver;{data.title}\nDate/Time;{wsm_date}\nRFUnit;dBm\n\n\nFrequency Range [kHz];{(plist["low_freq_limit"] * 1000):06d};{plist["high_freq_limit"] * 1000:06d};\n')
+                file.write(
+                    f'Receiver;{data.TITLE}\n' +
+                    f'Date/Time;{wsm_date}\n' +
+                    'RFUnit;dBm\n\n\nFrequency Range [kHz];' +
+                    f'{(plist["low_freq_limit"] * 1000):06d};' +
+                    f'{plist["high_freq_limit"] * 1000:06d};\n')
                 file.write('Frequency;RF level (%);RF level\n')
                 for freq, value in reversed(array):
                     file.write(f'{int(freq * 1000):06d};;{value:04.1f}\n')
@@ -1578,16 +1586,16 @@ class GUI():
     def _clear_preview(self):
 
         # Clear Graph
-        self.ax.clear()
+        self.axis.clear()
 
         # Set Style
-        self.ax.set_facecolor('lightGrey')
-        self.ax.grid(linestyle='None')
-        self.ax.set_axisbelow(True)
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
-        self.ax.set_xlabel('Frequency /MHz')
-        self.ax.set_ylabel('Level /dBm')
+        self.axis.set_facecolor('lightGrey')
+        self.axis.grid(linestyle='None')
+        self.axis.set_axisbelow(True)
+        self.axis.set_xticks([])
+        self.axis.set_yticks([])
+        self.axis.set_xlabel('Frequency /MHz')
+        self.axis.set_ylabel('Level /dBm')
 
         # Set Font
         matplotlib.rcParams.update({'font.size': 9 })
@@ -1600,22 +1608,22 @@ class GUI():
 
         # Get x,y values
         mean = 0
-        for x in self.files[self.file_listbox_selection].frequencies:
+        for point in self.files[self.file_listbox_selection].frequencies:
             try:
                 previous
             except:
-                previous = [x[0], x[1]]
+                previous = [point[0], point[1]]
                 x_values = []
                 y_values = []
-            mean += x[1]
-            if previous[0] + (self.files[self.file_listbox_selection].resolution * 2) < x[0]:
+            mean += point[1]
+            if previous[0] + (self.files[self.file_listbox_selection].resolution * 2) < point[0]:
                 x_values.append(previous[0] + self.files[self.file_listbox_selection].resolution)
                 y_values.append(-200)
-                x_values.append(x[0] - self.files[self.file_listbox_selection].resolution)
+                x_values.append(point[0] - self.files[self.file_listbox_selection].resolution)
                 y_values.append(-200)
-            x_values.append(x[0])
-            y_values.append(x[1])
-            previous = x
+            x_values.append(point[0])
+            y_values.append(point[1])
+            previous = point
 
         # Calculate mean value for potential scaling
         mean /= len(self.files[self.file_listbox_selection].frequencies)
@@ -1630,31 +1638,31 @@ class GUI():
 
         # Get x tick values
         min_pixel_distance = 25
-        axeswidth = self.ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted()).width * self.fig.dpi
+        axeswidth = self.axis.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted()).width * self.fig.dpi
         min_tick_distance = ((xmax - xmin) * min_pixel_distance) / axeswidth
         x_ticks = []
         prev = 0
         tv_country = self.country.get() if self.country.get() == 'United States of America' else 'UK'
-        for channel in data.TVChannels[tv_country]:
+        for channel in data.TV_CHANNELS[tv_country]:
             if channel[1] - prev >= min_tick_distance and self.files[self.file_listbox_selection].frequencies[0][0] <= channel[1] and self.files[self.file_listbox_selection].frequencies[-1][0] >= channel[1]:
                 x_ticks.append(channel[1])
                 prev = channel[1]
 
         # Clear previous graph
-        self.ax.clear()
+        self.axis.clear()
 
         # Set Style
-        self.ax.get_yaxis().set_visible(True)
-        self.ax.get_xaxis().set_visible(True)
-        self.ax.grid(linestyle='-', color='grey')
-        self.ax.fill_between(x_values, int(ymin) - 1, y_values, facecolor='lightGreen')
+        self.axis.get_yaxis().set_visible(True)
+        self.axis.get_xaxis().set_visible(True)
+        self.axis.grid(linestyle='-', color='grey')
+        self.axis.fill_between(x_values, int(ymin) - 1, y_values, facecolor='lightGreen')
 
         # Set axis/ticks
-        self.ax.axis([xmin, xmax, ymin, ymax])
-        self.ax.set_xticks(x_ticks, minor=False)
+        self.axis.axis([xmin, xmax, ymin, ymax])
+        self.axis.set_xticks(x_ticks, minor=False)
 
         # Draw Graph
-        self.ax.plot(x_values, y_values, color='green')
+        self.axis.plot(x_values, y_values, color='green')
         self.canvas.draw()
 
     # Method to quit application
@@ -1671,11 +1679,11 @@ class GUI():
     def _about(self):
         tkmessagebox.showinfo(
             'About',
-            f'{data.title} v{data.version}\n\n{chr(169)} Stephen Bunting 2019\n{data.website_uri}')
+            f'{data.TITLE} v{data.VERSION}\n\n{chr(169)} Stephen Bunting 2019\n{data.WEBSITE_URI}')
 
     # Method to open docs in web browser
     def _open_http(self):
-        webbrowser.open(f'{data.website_uri}documentation.php', new=2, autoraise=True)
+        webbrowser.open(f'{data.WEBSITE_URI}documentation.php', new=2, autoraise=True)
 
     # Method to display settings box
     def _settings(self):
@@ -1686,28 +1694,28 @@ class GUI():
         else:
             self.settings_window_open = True
             self.settings = SettingsWindow()
-            self.settings.settings_window.mainloop()
+            self.settings.start()
             self.settings_window_open = False
             self._refresh()
 
     # Check for latest version of software
     def _check_for_updates(self, **kwargs):
-        if 'display' in kwargs.keys():
+        if kwargs.get('display') is not None:
             display = kwargs['display']
         else:
             display = True
 
         try:
-            r = requests.get(data.update_file_location)
+            req = requests.get(data.UPDATE_FILE_LOCATION, timeout=3)
             update_connection = True
         except requests.exceptions.ConnectionError:
             update_connection = False
 
         if update_connection:
-            root = xml.etree.ElementTree.fromstring(r.text)
+            root = xml.etree.ElementTree.fromstring(req.text)
             latest = root[0][0].text
             download_uri = root[0][2].text
-            if latest == data.version:
+            if latest == data.VERSION:
                 if display:
                     tkmessagebox.showinfo(
                         "Check for Updates",
@@ -1724,11 +1732,11 @@ class GUI():
     # Method to show an error message
     def _display_error(self, code):
         if code == 1:
-            message = f'Could not read from preferences file {data.plist_name}'
+            message = f'Could not read from preferences file {data.PLIST_NAME}'
         elif code == 2:
-            message = f'Could not create preferences path {data.plistPath}'
+            message = f'Could not create preferences path {data.PLIST_PATH}'
         elif code == 3:
-            message = f'Could not write preferences file {data.plist_name}'
+            message = f'Could not write preferences file {data.PLIST_NAME}'
         elif code == 4:
             message = "Could not connect to update server."
         else:
@@ -1740,5 +1748,5 @@ class GUI():
 ################################################################################
 
 if __name__ == '__main__':
-    gui = GUI(errors=errors)
-    gui.window.mainloop()
+    gui = GUI(errors=errors_to_display)
+    gui.start()
