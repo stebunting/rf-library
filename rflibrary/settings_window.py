@@ -1,0 +1,373 @@
+import os
+import plistlib
+import tkinter as tk
+from tkinter import ttk
+import tkinter.filedialog as tkfiledialog
+import data
+from tooltip import CreateToolTip
+from output import date_formats
+import log
+from helpers import dir_format
+import settings
+
+class SettingsWindow:
+    def __init__(self):
+        # Variables
+        self._move_old_log = False
+        self._log_folder = ''
+        self._old_log_location = ''
+        self._default_library_location = ''
+
+        self._settings_window = tk.Toplevel(takefocus=True)
+
+        self._settings_window.title('Settings')
+        self._settings_window.resizable(width=False, height=False)
+
+        self._create_settings_frames()
+        self._create_settings_widgets()
+
+    def start(self):
+        self._settings_window.mainloop()
+
+    # Method to bring settings window to front
+    def bringtofront(self):
+        self._settings_window.lift()
+
+    # Create settings frames
+    def _create_settings_frames(self):
+        self._settings_master_frame = ttk.Frame(self._settings_window)
+        self._settings_master_frame.grid(padx=0, pady=0, sticky='NWSE')
+
+        self._output_preferences = ttk.LabelFrame(
+            self._settings_master_frame, text='Output Preferences')
+        self._output_preferences.grid(padx=16, pady=16, sticky='NWSE')
+
+        self._logging_preferences = ttk.LabelFrame(
+            self._settings_master_frame, text='Logging')
+        self._logging_preferences.grid(padx=16, pady=16, sticky='NWSE')
+
+        self._personal_data = ttk.LabelFrame(
+            self._settings_master_frame, text='Personal Data')
+        self._personal_data.grid(padx=16, pady=16, sticky='NWSE')
+
+        self._app_data = ttk.LabelFrame(
+            self._settings_master_frame, text='Application Data')
+        self._app_data.grid(padx=16, pady=16, sticky='NWSE')
+
+        self._settings_buttons_frame = ttk.Frame(self._settings_master_frame)
+        self._settings_buttons_frame.grid(
+            padx=16, pady=16, columnspan=2, sticky='NWSE')
+
+    # Create settings widgets
+    def _create_settings_widgets(self):
+        # Initialise Tk variables
+        self._scans_folder_display = tk.StringVar(value=dir_format(settings.plist['default_library_location'], 50))
+        self._dir_structure = tk.StringVar(value=settings.plist['dir_structure'])
+        self._file_structure = tk.StringVar(value=settings.plist['file_structure'])
+        self._low_freq_limit = tk.StringVar(value=settings.plist['low_freq_limit'])
+        self._high_freq_limit = tk.StringVar(value=settings.plist['high_freq_limit'])
+        self._default_date_format = tk.StringVar(value=settings.plist['default_date_format'])
+        self._create_log = tk.BooleanVar(value=settings.plist['create_log'])
+        self._log_folder_display = tk.StringVar(value=dir_format(settings.plist['logFolder'], 50))
+        self._forename = tk.StringVar(value=settings.plist['forename'])
+        self._surname = tk.StringVar(value=settings.plist['surname'])
+        self._auto_update_check = tk.BooleanVar(value=settings.plist['auto_update_check'])
+
+        # Set Variables
+        self._default_library_location = settings.plist['default_library_location']
+        self._log_folder = settings.plist['logFolder']
+
+        # Scans Folder
+        ttk.Label(
+            self._output_preferences,
+            text='Scans Folder',
+            width='16'
+        ).grid(column=0, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        scans_folder_label = ttk.Label(
+            self._output_preferences,
+            textvariable=self._scans_folder_display,
+            width='36')
+        scans_folder_label.grid(
+            column=1,
+            row=0,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(scans_folder_label, 'Scan library base folder')
+        change_base_folder_button = ttk.Button(
+            self._output_preferences,
+            text='Change Folder',
+            command=self._change_base_folder)
+        change_base_folder_button.grid(column=1, row=1)
+
+        # Directory Structure
+        ttk.Label(
+            self._output_preferences,
+            text='Directory Structure',
+            width='16'
+        ).grid(column=0, row=2, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        self._dir_structure_entry = ttk.Entry(
+            self._output_preferences,
+            textvariable=self._dir_structure,
+            width='35')
+        self._dir_structure_entry.grid(
+            column=1,
+            row=2,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(
+            self._dir_structure_entry,
+            'Default library directory structure (see docs for more details')
+
+        # Filename Structure
+        ttk.Label(
+            self._output_preferences,
+            text='Filename Structure',
+            width='16'
+        ).grid(column=0, row=3, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        self._file_structure_entry = ttk.Entry(
+            self._output_preferences,
+            textvariable=self._file_structure,
+            width='35')
+        self._file_structure_entry.grid(
+            column=1,
+            row=3,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(
+            self._file_structure_entry,
+            'Default library filename structure (see docs for more details')
+
+        # Date Format
+        ttk.Label(
+            self._output_preferences,
+            text='Date Format',
+            width='16'
+        ).grid(column=0, row=4, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        self.date_format_box = ttk.Combobox(
+            self._output_preferences,
+            textvariable=self._default_date_format)
+        self.date_format_box['values'] = list(date_formats)
+        self.date_format_box.grid(
+            column=1,
+            row=4,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(self.date_format_box, 'Preferred date format')
+
+        # Low Frequency Limit
+        ttk.Label(
+            self._output_preferences,
+            text='Low Frequency Limit',
+            width='16'
+        ).grid(column=0, row=5, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        low_freq_limit_entry = ttk.Entry(
+            self._output_preferences,
+            textvariable=self._low_freq_limit)
+        low_freq_limit_entry.grid(column=1, row=5)
+        CreateToolTip(
+            low_freq_limit_entry,
+            'Low frequency limit for the output file (set to 0 for no limit)')
+
+        # High Frequency Limit
+        ttk.Label(
+            self._output_preferences,
+            text='High Frequency Limit',
+            width='16'
+        ).grid(column=0, row=6, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        high_freq_limit_entry = ttk.Entry(
+            self._output_preferences,
+            textvariable=self._high_freq_limit)
+        high_freq_limit_entry.grid(column=1, row=6)
+        CreateToolTip(
+            high_freq_limit_entry,
+            'High frequency limit for the output file (set to 0 for no limit)')
+
+        # Create Log
+        ttk.Label(
+            self._logging_preferences,
+            text='Write To Log File',
+            width='16'
+        ).grid(column=0, row=0, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        self._create_log_check = ttk.Checkbutton(
+            self._logging_preferences,
+            variable=self._create_log)
+        self._create_log_check.grid(
+            column=1,
+            row=0,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(self._create_log_check, 'Turn log file writing on/off')
+
+        # Log Location
+        ttk.Label(
+            self._logging_preferences,
+            text='Log Location',
+            width='16'
+        ).grid(column=0, row=1, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        self.log_location_entry = ttk.Label(
+            self._logging_preferences,
+            textvariable=self._log_folder_display,
+            width='36')
+        self.log_location_entry.grid(
+            column=1,
+            row=1,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(self.log_location_entry, 'Log file location')
+        self.change_log_location = ttk.Button(
+            self._logging_preferences,
+            text='Change Folder',
+            command=self._change_log_folder)
+        self.change_log_location.grid(
+            column=1,
+            row=2,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+
+        # Forename Entry
+        ttk.Label(
+            self._personal_data,
+            text='Forename',
+            width='16'
+        ).grid(column=0, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        forename_entry = ttk.Entry(self._personal_data, textvariable=self._forename)
+        forename_entry.grid(column=1, row=0)
+        CreateToolTip(forename_entry, 'Your forename')
+
+        # Surname Entry
+        ttk.Label(
+            self._personal_data,
+            text='Surname',
+            width='16'
+        ).grid(column=0, row=1, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        surname_entry = ttk.Entry(self._personal_data, textvariable=self._surname)
+        surname_entry.grid(column=1, row=1)
+        CreateToolTip(surname_entry, 'Your surname')
+
+        # Check for Updates
+        ttk.Label(
+            self._app_data,
+            text='Auto Update Check',
+            width='16'
+        ).grid(column=0, row=0, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        self.check_for_updates_check = ttk.Checkbutton(
+            self._app_data,
+            variable=self._auto_update_check)
+        self.check_for_updates_check.grid(
+            column=1,
+            row=0,
+            sticky='W',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(self.check_for_updates_check, 'Automatically check for updates on startup')
+
+        # Buttons
+        save_settings_button = ttk.Button(
+            self._settings_buttons_frame,
+            text='Save',
+            command=self._save_settings)
+        save_settings_button.grid(column=0, row=0)
+        CreateToolTip(save_settings_button, 'Save changes')
+        cancel_settings_button = ttk.Button(
+            self._settings_buttons_frame,
+            text='Cancel',
+            command=self._close_settings)
+        cancel_settings_button.grid(column=1, row=0)
+        CreateToolTip(cancel_settings_button, 'Discard changes')
+
+        # Bindings
+        self._settings_window.bind_all('<Return>', self._save_settings)
+        self._settings_window.bind_all('<Escape>', self._close_settings)
+
+        # Add padding to all entry boxes
+        for widget in [
+            change_base_folder_button,
+            forename_entry,
+            surname_entry,
+            low_freq_limit_entry,
+            high_freq_limit_entry,
+            save_settings_button,
+            cancel_settings_button]:
+            widget.grid(sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+
+    # Method to select scans base folder
+    def _change_base_folder(self):
+        directory = tkfiledialog.askdirectory(
+            parent=self._settings_master_frame,
+            title='Select Scan Folder',
+            initialdir=settings.plist['default_library_location'])
+        if directory != '':
+            self._default_library_location = directory
+            self._scans_folder_display.set(dir_format(self._default_library_location, 50))
+
+    # Method to select default log folder
+    def _change_log_folder(self):
+        if os.path.exists(os.path.join(settings.plist['logFolder'], log.FILENAME)):
+            self._move_old_log = True
+            self._old_log_location = settings.plist['logFolder']
+
+        directory = tkfiledialog.askdirectory(
+            parent=self._settings_master_frame,
+            title='Select Source Folder',
+            initialdir=settings.plist['logFolder'])
+        if directory != '':
+            self._log_folder = directory
+            self._log_folder_display.set(dir_format(self._log_folder, 50))
+
+    # Method to save settings and close window
+    def _save_settings(self):
+        # Ensure limits are good ints else revert to default
+        defaults = [settings.plist['low_freq_limit'], settings.plist['high_freq_limit']]
+        for var, default in zip([self._low_freq_limit, self._high_freq_limit], defaults):
+            if var.get() == '':
+                var.set(0)
+            else:
+                try:
+                    int(var.get())
+                except ValueError:
+                    var.set(default)
+            if int(var.get()) < 0:
+                var.set(0)
+        if int(self._low_freq_limit.get()) > int(self._high_freq_limit.get()):
+            self._low_freq_limit.set(self._high_freq_limit.get())
+        elif int(self._high_freq_limit.get()) < int(self._low_freq_limit.get()):
+            self._high_freq_limit.set(self._low_freq_limit.get())
+
+        settings.plist['default_library_location'] = self._default_library_location
+        settings.plist['forename'] = self._forename.get()
+        settings.plist['surname'] = self._surname.get()
+        settings.plist['dir_structure'] = self._dir_structure.get().strip('/')
+        settings.plist['file_structure'] = self._file_structure.get()
+        settings.plist['default_date_format'] = self._default_date_format.get()
+        settings.plist['low_freq_limit'] = int(self._low_freq_limit.get())
+        settings.plist['high_freq_limit'] = int(self._high_freq_limit.get())
+        settings.plist['create_log'] = self._create_log.get()
+        settings.plist['logFolder'] = self._log_folder
+        settings.plist['auto_update_check'] = self._auto_update_check.get()
+
+        try:
+            with open(data.PLIST_NAME, 'wb') as file:
+                plistlib.dump(settings.plist, file)
+        except PermissionError:
+            pass
+            # TODO: Display this error
+            # gui._display_error(1)
+
+        # Move old log to new log location
+        if self._move_old_log:
+            os.rename(os.path.join(self._old_log_location, log.FILENAME),
+                      os.path.join(settings.plist['logFolder'], log.FILENAME))
+
+        self._close_settings()
+
+    # Method to close settings window
+    def _close_settings(self):
+        self._settings_window.quit()
+        self._settings_window.destroy()

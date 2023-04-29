@@ -20,10 +20,10 @@ class CreateToolTip:
         self.id_value = None
         self.top_level = None
 
-    def enter(self, event=None):
+    def enter(self, _=None):
         self.schedule()
 
-    def leave(self, event=None):
+    def leave(self, _=None):
         self.unschedule()
         self.hidetip()
 
@@ -38,6 +38,7 @@ class CreateToolTip:
             self.widget.after_cancel(id)
 
     def showtip(self):
+        return
         x_pnt = y_pnt = 0
         x_pnt, y_pnt, _, _ = self.widget.bbox('insert')
         x_pnt += self.widget.winfo_rootx() + 25

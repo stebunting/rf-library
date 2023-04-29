@@ -67,7 +67,7 @@ ignored-modules=
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-#init-hook=
+init-hook='import site;import os;site.addsitedir("rflibrary");site.addsitedir(os.path.expanduser("~/Dev/.virtualEnvs/rf-library/lib/python3.11/site-packages"))'
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
@@ -306,7 +306,7 @@ max-returns=6
 max-statements=50
 
 # Minimum number of public methods for a class (see R0903).
-min-public-methods=2
+min-public-methods=1
 
 
 [EXCEPTIONS]
@@ -426,28 +426,16 @@ disable=raw-checker-failed,
         missing-function-docstring,
         missing-class-docstring,
         missing-module-docstring,
-        consider-using-with,
-        attribute-defined-outside-init,
-        access-member-before-definition,
-        invalid-name,
-        global-variable-not-assigned,
-        used-before-assignment,
-        bare-except,
-        too-many-locals,
         inconsistent-return-statements,
         too-many-statements,
         too-many-branches,
         protected-access,
-        global-statement,
-        consider-using-generator,
         too-many-instance-attributes,
-        undefined-variable,
-        import-error,
         too-many-lines,
-        line-too-long,
-        no-member,
-        broad-exception-caught,
-        unused-argument
+        unreachable,
+        duplicate-code,
+        fixme,
+        too-many-arguments
 
 
 # Enable the message, report, category or checker with the given id(s). You can

@@ -74,11 +74,13 @@ class TestFileParse(unittest.TestCase):
             self.assertEqual(
                 fut.valid,
                 test['expected_validity'],
-                f'Expected {test["filename"]} valid to equal {test["expected_validity"]}, got {fut.valid}')
+                (f'Expected {test["filename"]} valid to equal {test["expected_validity"]}, '
+                 f'got {fut.valid}'))
             self.assertEqual(
                 fut.filename,
                 test['expected_filename'],
-                f'Expected {test["filename"]} filename to equal {test["expected_filename"]}, got {fut.filename}')
+                (f'Expected {test["filename"]} filename to equal {test["expected_filename"]}, '
+                 f'got {fut.filename}'))
             self.assertEqual(
                 fut.model,
                 test['expected_model'],
@@ -86,32 +88,39 @@ class TestFileParse(unittest.TestCase):
             self.assertEqual(
                 fut.start_frequency_format(),
                 test['expected_start_frequency'],
-                f'Expected {test["filename"]} start_frequency to equal {test["expected_start_frequency"]}, got {fut.start_frequency_format()}')
+                (f'Expected {test["filename"]} start_frequency to equal {test["expected_start_frequency"]}, '
+                 f'got {fut.start_frequency_format()}'))
             self.assertEqual(
                 fut.stop_frequency_format(),
                 test['expected_stop_frequency'],
-                f'Expected {test["filename"]} stop_frequency to equal {test["expected_stop_frequency"]}, got {fut.stop_frequency_format()}')
+                (f'Expected {test["filename"]} stop_frequency to equal {test["expected_stop_frequency"]}, '
+                 f'got {fut.stop_frequency_format()}'))
             self.assertEqual(
                 fut.data_points,
                 test['expected_data_points'],
-                f'Expected {test["filename"]} data_points to equal {test["expected_data_points"]}, got {fut.data_points}')
+                (f'Expected {test["filename"]} data_points to equal {test["expected_data_points"]}, '
+                 f'got {fut.data_points}'))
             self.assertAlmostEqual(
                 fut.resolution,
                 test['expected_resolution'],
                 3,
-                f'Expected {test["filename"]} resolution to equal {test["expected_resolution"]}, got {fut.resolution}')
+                (f'Expected {test["filename"]} resolution to equal {test["expected_resolution"]}, '
+                 f'got {fut.resolution}'))
             self.assertEqual(
                 fut.start_tv_channel,
                 test['expected_start_tv_channel'],
-                f'Expected {test["filename"]} start_tv_channel to equal {test["expected_start_tv_channel"]}, got {fut.start_tv_channel}')
+                (f'Expected {test["filename"]} start_tv_channel to equal {test["expected_start_tv_channel"]}, '
+                 f'got {fut.start_tv_channel}'))
             self.assertEqual(
                 fut.stop_tv_channel,
                 test['expected_stop_tv_channel'],
-                f'Expected {test["filename"]} stop_tv_channel to equal {test["expected_stop_tv_channel"]}, got {fut.stop_tv_channel}')
+                (f'Expected {test["filename"]} stop_tv_channel to equal {test["expected_stop_tv_channel"]}, '
+                 f'got {fut.stop_tv_channel}'))
             self.assertEqual(
                 fut.new_filename,
                 test['expected_new_filename'],
-                f'Expected {test["filename"]} new_filename to equal {test["expected_new_filename"]}, got {fut.new_filename}')
+                (f'Expected {test["filename"]} new_filename to equal {test["expected_new_filename"]}, '
+                 f'got {fut.new_filename}'))
             self.assertEqual(
                 fut.in_out,
                 test['expected_in_out'],
