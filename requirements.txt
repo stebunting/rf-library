@@ -4,13 +4,8 @@ contourpy==1.0.7
 cycler==0.11.0
 fonttools==4.39.3
 idna==3.4
-importlib-metadata==6.6.0
-jaraco.classes==3.2.3
-keyring==23.13.1
 kiwisolver==1.4.4
-lxml==4.9.2
 matplotlib==3.7.1
-more-itertools==9.1.0
 numpy==1.24.3
 packaging==23.1
 Pillow==9.5.0
@@ -19,4 +14,3 @@ python-dateutil==2.8.2
 requests==2.29.0
 six==1.16.0
 urllib3==1.26.15
-zipp==3.15.0
