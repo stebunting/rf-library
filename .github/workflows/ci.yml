@@ -4,12 +4,12 @@ on:
   push:
     branches:
       - '**'
-    tags-ignore:
-      - '**'
+    tags:
+      - 'v[0-9].[0-9].[0-9]'
 
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test
     
     runs-on: ubuntu-latest
 
@@ -33,3 +33,99 @@ jobs:
 
     - name: Run Unit Tests
       run: python -m unittest discover -p "*_test.py"
+
+  build-osx:
+    name: Build OS X
+
+    needs: test
+
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: Create Bundle
+      run: pyinstaller rflibrary_osx.spec
+
+    - name: Zip Bundle
+      run: zip -r rflibrary.zip dist/rflibrary.app
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: rflibrary-osx
+        path: rflibrary.zip
+        retention-days: 7
+
+  build-win:
+    name: Build Windows
+
+    needs: test
+
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: Create Executable
+      run: pyinstaller rflibrary_win.spec
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: rflibrary-win
+        path: dist/rflibrary.exe
+        retention-days: 7
+  
+  deploy:
+    name: Deploy
+
+    needs: [build-osx, build-win]
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Configure AWS
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Deploy to AWS S3
+      run: |
+        aws s3 cp rflibrary-osx/rflibrary.zip s3://${{ secrets.AWS_S3_BUCKET_NAME }}/rflibrary-osx-${{ github.ref_name }}.zip
+        aws s3 cp rflibrary-win/rflibrary.exe s3://${{ secrets.AWS_S3_BUCKET_NAME }}/rflibrary-win-${{ github.ref_name }}.exe
