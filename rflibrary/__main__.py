@@ -14,7 +14,6 @@ import tkinter.font as tkfont
 import tkinter.messagebox as tkmessagebox
 
 # Third party imports
-import csv
 from PIL import Image, ImageTk
 import requests
 
@@ -26,6 +25,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # Program data and module imports
 import data
 from file import File
+from log import Log
+import log
 from tooltip import CreateToolTip
 
 matplotlib.use('TkAgg')
@@ -432,7 +433,7 @@ class SettingsWindow:
 
     # Method to select default log folder
     def _change_log_folder(self):
-        if os.path.exists(os.path.join(plist['logFolder'], data.LOG_FILENAME)):
+        if os.path.exists(os.path.join(plist['logFolder'], log.FILENAME)):
             self.move_old_log = True
             self.old_log_location = plist['logFolder']
 
@@ -484,8 +485,8 @@ class SettingsWindow:
 
         # Move old log to new log location
         if self.move_old_log:
-            os.rename(os.path.join(self.old_log_location, data.LOG_FILENAME),
-                      os.path.join(plist['logFolder'], data.LOG_FILENAME))
+            os.rename(os.path.join(self.old_log_location, log.FILENAME),
+                      os.path.join(plist['logFolder'], log.FILENAME))
 
         self._close_settings()
 
@@ -508,6 +509,8 @@ class GUI:
 
         # Variables
         self.files = []
+        self.log = Log(plist['logFolder'])
+
         self.file_listbox_selection = None
         self.subdirectory = True
         self.settings_window_open = False
@@ -1272,6 +1275,7 @@ class GUI:
     def _refresh(self):
         global dateFormat
         dateFormat = set_date_format()
+        log.folder = plist['logFolder']
         for file in self.files:
             file.updateTVChannels(self.country.get())
         self._print_files()
@@ -1483,7 +1487,7 @@ class GUI:
                 gui._display_error(1)
 
             if plist['create_log']:
-                if self._write_to_log():
+                if self.log.write(self.output):
                     statement += 'Log file updated.\n'
                 else:
                     statement += f'WARNING: Log could not be updated at {plist["logFolder"]}\n'
@@ -1699,10 +1703,7 @@ class GUI:
 
     # Check for latest version of software
     def _check_for_updates(self, **kwargs):
-        if kwargs.get('display') is not None:
-            display = kwargs['display']
-        else:
-            display = True
+        display = kwargs['display'] if kwargs.get('display') is not None else True
 
         try:
             req = requests.get(data.UPDATE_FILE_LOCATION, timeout=3)

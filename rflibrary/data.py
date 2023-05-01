@@ -66,7 +66,6 @@ PAD_Y_DEFAULT = 2
 DEFAULT_DATE_FORMAT = 'yyyy-mm-dd'
 DEFAULT_DIRECTORY_STRUCTURE = os.path.join('%c', '%t %v', '%y')
 DEFAULT_FILENAME_STRUCTURE = '%t %c-%v-%y%m%d-%i %f %n'
-LOG_FILENAME = 'rflibrary-log.csv'
 
 # Maintenence
 MAKE_WSM = False
