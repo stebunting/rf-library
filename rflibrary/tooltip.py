@@ -35,7 +35,7 @@ class CreateToolTip:
         id_value = self.id_value
         self.id_value = None
         if id_value:
-            self.widget.after_cancel(id)
+            self.widget.after_cancel(id_value)
 
     def showtip(self):
         x_pnt = y_pnt = 0
