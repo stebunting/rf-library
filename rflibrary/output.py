@@ -49,6 +49,22 @@ class Output:
 
         self._set_master_filename()
 
+    def set_venue(self, val):
+        self.venue = val
+        self._update_output()
+
+    def set_town(self, val):
+        self.town = val
+        self._update_output()
+
+    def set_country(self, val):
+        self.country = val
+        self._update_output()
+
+    def set_in_out(self, val):
+        self.in_out = val
+        self._update_output()
+
     def num_files(self):
         return len(self.files)
 

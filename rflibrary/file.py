@@ -136,7 +136,7 @@ class File:
                 os.stat(self._full_filename).st_ctime)
 
     # Method to get TV channels
-    def update_tv_channels(self):
+    def update_tv_channels(self, _=None):
         if self._tv_country == 'United States of America':
             self._tv_country = 'United States of America'
         else:

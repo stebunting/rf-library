@@ -282,10 +282,10 @@ class GUI:
         self.delete_source_files = tk.BooleanVar(value=self.output.delete_source_files)
 
         # Set tracers to update output object
-        self.venue.trace('w', lambda *_: setattr(self.output, 'venue', self.venue.get()))
-        self.town.trace('w', lambda *_: setattr(self.output, 'town', self.town.get()))
-        self.country.trace('w', lambda *_: setattr(self.output, 'country', self.country.get()))
-        self.in_out.trace('w', lambda *_: setattr(self.output, 'in_out', self.in_out.get()))
+        self.venue.trace('w', lambda *_: self.output.set_venue(self.venue.get()))
+        self.town.trace('w', lambda *_: self.output.set_town(self.town.get()))
+        self.country.trace('w', lambda *_: self.output.set_country(self.country.get()))
+        self.in_out.trace('w', lambda *_: self.output.set_in_out(self.in_out.get()))
         self.target_subdirectory.trace('w',
             lambda *_: setattr(self.output, 'target_subdirectory', self.target_subdirectory.get()))
         self.copy_source_files.trace('w',
