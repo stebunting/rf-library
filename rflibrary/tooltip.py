@@ -38,7 +38,6 @@ class CreateToolTip:
             self.widget.after_cancel(id)
 
     def showtip(self):
-        return
         x_pnt = y_pnt = 0
         x_pnt, y_pnt, _, _ = self.widget.bbox('insert')
         x_pnt += self.widget.winfo_rootx() + 25

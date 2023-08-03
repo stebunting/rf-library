@@ -36,14 +36,14 @@ class Writer:
                 file.write(f'{freq:09.4f},{value:09.4f}\n')
 
     # Method to write WSM file to disk
-    def write_wsm_file(self, filename, array, wsm_date, low, high):
+    def write_wsm_file(self, filename, array, wsm_date, limits):
         with open(filename, 'w', encoding='UTF-8') as file:
             wsm_date = wsm_date.strftime('%Y-%m-%d 00:00:00')
             file.write(f'Receiver;{data.TITLE}\n'
                        f'Date/Time;{wsm_date}\n'
                        'RFUnit;dBm\n\n\nFrequency Range [kHz];'
-                       f'{(low * 1000):06d};'
-                       f'{high * 1000:06d};\n')
+                       f'{(limits[0] * 1000):06d};'
+                       f'{limits[1] * 1000:06d};\n')
             file.write('Frequency;RF level (%);RF level\n')
             for freq, value in reversed(array):
                 file.write(f'{int(freq * 1000):06d};;{value:04.1f}\n')

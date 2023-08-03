@@ -111,11 +111,6 @@ class GUI:
 
         self.gui_style = ttk.Style()
         self.gui_style.theme_use('clam')
-        # self.gui_style.map(
-        #     'TCombobox',
-        #     fieldbackground=[('readonly', 'white'),
-        #                      ('pressed', 'red')],
-        #                      foreground=[('readonly', 'black')])
         self.gui_style.configure('TLabelframe.Label', font=f'Arial {self.header_size}')
         self.gui_style.map('TCheckbutton', background=[('hover', self.base_background)])
 
@@ -298,13 +293,11 @@ class GUI:
         self.delete_source_files.trace('w',
             lambda *_: setattr(self.output, 'delete_source_files', self.delete_source_files.get()))
 
-        # File List
         ttk.Label(self.input_frame, text='File List').grid(column=0, row=0, sticky='W')
         self.file_listbox = tk.Listbox(self.input_frame, height=8, width=20)
         self.file_listbox.bind('<<ListboxSelect>>', self._select_file_item)
         self.file_listbox.grid(column=0, row=1, padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
 
-        # Data List
         ttk.Label(
             self.input_frame,
             text='Selected File Information'
@@ -392,7 +385,6 @@ class GUI:
             self.add_files_button,
             f'Add files to file list ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}A)')
 
-        # File Info status
         self.file_status = ttk.Label(self.input_frame, textvariable=self.num_files)
         self.file_status.grid(
             column=0,
@@ -401,7 +393,6 @@ class GUI:
             padx=data.PAD_X_DEFAULT,
             pady=data.PAD_Y_DEFAULT)
 
-        # Source Venue Data
         ttk.Label(
             self.info_frame,
             text='Venue',
@@ -415,7 +406,6 @@ class GUI:
         self.venue_entry.grid(column=1, row=0)
         CreateToolTip(self.venue_entry, 'Scan location name')
 
-        # Source Town Data
         ttk.Label(
             self.info_frame,
             text='Town',
@@ -429,7 +419,6 @@ class GUI:
         self.town_entry.grid(column=1, row=1)
         CreateToolTip(self.town_entry, 'Scan location town/city')
 
-        # Source Country Data
         ttk.Label(
             self.info_frame,
             text='Country',
@@ -450,7 +439,6 @@ class GUI:
         self.country_box.bind('<<ComboboxSelected>>', self._refresh)
         CreateToolTip(self.country_box, 'Scan location country')
 
-        # Source Scan Date
         ttk.Label(
             self.info_frame,
             text='Scan Date',
@@ -465,7 +453,6 @@ class GUI:
         self.date_entry.config(state='readonly')
         CreateToolTip(self.date_entry, 'Date scan was taken')
 
-        # Inside / Outside
         ttk.Label(
             self.info_frame,
             text='Inside/Outside',
@@ -482,7 +469,6 @@ class GUI:
         self.io_box.bind('<<ComboboxSelected>>', self._io_box_edit)
         CreateToolTip(self.io_box, 'Was the scan taken inside or outside?')
 
-        # Output Location
         reset_image = ImageTk.PhotoImage(Image.open(os.path.join(data.ICON_LOCATION, 'reset.png')))
         ttk.Label(
             self.output_frame,
@@ -503,7 +489,6 @@ class GUI:
         self.target_directory.grid(column=2, row=0, sticky='W')
         CreateToolTip(self.target_directory, 'Output scan folder')
 
-        # Subdirectory
         ttk.Label(
             self.output_frame,
             text='Subdirectory',
@@ -524,7 +509,6 @@ class GUI:
         self.target_subdirectory_entry.bind('<KeyRelease>', self._custom_subdirectory)
         CreateToolTip(self.target_subdirectory_entry, 'Optional subdirectory')
 
-        # Output Master Filename
         ttk.Label(
             self.output_frame,
             text='Master Filename',
@@ -551,7 +535,6 @@ class GUI:
         self.scan_master_filename_entry.bind('<KeyRelease>', self.output.set_custom_master_filename)
         CreateToolTip(self.scan_master_filename_entry, 'Master output filename')
 
-        # Options
         self.copy_source_files_check = ttk.Checkbutton(
             self.output_frame,
             variable=self.copy_source_files)
@@ -583,7 +566,6 @@ class GUI:
             self.delete_source_files_check,
             'Delete source files on file creation')
 
-        # Output Buttons
         self.output_buttons = ttk.Frame(self.output_frame)
         self.output_buttons.grid(column=2, row=5, sticky='W')
         self.create_file_button = ttk.Button(
@@ -613,7 +595,6 @@ class GUI:
             self.custom_output_button,
             f'Set custom destination for output files ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}D)')
 
-        # Add styling to all entry boxes
         for entry_box in [
             self.venue_entry,
             self.town_entry,
@@ -623,7 +604,6 @@ class GUI:
             entry_box.grid(sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
             entry_box.bind('<KeyRelease>', self._set_master_filename)
 
-        # Key Bindings
         self.window.bind_all(f'<{data.COMMAND}Return>', self._create_file)
         self.file_listbox.bind('<Escape>', self._deselect_file_listbox)
         self.file_listbox.bind('<BackSpace>', self._remove_file)
