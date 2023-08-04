@@ -9,7 +9,7 @@ import tkinter.filedialog as tkfiledialog
 
 # Program data and module imports
 import data
-from tooltip import CreateToolTip
+from tooltip import ToolTip
 from output import date_formats
 import log
 from helpers import dir_format
@@ -87,7 +87,7 @@ class SettingsWindow:
         ).grid(column=0, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         scans_folder_label = ttk.Label(self._output_preferences, textvariable=self._scans_folder_display, width='36')
         scans_folder_label.grid(column=1, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(scans_folder_label, 'Scan library base folder')
+        ToolTip(scans_folder_label, 'Scan library base folder').bind()
         change_base_folder_button = ttk.Button(
             self._output_preferences,
             text='Change Folder',
@@ -96,10 +96,10 @@ class SettingsWindow:
 
         # Directory Structure
         dir_structure = self._create_op_prefs_entry('Directory Structure', self._dir_structure, 2, '35')
-        CreateToolTip(dir_structure, 'Default library directory structure (see docs for more details')
+        ToolTip(dir_structure, 'Default library directory structure (see docs for more details').bind()
 
         file_structure = self._create_op_prefs_entry('Filename Structure', self._file_structure, 3, '35')
-        CreateToolTip(file_structure, 'Default library filename structure (see docs for more details')
+        ToolTip(file_structure, 'Default library filename structure (see docs for more details').bind()
 
         # Date Format
         ttk.Label(
@@ -110,14 +110,14 @@ class SettingsWindow:
         date_format_box = ttk.Combobox(self._output_preferences, textvariable=self._default_date_format)
         date_format_box['values'] = list(date_formats)
         date_format_box.grid(column=1, row=4, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(date_format_box, 'Preferred date format')
+        ToolTip(date_format_box, 'Preferred date format').bind()
 
         # Frequency Limits
         low_freq_limit = self._create_op_prefs_entry('Low Frequency Limit', self._low_freq_limit, 5)
-        CreateToolTip(low_freq_limit, 'Low frequency limit for the output file (set to 0 for no limit)')
+        ToolTip(low_freq_limit, 'Low frequency limit for the output file (set to 0 for no limit)').bind()
 
         high_freq_limit = self._create_op_prefs_entry('High Frequency Limit', self._high_freq_limit, 6)
-        CreateToolTip(high_freq_limit, 'High frequency limit for the output file (set to 0 for no limit)')
+        ToolTip(high_freq_limit, 'High frequency limit for the output file (set to 0 for no limit)').bind()
 
         # Create Log
         ttk.Label(
@@ -127,7 +127,7 @@ class SettingsWindow:
         ).grid(column=0, row=0, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         create_log_check = ttk.Checkbutton(self._logging_preferences, variable=self._create_log)
         create_log_check.grid(column=1, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(create_log_check, 'Turn log file writing on/off')
+        ToolTip(create_log_check, 'Turn log file writing on/off').bind()
 
         # Log Location
         ttk.Label(
@@ -137,7 +137,7 @@ class SettingsWindow:
         ).grid(column=0, row=1, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         log_location_entry = ttk.Label(self._logging_preferences, textvariable=self._log_folder_display, width='36')
         log_location_entry.grid(column=1, row=1, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(log_location_entry, 'Log file location')
+        ToolTip(log_location_entry, 'Log file location').bind()
         change_log_location = ttk.Button(
             self._logging_preferences,
             text='Change Folder',
@@ -156,7 +156,7 @@ class SettingsWindow:
         ).grid(column=0, row=0, sticky='w', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         check_for_updates_check = ttk.Checkbutton(self._app_data, variable=self._auto_update_check)
         check_for_updates_check.grid(column=1, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(check_for_updates_check, 'Automatically check for updates on startup')
+        ToolTip(check_for_updates_check, 'Automatically check for updates on startup').bind()
 
         # Buttons
         self._create_button('Save', 'Save changes', self._save_settings, 0)
@@ -184,7 +184,7 @@ class SettingsWindow:
         ).grid(column=0, row=row, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         box = ttk.Entry(self._personal_data, textvariable=var, width='20')
         box.grid(column=1, row=row, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(box, description)
+        ToolTip(box, description).bind()
 
     def _create_button(self, label, description, cmd, col):
         button = ttk.Button(
@@ -193,7 +193,7 @@ class SettingsWindow:
             command=cmd
         )
         button.grid(column=col, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(button, description)
+        ToolTip(button, description).bind()
 
     # Method to select scans base folder
     def _change_base_folder(self):

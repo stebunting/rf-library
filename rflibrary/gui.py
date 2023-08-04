@@ -26,7 +26,7 @@ import output
 from log import Log
 import log
 from writer import Writer
-from tooltip import CreateToolTip
+from tooltip import ToolTip
 from settings_window import SettingsWindow
 from helpers import dir_format
 import settings
@@ -136,7 +136,7 @@ class GUI:
 
         self.preview_frame = ttk.LabelFrame(self.right_container, text='Source Preview')
         self.preview_frame.grid(column=0, row=0, columnspan=2, padx=8, pady=8, sticky='NWE')
-        CreateToolTip(self.preview_frame, 'Selected scan preview')
+        ToolTip(self.preview_frame, 'Selected scan preview').bind()
 
         self.output_frame = ttk.LabelFrame(self.master_frame, text='Output Data')
         self.output_frame.grid(column=0, row=1, columnspan=3, padx=8, pady=8, sticky='NWE')
@@ -392,13 +392,13 @@ class GUI:
             command=self._reset_output_location)
         self.default_output_check.grid(column=1, row=0, sticky='W', padx=0, pady=0)
         self.default_output_check.image = reset_image
-        CreateToolTip(self.default_output_check, 'Check to use default library destination folder')
+        ToolTip(self.default_output_check, 'Check to use default library destination folder').bind()
         self.target_directory = ttk.Label(
             self.output_frame,
             textvariable=self.scan_output_location_display,
             width=77)
         self.target_directory.grid(column=2, row=0, sticky='W')
-        CreateToolTip(self.target_directory, 'Output scan folder')
+        ToolTip(self.target_directory, 'Output scan folder').bind()
 
         ttk.Label(
             self.output_frame,
@@ -418,7 +418,7 @@ class GUI:
             padx=0,
             pady=data.PAD_Y_DEFAULT)
         self.target_subdirectory_entry.bind('<KeyRelease>', self._custom_subdirectory)
-        CreateToolTip(self.target_subdirectory_entry, 'Optional subdirectory')
+        ToolTip(self.target_subdirectory_entry, 'Optional subdirectory').bind()
 
         ttk.Label(
             self.output_frame,
@@ -431,7 +431,7 @@ class GUI:
             command=self._set_master_filename)
         self.default_master_filename_reset.grid(column=1, row=2, sticky='W', padx=0, pady=0)
         self.default_master_filename_reset.image = reset_image
-        CreateToolTip(self.default_master_filename_reset, 'Check to use default filename')
+        ToolTip(self.default_master_filename_reset, 'Check to use default filename').bind()
         self.scan_master_filename_entry = ttk.Entry(
             self.output_frame,
             textvariable=self.scan_master_filename,
@@ -444,7 +444,7 @@ class GUI:
             pady=data.PAD_Y_DEFAULT)
         self.scan_master_filename_entry.config(width=60)
         self.scan_master_filename_entry.bind('<KeyRelease>', self.output.set_custom_master_filename)
-        CreateToolTip(self.scan_master_filename_entry, 'Master output filename')
+        ToolTip(self.scan_master_filename_entry, 'Master output filename').bind()
 
         self._make_checkbox('Duplicate Source Files', 'Duplicate source files in library', self.copy_source_files, 3)
         self._make_checkbox('Delete Source Files', 'Delete source files on file creation', self.delete_source_files, 4)
@@ -474,7 +474,7 @@ class GUI:
             padx=data.PAD_X_DEFAULT,
             pady=data.PAD_Y_DEFAULT)
         button.image = img
-        CreateToolTip(button, description)
+        ToolTip(button, description).bind()
         return button
 
     def _make_entry_box(self, label, description, var, row):
@@ -489,7 +489,7 @@ class GUI:
             width=20,
             font=f'TkDefaultFont {self.font_size}')
         box.grid(column=1, row=row, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(box, description)
+        ToolTip(box, description).bind()
         box.bind('<KeyRelease>', self._set_master_filename)
         return box
 
@@ -506,7 +506,7 @@ class GUI:
             state='readonly',
             font=f'TkDefaultFont {self.font_size}')
         box.grid(column=1, row=row, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(box, description)
+        ToolTip(box, description).bind()
         box.bind('<KeyRelease>', self._set_master_filename)
         return box
 
@@ -514,12 +514,12 @@ class GUI:
         box = ttk.Checkbutton(self.output_frame, variable=var)
         box.grid(column=1, row=row, sticky='E', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
         ttk.Label(self.output_frame, text=label).grid(column=2, row=row, sticky='W')
-        CreateToolTip(box, description)
+        ToolTip(box, description).bind()
 
     def _make_op_button(self, label, description, cmd, col):
         button = ttk.Button(self.output_buttons, text=label, command=cmd)
         button.grid(column=col, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(button, description)
+        ToolTip(button, description).bind()
         return button
 
     # Method to update filelist

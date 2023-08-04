@@ -1,43 +1,41 @@
-################################################################################
-##########                      TOOLTIP OBJECT                        ##########
-################################################################################
-
 import tkinter as tk
 from tkinter import ttk
 
 # SOURCE:
 # https://stackoverflow.com/questions/3221956/what-is-the-simplest-way-to-make-tooltips-in-tkinter
 
-class CreateToolTip:
+class ToolTip:
     def __init__(self, widget, text='widget info'):
-        self.waittime = 500     # miliseconds
+        self.waittime = 500     # milliseconds
         self.wraplength = 250   # pixels
-        self.widget = widget
         self.text = text
-        self.widget.bind('<Enter>', self.enter)
-        self.widget.bind('<Leave>', self.leave)
-        self.widget.bind('<ButtonPress>', self.leave)
+        self.widget = widget
         self.id_value = None
         self.top_level = None
 
-    def enter(self, _=None):
-        self.schedule()
+    def bind(self):
+        self.widget.bind('<Enter>', self._enter)
+        self.widget.bind('<Leave>', self._leave)
+        self.widget.bind('<ButtonPress>', self._leave)
 
-    def leave(self, _=None):
-        self.unschedule()
-        self.hidetip()
+    def _enter(self, _=None):
+        self._schedule()
 
-    def schedule(self):
-        self.unschedule()
-        self.id_value = self.widget.after(self.waittime, self.showtip)
+    def _leave(self, _=None):
+        self._unschedule()
+        self._hide_tip()
 
-    def unschedule(self):
+    def _schedule(self):
+        self._unschedule()
+        self.id_value = self.widget.after(self.waittime, self._show_tip)
+
+    def _unschedule(self):
         id_value = self.id_value
         self.id_value = None
         if id_value:
             self.widget.after_cancel(id_value)
 
-    def showtip(self):
+    def _show_tip(self):
         x_pnt = y_pnt = 0
         x_pnt, y_pnt, _, _ = self.widget.bbox('insert')
         x_pnt += self.widget.winfo_rootx() + 25
@@ -61,7 +59,7 @@ class CreateToolTip:
         self.top_level.update()
         self.top_level.lift()
 
-    def hidetip(self):
+    def _hide_tip(self):
         top_level = self.top_level
         self.top_level = None
         if top_level:
