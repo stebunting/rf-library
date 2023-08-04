@@ -78,7 +78,10 @@ class GUI:
         self._create_styles()
         self._create_frames()
         self._create_menu()
-        self._create_widgets()
+        self._init_tk_vars()
+        self._create_input_frame()
+        self._create_info_frame()
+        self._create_output_frame()
 
         for error in settings.errors_to_display:
             self._display_error(error)
@@ -144,100 +147,19 @@ class GUI:
     def _create_menu(self):
         self.menu_bar = tk.Menu(self.window)
 
-        # File Menu
-        self.file_menu = tk.Menu(self.menu_bar, tearoff=False)
-        self.file_menu.add_command(
-            label='Add Files...',
-            accelerator=f'{data.COMMAND_ABBR}{data.MODIFIER_ABBR}A',
-            command=self._add_files)
-        self.file_menu.add_command(
-            label='Add Directory...',
-            accelerator=f'{data.COMMAND_ABBR}{data.ALT_ABBR}A',
-            command=self._add_directory)
-        self.file_menu.add_separator()
-        self.file_menu.add_command(
-            label='Set Date',
-            accelerator=f'{data.COMMAND_ABBR}D',
-            command=self._use_date)
-        self.file_menu.add_command(
-            label='Set Destination...',
-            accelerator=f'{data.COMMAND_ABBR}{data.MODIFIER_ABBR}D',
-            command=self._custom_destination)
-        self.file_menu.add_command(
-            label='Create File',
-            accelerator=f'{data.COMMAND_ABBR}Return',
-            command=self._create_file)
-
-        # Edit Menu
-        self.edit_menu = tk.Menu(self.menu_bar, tearoff=False)
-        self.edit_menu.add_command(
-            label='Copy',
-            accelerator=f'{data.COMMAND_ABBR}C',
-            command=lambda: self.window.focus_get().event_generate("<<Copy>>"))
-        self.edit_menu.add_command(
-            label='Cut',
-            accelerator=f'{data.COMMAND_ABBR}X',
-            command=lambda: self.window.focus_get().event_generate("<<Cut>>"))
-        self.edit_menu.add_command(
-            label='Paste',
-            accelerator=f'{data.COMMAND_ABBR}V',
-            command=lambda: self.window.focus_get().event_generate("<<Paste>>"))
-        self.edit_menu.add_command(
-            label='Select All',
-            accelerator=f'{data.COMMAND_ABBR}A',
-            command=lambda: self.window.focus_get().event_generate("<<SelectAll>>"))
-        self.edit_menu.add_separator()
-        self.edit_menu.add_command(
-            label='Remove File',
-            accelerator='BackSpace',
-            command=self._remove_file)
-        self.edit_menu.add_command(
-            label='Clear Files',
-            accelerator=f'{data.COMMAND_ABBR}BackSpace',
-            command=self._clear_files)
-
-        # Help Menu
-        self.help_menu = tk.Menu(self.menu_bar, tearoff=False, name='help')
-
         # Application Menu (OS X only)
         if data.SYSTEM == 'Mac':
-            self.app_menu = tk.Menu(self.menu_bar, tearoff=False, name='apple')
-            self.app_menu.add_command(
-                label='About RF Library',
-                command=self._about)
-            self.app_menu.add_command(
-                label='Check for Updates...',
-                command=self._check_for_updates)
-            self.app_menu.add_separator()
+            self.app_menu = self._create_app_menu()
             self.menu_bar.add_cascade(menu=self.app_menu)
 
             # Configure OS X Built-in menu options
             self.window.createcommand('::tk::mac::ShowPreferences', self._settings)
             self.window.createcommand('::tk::mac::ShowHelp', self._open_http)
 
-        # Extra menus for Windows only
-        if data.SYSTEM == 'Windows':
-            self.file_menu.add_separator()
-            self.file_menu.add_command(
-                label='Exit',
-                accelerator=f'{data.COMMAND_ABBR}Q',
-                command=self._quit)
-            self.tools_menu = tk.Menu(self.menu_bar, tearoff=False)
-            self.tools_menu.add_command(
-                label='Preferences...',
-                command=self._settings)
-            self.help_menu.add_command(
-                label='Documentation',
-                command=self._open_http)
-            self.help_menu.add_separator()
-            self.help_menu.add_command(
-                label='Check for Updates...',
-                command=self._check_for_updates)
-            self.help_menu.add_command(
-                label='About RF Library',
-                command=self._about)
-
+        self.file_menu = self._create_file_menu()
         self.menu_bar.add_cascade(label='File', menu=self.file_menu)
+
+        self.edit_menu = self._create_edit_menu()
         self.menu_bar.add_cascade(label='Edit', menu=self.edit_menu)
 
         # Window Menu (OS X Only)
@@ -247,8 +169,10 @@ class GUI:
 
         # Tools Menu (Windows Only)
         elif data.SYSTEM == 'Windows':
+            self.tools_menu = self._create_tools_menu()
             self.menu_bar.add_cascade(label='Tools', menu=self.tools_menu)
 
+        self.help_menu = self._create_help_menu()
         self.menu_bar.add_cascade(label='Help', menu=self.help_menu)
         self.window.config(menu=self.menu_bar)
 
@@ -266,8 +190,102 @@ class GUI:
             self.window.bind_all(f'<{data.COMMAND}Q>', self._quit)
             self.window.bind_all(f'<{data.COMMAND}BackSpace>', self._clear_files)
 
-    # Create GUI widgets
-    def _create_widgets(self):
+    def _create_file_menu(self):
+        menu = tk.Menu(self.menu_bar, tearoff=False)
+        menu.add_command(
+            label='Add Files...',
+            accelerator=f'{data.COMMAND_ABBR}{data.MODIFIER_ABBR}A',
+            command=self._add_files)
+        menu.add_command(
+            label='Add Directory...',
+            accelerator=f'{data.COMMAND_ABBR}{data.ALT_ABBR}A',
+            command=self._add_directory)
+        menu.add_separator()
+        menu.add_command(
+            label='Set Date',
+            accelerator=f'{data.COMMAND_ABBR}D',
+            command=self._use_date)
+        menu.add_command(
+            label='Set Destination...',
+            accelerator=f'{data.COMMAND_ABBR}{data.MODIFIER_ABBR}D',
+            command=self._custom_destination)
+        menu.add_command(
+            label='Create File',
+            accelerator=f'{data.COMMAND_ABBR}Return',
+            command=self._create_file)
+
+        if data.SYSTEM == 'Windows':
+            menu.add_separator()
+            menu.add_command(
+                label='Exit',
+                accelerator=f'{data.COMMAND_ABBR}Q',
+                command=self._quit)
+        return menu
+
+    def _create_edit_menu(self):
+        menu = tk.Menu(self.menu_bar, tearoff=False)
+        menu.add_command(
+            label='Copy',
+            accelerator=f'{data.COMMAND_ABBR}C',
+            command=lambda: self.window.focus_get().event_generate("<<Copy>>"))
+        menu.add_command(
+            label='Cut',
+            accelerator=f'{data.COMMAND_ABBR}X',
+            command=lambda: self.window.focus_get().event_generate("<<Cut>>"))
+        menu.add_command(
+            label='Paste',
+            accelerator=f'{data.COMMAND_ABBR}V',
+            command=lambda: self.window.focus_get().event_generate("<<Paste>>"))
+        menu.add_command(
+            label='Select All',
+            accelerator=f'{data.COMMAND_ABBR}A',
+            command=lambda: self.window.focus_get().event_generate("<<SelectAll>>"))
+        menu.add_separator()
+        menu.add_command(
+            label='Remove File',
+            accelerator='BackSpace',
+            command=self._remove_file)
+        menu.add_command(
+            label='Clear Files',
+            accelerator=f'{data.COMMAND_ABBR}BackSpace',
+            command=self._clear_files)
+        return menu
+
+    def _create_help_menu(self):
+        menu = tk.Menu(self.menu_bar, tearoff=False, name='help')
+
+        if data.SYSTEM == 'Windows':
+            menu.add_command(
+                label='Documentation',
+                command=self._open_http)
+            menu.add_separator()
+            menu.add_command(
+                label='Check for Updates...',
+                command=self._check_for_updates)
+            menu.add_command(
+                label='About RF Library',
+                command=self._about)
+        return menu
+
+    def _create_app_menu(self):
+        menu = tk.Menu(self.menu_bar, tearoff=False, name='apple')
+        menu.add_command(
+            label='About RF Library',
+            command=self._about)
+        menu.add_command(
+            label='Check for Updates...',
+            command=self._check_for_updates)
+        menu.add_separator()
+        return menu
+
+    def _create_tools_menu(self):
+        menu = tk.Menu(self.menu_bar, tearoff=False)
+        menu.add_command(
+            label='Preferences...',
+            command=self._settings)
+        return menu
+
+    def _init_tk_vars(self):
         # Initialise tkinter variables
         self.num_files = tk.StringVar()
         self.venue = tk.StringVar(value=self.output.venue)
@@ -293,6 +311,8 @@ class GUI:
         self.delete_source_files.trace('w',
             lambda *_: setattr(self.output, 'delete_source_files', self.delete_source_files.get()))
 
+    # Create GUI widgets
+    def _create_input_frame(self):
         ttk.Label(self.input_frame, text='File List').grid(column=0, row=0, sticky='W')
         self.file_listbox = tk.Listbox(self.input_frame, height=8, width=20)
         self.file_listbox.bind('<<ListboxSelect>>', self._select_file_item)
@@ -310,80 +330,31 @@ class GUI:
         self.file_list_edit_frame = ttk.Frame(self.input_frame)
         self.file_list_edit_frame.grid(column=0, row=2, columnspan=2, sticky='E')
 
-        calendar_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.ICON_LOCATION, 'calendar_disabled.png')))
-        self.use_date_button = ttk.Button(
-            self.file_list_edit_frame,
-            image=calendar_image,
-            state='disabled',
-            command=self._use_date)
-        self.use_date_button.grid(column=4, row=0, sticky='E', padx=data.PAD_X_DEFAULT, pady=0)
-        self.use_date_button.image = calendar_image
-        CreateToolTip(
-            self.use_date_button,
-            f'Use currently selected file\'s creation date for scan date ({data.COMMAND_SYMBOL}D)')
-
-        bin_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.ICON_LOCATION, 'bin_disabled.png')))
-        self.clear_files_button = ttk.Button(
-            self.file_list_edit_frame,
-            image=bin_image,
-            state='disabled',
-            command=self._clear_files)
-        self.clear_files_button.grid(
-            column=3,
-            row=0,
-            sticky='E',
-            padx=data.PAD_X_DEFAULT,
-            pady=0)
-        self.clear_files_button.image = bin_image
-        CreateToolTip(
-            self.clear_files_button,
-            f'Remove all files from file list ({data.COMMAND_SYMBOL}\u232b)')
-
-        minus_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.ICON_LOCATION, 'minus_disabled.png')))
-        self.remove_file_button = ttk.Button(
-            self.file_list_edit_frame,
-            image=minus_image,
-            state='disabled',
-            command=self._remove_file)
-        self.remove_file_button.grid(column=2, row=0, sticky='E', padx=data.PAD_X_DEFAULT, pady=0)
-        self.remove_file_button.image = minus_image
-        CreateToolTip(self.remove_file_button, 'Remove selected file from file list (\u232b)')
-
-        folder_image = ImageTk.PhotoImage(
-            Image.open(os.path.join(data.ICON_LOCATION, 'folder.png')))
-        self.add_directory_button = ttk.Button(
-            self.file_list_edit_frame,
-            image=folder_image,
-            command=self._add_directory)
-        self.add_directory_button.grid(
-            column=1,
-            row=0,
-            sticky='E',
-            padx=data.PAD_X_DEFAULT,
-            pady=data.PAD_Y_DEFAULT)
-        self.add_directory_button.image = folder_image
-        CreateToolTip(
-            self.add_directory_button,
-            f'Add directory to file list ({data.COMMAND_SYMBOL}{data.ALT_SYMBOL}A)')
-
-        plus_image = ImageTk.PhotoImage(Image.open(os.path.join(data.ICON_LOCATION, 'plus.png')))
-        self.add_files_button = ttk.Button(
-            self.file_list_edit_frame,
-            image=plus_image,
-            command=self._add_files)
-        self.add_files_button.grid(
-            column=0,
-            row=0,
-            sticky='E',
-            padx=data.PAD_X_DEFAULT,
-            pady=data.PAD_Y_DEFAULT)
-        self.add_files_button.image = plus_image
-        CreateToolTip(
-            self.add_files_button,
-            f'Add files to file list ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}A)')
+        self.use_date_button = self._make_ip_button(
+            'calendar_enabled.png',
+            f'Use currently selected file\'s creation date for scan date ({data.COMMAND_SYMBOL}D)',
+            self._use_date,
+            4)
+        self.clear_files_button = self._make_ip_button(
+            'bin_enabled.png',
+            f'Remove all files from file list ({data.COMMAND_SYMBOL}\u232b)',
+            self._clear_files,
+            3)
+        self.remove_file_button = self._make_ip_button(
+            'minus_enabled.png',
+            'Remove selected file from file list (\u232b)',
+            self._remove_file,
+            2)
+        self.add_directory_button = self._make_ip_button(
+            'folder.png',
+            f'Add directory to file list ({data.COMMAND_SYMBOL}{data.ALT_SYMBOL}A)',
+            self._add_directory,
+            1)
+        self.add_files_button = self._make_ip_button(
+            'plus.png',
+            f'Add files to file list ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}A)',
+            self._add_files,
+            0)
 
         self.file_status = ttk.Label(self.input_frame, textvariable=self.num_files)
         self.file_status.grid(
@@ -393,82 +364,22 @@ class GUI:
             padx=data.PAD_X_DEFAULT,
             pady=data.PAD_Y_DEFAULT)
 
-        ttk.Label(
-            self.info_frame,
-            text='Venue',
-            width=self.left_indent
-        ).grid(column=0, row=0, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        self.venue_entry = ttk.Entry(
-            self.info_frame,
-            textvariable=self.venue,
-            width=20,
-            font=f'TkDefaultFont {self.font_size}')
-        self.venue_entry.grid(column=1, row=0)
-        CreateToolTip(self.venue_entry, 'Scan location name')
+        self.file_listbox.bind('<Escape>', self._deselect_file_listbox)
+        self.file_listbox.bind('<BackSpace>', self._remove_file)
 
-        ttk.Label(
-            self.info_frame,
-            text='Town',
-            width=self.left_indent
-        ).grid(column=0, row=1, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        self.town_entry = ttk.Entry(
-            self.info_frame,
-            textvariable=self.town,
-            width=20,
-            font=f'TkDefaultFont {self.font_size}')
-        self.town_entry.grid(column=1, row=1)
-        CreateToolTip(self.town_entry, 'Scan location town/city')
-
-        ttk.Label(
-            self.info_frame,
-            text='Country',
-            width=self.left_indent
-        ).grid(column=0, row=2, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        self.country_box = ttk.Combobox(
-            self.info_frame,
-            textvariable=self.country,
-            width=20,
-            font=f'TkDefaultFont {self.font_size}')
+    def _create_info_frame(self):
+        self.venue_entry = self._make_entry_box('Venue', 'Scan location name', self.venue, 0)
+        self.town_entry = self._make_entry_box('Town', 'Scan location town/city', self.town, 1)
+        self.country_box = self._make_combobox('Country', 'Scan location country', self.country, 2)
         self.country_box['values'] = output.country_list
-        self.country_box.grid(
-            column=1,
-            row=2,
-            sticky='W',
-            padx=data.PAD_X_DEFAULT,
-            pady=data.PAD_Y_DEFAULT)
         self.country_box.bind('<<ComboboxSelected>>', self._refresh)
-        CreateToolTip(self.country_box, 'Scan location country')
-
-        ttk.Label(
-            self.info_frame,
-            text='Scan Date',
-            width=self.left_indent
-        ).grid(column=0, row=3, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        self.date_entry = ttk.Entry(
-            self.info_frame,
-            textvariable=self.scan_date,
-            width=20,
-            font=f'TkDefaultFont {self.font_size}')
-        self.date_entry.grid(column=1, row=3)
+        self.date_entry = self._make_entry_box('Scan Date', 'Date scan was taken', self.scan_date, 3)
         self.date_entry.config(state='readonly')
-        CreateToolTip(self.date_entry, 'Date scan was taken')
-
-        ttk.Label(
-            self.info_frame,
-            text='Inside/Outside',
-            width=self.left_indent
-        ).grid(column=0, row=4, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        self.io_box = ttk.Combobox(
-            self.info_frame,
-            textvariable=self.in_out,
-            width=20,
-            state='readonly',
-            font=f'TkDefaultFont {self.font_size}')
+        self.io_box = self._make_combobox('Inside/Outside', 'Was the scan taken inside or outside?', self.in_out, 4)
         self.io_box['values'] = output.io_list
-        self.io_box.grid(column=1, row=4)
         self.io_box.bind('<<ComboboxSelected>>', self._io_box_edit)
-        CreateToolTip(self.io_box, 'Was the scan taken inside or outside?')
 
+    def _create_output_frame(self):
         reset_image = ImageTk.PhotoImage(Image.open(os.path.join(data.ICON_LOCATION, 'reset.png')))
         ttk.Label(
             self.output_frame,
@@ -535,81 +446,81 @@ class GUI:
         self.scan_master_filename_entry.bind('<KeyRelease>', self.output.set_custom_master_filename)
         CreateToolTip(self.scan_master_filename_entry, 'Master output filename')
 
-        self.copy_source_files_check = ttk.Checkbutton(
-            self.output_frame,
-            variable=self.copy_source_files)
-        self.copy_source_files_check.grid(
-            column=1,
-            row=3,
-            sticky='E',
-            padx=data.PAD_X_DEFAULT,
-            pady=data.PAD_Y_DEFAULT)
-        ttk.Label(
-            self.output_frame,
-            text='Duplicate Source Files'
-        ).grid(column=2, row=3, sticky='W')
-        CreateToolTip(self.copy_source_files_check, 'Duplicate source files in library')
-        self.delete_source_files_check = ttk.Checkbutton(
-            self.output_frame,
-            variable=self.delete_source_files)
-        self.delete_source_files_check.grid(
-            column=1,
-            row=4,
-            sticky='E',
-            padx=data.PAD_X_DEFAULT,
-            pady=data.PAD_Y_DEFAULT)
-        ttk.Label(
-            self.output_frame,
-            text='Delete Source Files'
-        ).grid(column=2, row=4, sticky='W')
-        CreateToolTip(
-            self.delete_source_files_check,
-            'Delete source files on file creation')
+        self._make_checkbox('Duplicate Source Files', 'Duplicate source files in library', self.copy_source_files, 3)
+        self._make_checkbox('Delete Source Files', 'Delete source files on file creation', self.delete_source_files, 4)
 
         self.output_buttons = ttk.Frame(self.output_frame)
         self.output_buttons.grid(column=2, row=5, sticky='W')
-        self.create_file_button = ttk.Button(
-            self.output_buttons,
-            text='Create File',
-            command=self._create_file)
-        self.create_file_button.grid(
-            column=0,
-            row=0,
-            sticky='W',
-            padx=data.PAD_X_DEFAULT,
-            pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(
-            self.create_file_button,
-            f'Create master file ({data.COMMAND_SYMBOL}\u23ce)')
-        self.custom_output_button = ttk.Button(
-            self.output_buttons,
-            text='Set Destination',
-            command=self._custom_destination)
-        self.custom_output_button.grid(
-            column=1,
-            row=0,
-            sticky='W',
-            padx=data.PAD_X_DEFAULT,
-            pady=data.PAD_Y_DEFAULT)
-        CreateToolTip(
-            self.custom_output_button,
-            f'Set custom destination for output files ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}D)')
 
-        for entry_box in [
-            self.venue_entry,
-            self.town_entry,
-            self.country_box,
-            self.date_entry,
-            self.io_box]:
-            entry_box.grid(sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-            entry_box.bind('<KeyRelease>', self._set_master_filename)
+        self._make_op_button('Create File', f'Create master file ({data.COMMAND_SYMBOL}\u23ce)', self._create_file, 0)
+        self._make_op_button(
+            'Set Destination',
+            f'Set custom destination for output files ({data.COMMAND_SYMBOL}{data.MODIFIER_SYMBOL}D)',
+            self._custom_destination,
+            1)
 
         self.window.bind_all(f'<{data.COMMAND}Return>', self._create_file)
-        self.file_listbox.bind('<Escape>', self._deselect_file_listbox)
-        self.file_listbox.bind('<BackSpace>', self._remove_file)
 
         # Initialise Lists
         self._print_files()
+
+    def _make_ip_button(self, icon, description, cmd, col):
+        img = ImageTk.PhotoImage(Image.open(os.path.join(data.ICON_LOCATION, icon)))
+        button = ttk.Button(self.file_list_edit_frame, image=img, command=cmd)
+        button.grid(
+            column=col,
+            row=0,
+            sticky='E',
+            padx=data.PAD_X_DEFAULT,
+            pady=data.PAD_Y_DEFAULT)
+        button.image = img
+        CreateToolTip(button, description)
+        return button
+
+    def _make_entry_box(self, label, description, var, row):
+        ttk.Label(
+            self.info_frame,
+            text=label,
+            width=self.left_indent
+        ).grid(column=0, row=row, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        box = ttk.Entry(
+            self.info_frame,
+            textvariable=var,
+            width=20,
+            font=f'TkDefaultFont {self.font_size}')
+        box.grid(column=1, row=row, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(box, description)
+        box.bind('<KeyRelease>', self._set_master_filename)
+        return box
+
+    def _make_combobox(self, label, description, var, row):
+        ttk.Label(
+            self.info_frame,
+            text=label,
+            width=self.left_indent
+        ).grid(column=0, row=row, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        box = ttk.Combobox(
+            self.info_frame,
+            textvariable=var,
+            width=20,
+            state='readonly',
+            font=f'TkDefaultFont {self.font_size}')
+        box.grid(column=1, row=row, sticky='NW', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(box, description)
+        box.bind('<KeyRelease>', self._set_master_filename)
+        return box
+
+    def _make_checkbox(self, label, description, var, row):
+        box = ttk.Checkbutton(self.output_frame, variable=var)
+        box.grid(column=1, row=row, sticky='E', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        ttk.Label(self.output_frame, text=label).grid(column=2, row=row, sticky='W')
+        CreateToolTip(box, description)
+
+    def _make_op_button(self, label, description, cmd, col):
+        button = ttk.Button(self.output_buttons, text=label, command=cmd)
+        button.grid(column=col, row=0, sticky='W', padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        CreateToolTip(button, description)
+        return button
 
     # Method to update filelist
     def _print_files(self, event=None):
