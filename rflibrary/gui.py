@@ -755,7 +755,7 @@ class GUI:
                         file.new_filename,
                         file.get_output_file())
                     if not written_filename:
-                        return False
+                        return
                     files_written += 1
                     statement += f'{written_filename}\n'
 
@@ -766,7 +766,7 @@ class GUI:
                     self.output.scan_master_filename,
                     output_file)
                 if not written_filename:
-                    return False
+                    return
                 files_written += 1
                 statement += f'{written_filename}\n'
 
@@ -778,7 +778,7 @@ class GUI:
                     self.output.scan_master_filename,
                     wsm_file)
                 if not written_filename:
-                    return False
+                    return
                 files_written += 1
                 statement += f'{written_filename}\n'
 
