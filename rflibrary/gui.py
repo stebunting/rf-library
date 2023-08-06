@@ -318,6 +318,7 @@ class GUI:
         self.file_listbox = tk.Listbox(self.input_frame, height=8, width=20)
         self.file_listbox.bind('<<ListboxSelect>>', self._select_file_item)
         self.file_listbox.grid(column=0, row=1, padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
+        self.file_listbox.configure(background='#ffffff')
 
         ttk.Label(
             self.input_frame,
