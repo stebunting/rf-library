@@ -20,19 +20,19 @@ def get_plist_file():
         try:
             os.makedirs(data.PLIST_PATH, exist_ok=True)
         except PermissionError:
-            errors_to_display.append(2)
+            errors_to_display.append('CREATE_PREF_PATH')
         try:
             with open(data.PLIST_NAME, 'wb'):
                 os.chmod(data.PLIST_NAME, 0o600)
             new_file = True
         except (PermissionError, FileNotFoundError):
-            errors_to_display.append(3)
+            errors_to_display.append('WRITE_PREF_FILE')
     else:
         try:
             with open(data.PLIST_NAME, 'rb') as plist_file:
                 settings = plistlib.load(plist_file)
         except PermissionError:
-            errors_to_display.append(1)
+            errors_to_display.append('READ_PREF_FILE')
     return settings, exists, new_file
 
 def set_plist_defaults(settings):

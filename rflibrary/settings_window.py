@@ -14,6 +14,7 @@ from output import date_formats
 import log
 from helpers import dir_format
 import settings
+from error import display_error
 
 class SettingsWindow:
     def __init__(self):
@@ -254,9 +255,7 @@ class SettingsWindow:
             with open(data.PLIST_NAME, 'wb') as file:
                 plistlib.dump(settings.plist, file)
         except PermissionError:
-            pass
-            # TODO: Display this error
-            # gui._display_error(1)
+            display_error('READ_PREF_FILE')
 
         # Move old log to new log location
         if self._move_old_log:

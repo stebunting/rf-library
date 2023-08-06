@@ -32,6 +32,7 @@ from helpers import dir_format
 import settings
 from chart import Chart
 from file import InvalidFileError
+from error import display_error
 
 matplotlib.use('TkAgg')
 
@@ -84,7 +85,7 @@ class GUI:
         self._create_output_frame()
 
         for error in settings.errors_to_display:
-            self._display_error(error)
+            display_error(error)
 
         # Open settings if settings uninitialised
         if not settings.SETTINGS_EXISTS:
@@ -797,7 +798,7 @@ class GUI:
                     self.output.copy_source_files,
                     self.output.delete_source_files)
             except PermissionError:
-                self._display_error(1)
+                display_error('READ_PREF_FILE')
 
             if settings.plist['create_log']:
                 if self.log.write(self.output):
@@ -888,18 +889,4 @@ class GUI:
                     webbrowser.open(download_uri, new=2 , autoraise=False)
         else:
             if display:
-                self._display_error(4)
-
-    # Method to show an error message
-    def _display_error(self, code):
-        if code == 1:
-            message = f'Could not read from preferences file {data.PLIST_NAME}'
-        elif code == 2:
-            message = f'Could not create preferences path {data.PLIST_PATH}'
-        elif code == 3:
-            message = f'Could not write preferences file {data.PLIST_NAME}'
-        elif code == 4:
-            message = "Could not connect to update server."
-        else:
-            message = "Undefined"
-        tkmessagebox.showerror("RF Library Error", message)
+                display_error('CONN_UPDATE_SERVER')
