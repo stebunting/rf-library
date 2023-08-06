@@ -1,5 +1,8 @@
 # RF Library Changelog
 
+## [0.6.0]
+- Code Refactor
+
 ## [0.5.5]
 - Fixed tooltips
 
