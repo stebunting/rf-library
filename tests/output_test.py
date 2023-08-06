@@ -26,7 +26,7 @@ class TestOutput(unittest.TestCase):
             'high_freq_limit': 900,
             'files': ['IN_001.csv', 'IN_002.csv', 'IN_003.csv', 'IN_004.csv', 'IN_005.csv'],
             'expected_num_files': 5,
-            'expected_filename': "London United States of America-Hammersmith Apollo-20230803-Inside John Smith.csv",
+            'expected_filename': "London United States of America-Hammersmith Apollo-20230806-Inside John Smith.csv",
             'expected_output_lines': 542
         }]
 

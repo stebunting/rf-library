@@ -1,6 +1,7 @@
 # rf-library
 
 [![CI](https://github.com/stebunting/rf-library/actions/workflows/ci.yml/badge.svg)](https://github.com/stebunting/rf-library/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/stebunting/rf-library/branch/dev/graph/badge.svg?token=9JR0V6J535)](https://codecov.io/gh/stebunting/rf-library)
 
 App for converting, merging and organising RF scans from various sources for use in IM calculation software.
 
