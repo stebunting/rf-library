@@ -4,7 +4,7 @@ block_cipher = None
 
 a = Analysis(
     ['rflibrary/__main__.py'],
-    pathex=['..\\rflibrary'],
+    pathex=['./rflibrary'],
     binaries=[],
     datas=[('rflibrary/icons/*', 'icons')],
     hiddenimports=[],
