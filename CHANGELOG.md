@@ -1,5 +1,9 @@
 # RF Library Changelog
 
+## [0.6.1]
+- Minor Styling Update
+- CI Build Fixes
+
 ## [0.6.0]
 - Code Refactor
 

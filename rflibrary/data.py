@@ -14,7 +14,7 @@ def resource_path(relative_path):
 
 # Software Details
 TITLE = "RF Library"
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 ICON_LOCATION = resource_path('icons')
 WEBSITE_URI = "https://rflibrary.stevebunting.com/"
 UPDATE_FILE_LOCATION = f'{WEBSITE_URI}latestVersion.xml'
