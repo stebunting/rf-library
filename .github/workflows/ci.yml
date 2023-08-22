@@ -131,5 +131,5 @@ jobs:
 
     - name: Deploy to AWS S3
       run: |
-        aws s3 cp rflibrary-osx/rflibrary.zip s3://${{ secrets.AWS_S3_BUCKET_NAME }}/rflibrary-osx-${{ github.ref_name }}.zip
-        aws s3 cp rflibrary-win/rflibrary.exe s3://${{ secrets.AWS_S3_BUCKET_NAME }}/rflibrary-win-${{ github.ref_name }}.exe
+        aws s3 cp rflibrary-osx/rflibrary.zip s3://${{ secrets.AWS_S3_BUCKET_NAME }}/rflibrary-osx-${GITHUB_REF_NAME#v}.zip
+        aws s3 cp rflibrary-win/rflibrary.exe s3://${{ secrets.AWS_S3_BUCKET_NAME }}/rflibrary-win-${GITHUB_REF_NAME#v}.exe
