@@ -1,7 +1,6 @@
 # Standard library imports
 import os
 import sys
-import xml.etree.ElementTree
 import webbrowser
 
 # Tkinter GUI imports
@@ -13,7 +12,6 @@ import tkinter.messagebox as tkmessagebox
 
 # Third party imports
 from PIL import Image, ImageTk
-import requests
 
 # Matplotlib graph plotting imports
 import matplotlib
@@ -33,6 +31,7 @@ import settings
 from chart import Chart
 from file import InvalidFileError
 from error import display_error
+import update
 
 matplotlib.use('TkAgg')
 
@@ -847,7 +846,7 @@ class GUI:
     def _about(self):
         tkmessagebox.showinfo(
             'About',
-            f'{data.TITLE} v{data.VERSION}\n\n{chr(169)} Stephen Bunting 2023\n{data.WEBSITE_URI}')
+            f'{data.TITLE} {data.VERSION}\n\n{chr(169)} Stephen Bunting 2023\n{data.WEBSITE_URI}')
 
     # Method to open docs in web browser
     def _open_http(self):
@@ -868,17 +867,9 @@ class GUI:
     def _check_for_updates(self, **kwargs):
         display = kwargs['display'] if kwargs.get('display') is not None else True
 
-        try:
-            req = requests.get(data.UPDATE_FILE_LOCATION, timeout=3)
-            update_connection = True
-        except requests.exceptions.ConnectionError:
-            update_connection = False
-
-        if update_connection:
-            root = xml.etree.ElementTree.fromstring(req.text)
-            latest = root[0][0].text
-            download_uri = root[0][2].text
-            if latest == data.VERSION:
+        res = update.check()
+        if res["connection"]:
+            if res["version"] == data.VERSION:
                 if display:
                     tkmessagebox.showinfo(
                         "Check for Updates",
@@ -886,8 +877,8 @@ class GUI:
             else:
                 if (tkmessagebox.askyesno(
                     "Check for Updates",
-                    f'There is a new version of RF Library available. Would you like to download v{latest}?')):
-                    webbrowser.open(download_uri, new=2 , autoraise=False)
+                    f'There is a new version of RF Library available. Would you like to download {res["version"]}?')):
+                    webbrowser.open(res["path"], new=2 , autoraise=False)
         else:
             if display:
                 display_error('CONN_UPDATE_SERVER')

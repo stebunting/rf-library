@@ -14,10 +14,10 @@ def resource_path(relative_path):
 
 # Software Details
 TITLE = "RF Library"
-VERSION = "0.6.1"
+VERSION = "v0.6.1"
 ICON_LOCATION = resource_path('icons')
 WEBSITE_URI = "https://rflibrary.stevebunting.com/"
-UPDATE_FILE_LOCATION = f'{WEBSITE_URI}latestVersion.xml'
+UPDATE_FILE_LOCATION = "https://rf-library-backend.onrender.com/version"
 
 # Check system and set necessary variables
 if platform.system() == 'Darwin':
