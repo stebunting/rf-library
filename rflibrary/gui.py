@@ -317,7 +317,7 @@ class GUI:
         self.file_listbox = tk.Listbox(self.input_frame, height=8, width=20)
         self.file_listbox.bind('<<ListboxSelect>>', self._select_file_item)
         self.file_listbox.grid(column=0, row=1, padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        self.file_listbox.configure(background='#ffffff')
+        self.file_listbox.configure(background='#ffffff', fg='#000000')
 
         ttk.Label(
             self.input_frame,
@@ -325,7 +325,7 @@ class GUI:
         ).grid(column=1, row=0, sticky='W')
         self.data_listbox = tk.Listbox(self.input_frame, height=8, width=30)
         self.data_listbox.grid(column=1, row=1, padx=data.PAD_X_DEFAULT, pady=data.PAD_Y_DEFAULT)
-        self.data_listbox.configure(background='lightGrey')
+        self.data_listbox.configure(background='lightGrey', fg='#000000')
 
         # File List Edit Buttons
         self.file_list_edit_frame = ttk.Frame(self.input_frame)
