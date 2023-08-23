@@ -66,13 +66,13 @@ jobs:
       run: pyinstaller rflibrary_osx.spec
 
     - name: Zip Bundle
-      run: zip -r rflibrary.zip dist/rflibrary.app
+      run: cd dist && zip -r rflibrary.zip "RF Library.app"
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
       with:
         name: rflibrary-osx
-        path: rflibrary.zip
+        path: dist/rflibrary.zip
         retention-days: 7
 
   build-win:

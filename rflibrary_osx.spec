@@ -48,7 +48,7 @@ exe = EXE(
 
 app = BUNDLE(
     exe,
-    name='rflibrary.app',
+    name='RF Library.app',
     icon='rflibrary/icons/logo.icns',
     bundle_identifier='com.stevebunting.rflibrary',
     info_plist={
