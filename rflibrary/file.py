@@ -23,9 +23,9 @@ class File:
         self.in_out = 0
         self.valid = None
 
-        self._full_filename = name
+        self.full_filename = name
         self._tv_country = tv_country
-        self.filename = os.path.basename(self._full_filename)
+        self.filename = os.path.basename(self.full_filename)
         self.file, self._ext = os.path.splitext(self.filename)
 
         self.valid = self._read_file()
@@ -53,7 +53,7 @@ class File:
             return False
 
         # Read first line of file
-        with open(self._full_filename, 'r', encoding='utf-8') as file:
+        with open(self.full_filename, 'r', encoding='utf-8') as file:
             first_line = file.readline().rstrip()
             file.seek(0)
 
@@ -130,10 +130,10 @@ class File:
     def get_creation_date(self):
         if data.SYSTEM == 'Mac':
             self.creation_date = datetime.datetime.fromtimestamp(
-                os.stat(self._full_filename).st_birthtime)
+                os.stat(self.full_filename).st_birthtime)
         elif data.SYSTEM == 'Windows':
             self.creation_date = datetime.datetime.fromtimestamp(
-                os.stat(self._full_filename).st_ctime)
+                os.stat(self.full_filename).st_ctime)
 
     # Method to get TV channels
     def update_tv_channels(self, _=None):

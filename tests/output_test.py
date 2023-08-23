@@ -47,6 +47,7 @@ class TestOutput(unittest.TestCase):
                 high_freq_limit=test['high_freq_limit'])
             for file in test['files']:
                 output.add_file(os.path.join(data_directory, file), test['country'])
+            self.assertEqual(output.num_files(), len(test['files']))
 
             self.assertEqual(
                 output.num_files(),

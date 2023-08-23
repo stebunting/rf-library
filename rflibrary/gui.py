@@ -810,7 +810,7 @@ class GUI:
             if del_source_confirmed:
                 statement += '\nThe following files were deleted:\n'
                 for file in self.output.files:
-                    os.remove(file.fullfilename)
+                    os.remove(file.full_filename)
                     statement += f'{file.filename}\n'
                 self._clear_files(False)
                 tkmessagebox.showinfo('Success!', statement)
