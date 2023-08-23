@@ -1,5 +1,10 @@
 # RF Library Changelog
 
+## [0.6.2]
+- Use new 'Check For Updates' backend
+- Fix 'Delete Source Files' checkbox bug
+- Minor styling update
+
 ## [0.6.1]
 - Minor Styling Update
 - CI Build Fixes
