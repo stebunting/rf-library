@@ -1,5 +1,10 @@
 # RF Library Changelog
 
+## [0.6.3]
+- Make keyboard shortcuts work
+- List written files in write confirmation dialogue
+- Fix MacOS zip file in CI
+
 ## [0.6.2]
 - Use new 'Check For Updates' backend
 - Fix 'Delete Source Files' checkbox bug

@@ -14,7 +14,7 @@ def resource_path(relative_path):
 
 # Software Details
 TITLE = "RF Library"
-VERSION = "v0.6.2"
+VERSION = "v0.6.3"
 ICON_LOCATION = resource_path('icons')
 WEBSITE_URI = "https://rflibrary.stevebunting.com/"
 UPDATE_FILE_LOCATION = "https://rf-library-backend.onrender.com/version"
