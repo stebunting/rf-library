@@ -822,11 +822,10 @@ class GUI:
 
     # Method to write file to disk
     def _write_file(self, directory, filename, string):
-        filename = self.writer.get_filename(directory, filename)
-        value = self.writer.write_file(filename, string)
-        if value is False:
+        full_filename = self.writer.get_filename(directory, filename)
+        if self.writer.write_file(full_filename, string) is False:
             tkmessagebox.showwarning('Fail!', f'{filename} could not be written.')
-        return value
+        return filename
 
     # Method to create directory structure
     def _create_directory(self):
