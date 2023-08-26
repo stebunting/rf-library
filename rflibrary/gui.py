@@ -178,17 +178,18 @@ class GUI:
 
         # Bindings for Mac/Windows
         self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}a>', self._add_files)
+        self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}A>', self._add_files)
+
+        self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}d>', self._custom_destination)
+        self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}D>', self._custom_destination)
+        self.window.bind_all(f'<{data.COMMAND}BackSpace>', self._clear_files)
+        self.window.bind_all(f'<{data.COMMAND}{data.ALT}a>', self._add_directory)
+        self.window.bind_all(f'<{data.COMMAND}{data.ALT}A>', self._add_directory)
 
         # Bindings for Windows only
         if data.SYSTEM == 'Windows':
-            self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}A>', self._add_files)
-            self.window.bind_all(f'<{data.COMMAND}{data.ALT}a>', self._add_directory)
-            self.window.bind_all(f'<{data.COMMAND}{data.ALT}A>', self._add_directory)
-            self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}d>', self._custom_destination)
-            self.window.bind_all(f'<{data.COMMAND}{data.MODIFIER}D>', self._custom_destination)
             self.window.bind_all(f'<{data.COMMAND}q>', self._quit)
             self.window.bind_all(f'<{data.COMMAND}Q>', self._quit)
-            self.window.bind_all(f'<{data.COMMAND}BackSpace>', self._clear_files)
 
     def _create_file_menu(self):
         menu = tk.Menu(self.menu_bar, tearoff=False)
@@ -613,7 +614,7 @@ class GUI:
                 self.file_menu.entryconfig('Create File', state='disabled')
 
     # Method to change destination to custom destination
-    def _custom_destination(self):
+    def _custom_destination(self, _=None):
         custom_location = tkfiledialog.askdirectory(
             parent=self.master_frame,
             title='Select Destination Folder')
@@ -665,7 +666,7 @@ class GUI:
             self._update_subdirectory()
 
     # Method to open file dialogue and allow selection of files
-    def _add_files(self, selected_files=None, suppress_errors=False):
+    def _add_files(self, _=None, selected_files=None, suppress_errors=False):
         if selected_files is None:
             selected_files = tkfiledialog.askopenfilenames(
                 parent=self.input_frame,
@@ -684,7 +685,7 @@ class GUI:
         self._print_files()
 
     # Method to open file dialogue and allow selection of all files in a directory
-    def _add_directory(self):
+    def _add_directory(self, _=None):
         dir_files = []
         selected_dir = tkfiledialog.askdirectory(
             parent=self.input_frame, title='Add directory',
@@ -696,7 +697,7 @@ class GUI:
                 if not file.startswith('.') and not os.path.isdir(fullfilename):
                     dir_files.append(fullfilename)
         if len(dir_files) != 0:
-            self._add_files(dir_files, True)
+            self._add_files(None, dir_files, True)
 
     # Method to remove file
     def _remove_file(self, event=None):
@@ -712,7 +713,7 @@ class GUI:
             self._print_files(event)
 
     # Method to remove all files
-    def _clear_files(self, confirm_required=True):
+    def _clear_files(self, _=None, confirm_required=True):
         self.edit_menu.entryconfig('Clear Files', state='disabled')
         if confirm_required:
             if not tkmessagebox.askyesno(
@@ -730,7 +731,7 @@ class GUI:
         self._set_master_filename()
 
     # Method to create master file
-    def _create_file(self):
+    def _create_file(self, _=None):
         if self.output.num_files() == 0:
             tkmessagebox.showinfo('No Files To Create', 'No files to create.')
             return
