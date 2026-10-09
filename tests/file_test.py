@@ -9,6 +9,7 @@ data_directory = os.path.join(pathlib.Path(__file__).parent.resolve(), 'data')
 class TestFileParse(unittest.TestCase):
     def test(self):
         tests = [{
+            # TTi // 54 - 88 MHz
             'filename': 'IN_001.csv',
             'country': 'United States of America',
             'expected_validity': True,
@@ -23,6 +24,7 @@ class TestFileParse(unittest.TestCase):
             'expected_new_filename': '02.csv',
             'expected_in_out': 1
         }, {
+            # RF Explorer // 600 - 660 MHz
             'filename': 'RFExplorer_SingleSweepData_2016_05_28_16_57_56.csv',
             'country': 'United States of America',
             'expected_validity': True,
@@ -37,6 +39,7 @@ class TestFileParse(unittest.TestCase):
             'expected_new_filename': '35.csv',
             'expected_in_out': 1
         }, {
+            # Shure ULXD4Q (L51) // 632 - 696 MHz
             'filename': 'Shure ULXD.sdb2',
             'country': 'United Kingdom',
             'expected_validity': True,
@@ -51,6 +54,7 @@ class TestFileParse(unittest.TestCase):
             'expected_new_filename': '41.csv',
             'expected_in_out': 0
         }, {
+            # Invalid CSV
             'filename': 'Notcsv.xls',
             'country': 'United Kingdom',
             'expected_validity': False,
@@ -63,6 +67,51 @@ class TestFileParse(unittest.TestCase):
             'expected_start_tv_channel': None,
             'expected_stop_tv_channel': None,
             'expected_new_filename': '',
+            'expected_in_out': 0
+        }, {
+            # RF Explorer // 1910 - 1920 MHz
+            'filename': 'Brazil.csv',
+            'country': 'Brazil',
+            'expected_validity': True,
+            'expected_filename': 'Brazil.csv',
+            'expected_model': 'Generic',
+            'expected_start_frequency': '1910.000MHz',
+            'expected_stop_frequency': '1920.000MHz',
+            'expected_data_points': 271,
+            'expected_resolution': 0.037,
+            'expected_start_tv_channel': None,
+            'expected_stop_tv_channel': None,
+            'expected_new_filename': 'DBRA.csv',
+            'expected_in_out': 0
+        }, {
+            # RF Explorer // 1920 - 1930 MHz
+            'filename': 'OUT1423.csv',
+            'country': 'United States of America',
+            'expected_validity': True,
+            'expected_filename': 'OUT1423.csv',
+            'expected_model': 'Generic',
+            'expected_start_frequency': '1920.000MHz',
+            'expected_stop_frequency': '1930.000MHz',
+            'expected_data_points': 271,
+            'expected_resolution': 0.037,
+            'expected_start_tv_channel': None,
+            'expected_stop_tv_channel': None,
+            'expected_new_filename': 'DUSA.csv',
+            'expected_in_out': -1
+        }, {
+            # RF Explorer // 1880 - 1900 MHz
+            'filename': 'TTIDECT.csv',
+            'country': 'Spain',
+            'expected_validity': True,
+            'expected_filename': 'TTIDECT.csv',
+            'expected_model': 'TTi PSA2702',
+            'expected_start_frequency': '1880.000MHz',
+            'expected_stop_frequency': '1900.000MHz',
+            'expected_data_points': 271,
+            'expected_resolution': 0.074,
+            'expected_start_tv_channel': None,
+            'expected_stop_tv_channel': None,
+            'expected_new_filename': 'DEUR.csv',
             'expected_in_out': 0
         }]
 

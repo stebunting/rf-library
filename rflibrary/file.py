@@ -166,10 +166,10 @@ class File:
             self.new_filename = 'X1'
         elif 1920 <= self._start_frequency <= 1930:
             self.new_filename = 'DUSA'
-        elif 1910 <= self._start_frequency <= 1930:
-            self.new_filename = 'DSA'
         elif 1910 <= self._start_frequency <= 1920:
             self.new_filename = 'DBRA'
+        elif 1910 <= self._start_frequency <= 1930:
+            self.new_filename = 'DSA'
         elif 1893 <= self._start_frequency <= 1906:
             self.new_filename = 'DJAP'
         elif 1880 <= self._start_frequency <= 1900:
