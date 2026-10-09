@@ -301,15 +301,15 @@ class GUI:
         self.delete_source_files = tk.BooleanVar(value=self.output.delete_source_files)
 
         # Set tracers to update output object
-        self.venue.trace('w', lambda *_: self.output.set_venue(self.venue.get()))
-        self.town.trace('w', lambda *_: self.output.set_town(self.town.get()))
-        self.country.trace('w', lambda *_: self.output.set_country(self.country.get()))
-        self.in_out.trace('w', lambda *_: self.output.set_in_out(self.in_out.get()))
-        self.target_subdirectory.trace('w',
+        self.venue.trace_add('write', lambda *_: self.output.set_venue(self.venue.get()))
+        self.town.trace_add('write', lambda *_: self.output.set_town(self.town.get()))
+        self.country.trace_add('write', lambda *_: self.output.set_country(self.country.get()))
+        self.in_out.trace_add('write', lambda *_: self.output.set_in_out(self.in_out.get()))
+        self.target_subdirectory.trace_add('write',
             lambda *_: setattr(self.output, 'target_subdirectory', self.target_subdirectory.get()))
-        self.copy_source_files.trace('w',
+        self.copy_source_files.trace_add('write',
             lambda *_: setattr(self.output, 'copy_source_files', self.copy_source_files.get()))
-        self.delete_source_files.trace('w',
+        self.delete_source_files.trace_add('write',
             lambda *_: setattr(self.output, 'delete_source_files', self.delete_source_files.get()))
 
     # Create GUI widgets

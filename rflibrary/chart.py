@@ -50,8 +50,7 @@ class Chart:
         tv_country = country if country == 'United States of America' else 'UK'
         for channel in TV_CHANNELS[tv_country]:
             if channel[1] - prev >= min_tick_distance \
-                and file.frequencies[0][0] <= channel[1] \
-                and file.frequencies[-1][0] >= channel[1]:
+                and file.frequencies[0][0] <= channel[1] <= file.frequencies[-1][0]:
                 x_ticks.append(channel[1])
                 prev = channel[1]
 

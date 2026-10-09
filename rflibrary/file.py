@@ -143,12 +143,10 @@ class File:
             self._tv_country = 'UK'
         for chan in TV_CHANNELS[self._tv_country]:
             if self.start_tv_channel is None:
-                if (self._start_frequency >= float(chan[1]) and
-                    self._start_frequency < float(chan[2])):
+                if float(chan[1]) <= self._start_frequency < float(chan[2]):
                     self.start_tv_channel = chan[0]
             else:
-                if (self._stop_frequency > float(chan[1]) and
-                    self._stop_frequency <= float(chan[2])):
+                if float(chan[1]) < self._stop_frequency <= float(chan[2]):
                     self.stop_tv_channel = chan[0]
                     break
 
