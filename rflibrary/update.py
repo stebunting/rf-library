@@ -12,7 +12,7 @@ def check():
     try:
         req = requests.get(data.UPDATE_FILE_LOCATION, timeout=3)
         rtn["connection"] = req.status_code == 200
-    except requests.exceptions.ConnectionError:
+    except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
         rtn["connection"] = False
 
     if rtn["connection"]:
