@@ -62,7 +62,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Create Bundle
-        run: pyinstaller rflibrary_osx.spec
+        run: pyinstaller rflibrary_osx.spec --noconfirm
 
       - name: Zip Bundle
         run: cd dist && zip -r rflibrary.zip "RF Library.app"
@@ -98,7 +98,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Create Executable
-        run: pyinstaller rflibrary_win.spec
+        run: pyinstaller rflibrary_win.spec --noconfirm
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v7

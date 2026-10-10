@@ -4,13 +4,9 @@ import site
 site.addsitedir('rflibrary')
 import data
 
-block_cipher = None
-
 a = Analysis(
     ['rflibrary/__main__.py'],
-    pathex=[
-        '/Users/stebunting/Dev/.virtualEnvs/rf-library/lib/python3.11/site-packages',
-        './rflibrary'],
+    pathex=['./rflibrary'],
     binaries=[],
     datas=[('rflibrary/icons/*', 'icons')],
     hiddenimports=[],
@@ -20,18 +16,15 @@ a = Analysis(
     excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
-    cipher=block_cipher,
     noarchive=False)
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='rflibrary',
     debug=False,
     bootloader_ignore_signals=False,
@@ -46,8 +39,17 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None)
 
-app = BUNDLE(
+collection = COLLECT(
     exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='rflibrary')
+
+app = BUNDLE(
+    collection,
     name='RF Library.app',
     icon='rflibrary/icons/logo.icns',
     bundle_identifier='com.stevebunting.rflibrary',
