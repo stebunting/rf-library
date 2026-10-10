@@ -1,5 +1,9 @@
 # RF Library Changelog
 
+## [0.6.4]
+- Fixed bug where DBRA file was not named correctly
+- Do not crash on timeout when checking for update
+
 ## [0.6.3]
 - Make keyboard shortcuts work
 - List written files in write confirmation dialogue
